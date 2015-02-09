@@ -811,6 +811,7 @@ var Tegaki = {
     Tegaki.canvas = null;
     Tegaki.ctx = null;
     Tegaki.layers = [];
+    Tegaki.layerIndex = 0;
     Tegaki.activeCtx = null;
   },
   
