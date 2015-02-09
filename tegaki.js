@@ -797,7 +797,7 @@ var Tegaki = {
     T$.on(Tegaki.layersCnt, 'mousemove', Tegaki.onMouseMove);
     T$.on(Tegaki.layersCnt, 'mousedown', Tegaki.onMouseDown);
     T$.on(Tegaki.layersCnt, 'mouseover', Tegaki.onMouseOver);
-    T$.on(Tegaki.layersCnt, 'contextmeny', Tegaki.onDummy);
+    T$.on(Tegaki.layersCnt, 'contextmenu', Tegaki.onDummy);
     
     T$.off(document, 'mouseup', Tegaki.onMouseUp);
     T$.off(window, 'resize', Tegaki.updatePosOffset);
