@@ -541,7 +541,7 @@ var Tegaki = {
     el.type = 'range';
     lbl = T$.el('div');
     lbl.className = 'tegaki-label';
-    lbl.textContent = 'Alpha';
+    lbl.textContent = 'Opacity';
     grp.appendChild(lbl);
     T$.on(el, 'change', self.onAlphaChange);
     grp.appendChild(el);
