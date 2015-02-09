@@ -393,6 +393,12 @@ var T$ = {
     return document.createElement(name);
   },
   
+  extend: function(destination, source) {
+    for (var key in source) {
+      destination[key] = source[key];
+    }
+  },
+  
   selectedOptions: function(el) {
     var i, opt, sel;
     
@@ -411,6 +417,50 @@ var T$ = {
     return sel;
   }
 };
+
+var TegakiStrings = {
+  // Messages
+  badDimensions: 'Invalid dimensions.',
+  promptWidth: 'Canvas width in pixels',
+  promptHeight: 'Canvas height in pixels',
+  confirmDelLayers: 'Delete selected layers?',
+  errorMergeOneLayer: 'You need to select at least 2 layers.',
+  confirmMergeLayers: 'Merge selected layers?',
+  errorLoadImage: 'Could not load the image.',
+  noActiveLayer: 'No active layer.',
+  hiddenActiveLayer: 'The active layer is not visible.',
+  confirmCancel: 'Are you sure? Your work will be lost.',
+  confirmChangeCanvas: 'Changing the canvas will clear all layers and history.',
+  
+  // UI
+  color: 'Color',
+  size: 'Size',
+  alpha: 'Opacity',
+  layers: 'Layers',
+  addLayer: 'Add layer',
+  delLayers: 'Delete layers',
+  mergeLayers: 'Merge layers',
+  showHideLayer: 'Toggle visibility',
+  moveLayerUp: 'Move up',
+  moveLayerDown: 'Move down',
+  tool: 'Tool',
+  eraser: 'Eraser',
+  changeCanvas: 'Change canvas',
+  blank: 'Blank',
+  newCanvas: 'New',
+  undo: 'Undo',
+  redo: 'Redo',
+  close: 'Close',
+  finish: 'Finish',
+  
+  // Tools
+  pen: 'Pen',
+  airbrush: 'Airbrush',
+  pipette: 'Pipette',
+  dodge: 'Dodge',
+  burn: 'Burn',
+  blur: 'Blur'
+}
 
 var Tegaki = {
   VERSION: '0.0.1',
@@ -437,12 +487,12 @@ var Tegaki = {
   TWOPI: 2 * Math.PI,
   
   tools: {
-    Pen: TegakiPen,
-    Airbrush: TegakiAirbrush,
-    Pipette: TegakiPipette,
-    Dodge: TegakiDodge,
-    Burn: TegakiBurn,
-    Blur: TegakiBlur,
+    pen: TegakiPen,
+    airbrush: TegakiAirbrush,
+    pipette: TegakiPipette,
+    dodge: TegakiDodge,
+    burn: TegakiBurn,
+    blur: TegakiBlur,
   },
   
   tool: null,
@@ -508,7 +558,7 @@ var Tegaki = {
     }
     lbl = T$.el('div');
     lbl.className = 'tegaki-label';
-    lbl.textContent = 'Color';
+    lbl.textContent = TegakiStrings.color;
     grp.appendChild(lbl);
     T$.on(el, 'change', self.onColorChange);
     grp.appendChild(el);
@@ -524,7 +574,7 @@ var Tegaki = {
     el.type = 'range';
     lbl = T$.el('div');
     lbl.className = 'tegaki-label';
-    lbl.textContent = 'Size';
+    lbl.textContent = TegakiStrings.size;
     grp.appendChild(lbl);
     T$.on(el, 'change', self.onSizeChange);
     grp.appendChild(el);
@@ -541,7 +591,7 @@ var Tegaki = {
     el.type = 'range';
     lbl = T$.el('div');
     lbl.className = 'tegaki-label';
-    lbl.textContent = 'Opacity';
+    lbl.textContent = TegakiStrings.alpha;
     grp.appendChild(lbl);
     T$.on(el, 'change', self.onAlphaChange);
     grp.appendChild(el);
@@ -557,42 +607,42 @@ var Tegaki = {
     el.size = 3;
     lbl = T$.el('div');
     lbl.className = 'tegaki-label';
-    lbl.textContent = 'Layer';
+    lbl.textContent = TegakiStrings.layers;
     grp.appendChild(lbl);
     T$.on(el, 'change', self.onLayerChange);
     grp.appendChild(el);
     el = T$.el('span');
-    el.title = 'Add layer';
+    el.title = TegakiStrings.addLayer;
     el.className = 'tegaki-icon tegaki-plus';
     T$.on(el, 'click', self.onLayerAdd);
     grp.appendChild(el);
     el = T$.el('span');
-    el.title = 'Delete layers';
+    el.title = TegakiStrings.delLayers;
     el.className = 'tegaki-icon tegaki-minus';
     T$.on(el, 'click', self.onLayerDelete);
     grp.appendChild(el);
     el = T$.el('span');
     el.id = 'tegaki-layer-visibility';
-    el.title = 'Toggle visibility';
+    el.title = TegakiStrings.showHideLayer;
     el.className = 'tegaki-icon tegaki-eye';
     T$.on(el, 'click', self.onLayerVisibilityChange);
     grp.appendChild(el);
     el = T$.el('span');
     el.id = 'tegaki-layer-merge';
-    el.title = 'Merge layers';
+    el.title = TegakiStrings.mergeLayers;
     el.className = 'tegaki-icon tegaki-level-down';
     T$.on(el, 'click', self.onMergeLayers);
     grp.appendChild(el);
     el = T$.el('span');
     el.id = 'tegaki-layer-up';
-    el.title = 'Move up';
+    el.title = TegakiStrings.moveLayerUp;
     el.setAttribute('data-up', '1');
     el.className = 'tegaki-icon tegaki-up-open';
     T$.on(el, 'click', self.onMoveLayer);
     grp.appendChild(el);
     el = T$.el('span');
     el.id = 'tegaki-layer-down';
-    el.title = 'Move down';
+    el.title = TegakiStrings.moveLayerDown;
     el.className = 'tegaki-icon tegaki-down-open';
     T$.on(el, 'click', self.onMoveLayer);
     grp.appendChild(el);
@@ -606,12 +656,12 @@ var Tegaki = {
     for (tool in Tegaki.tools) {
       el2 = T$.el('option');
       el2.value = tool;
-      el2.textContent = tool;
+      el2.textContent = TegakiStrings[tool];
       el.appendChild(el2);
     }
     lbl = T$.el('div');
     lbl.className = 'tegaki-label';
-    lbl.textContent = 'Tool';
+    lbl.textContent = TegakiStrings.tool;
     grp.appendChild(lbl);
     T$.on(el, 'change', self.onToolChange);
     grp.appendChild(el);
@@ -625,7 +675,7 @@ var Tegaki = {
     el.type = 'checkbox';
     lbl = T$.el('div');
     lbl.className = 'tegaki-label';
-    lbl.textContent = 'Eraser';
+    lbl.textContent = TegakiStrings.eraser;
     grp.appendChild(lbl);
     T$.on(el, 'change', self.onEraserChange);
     grp.appendChild(el);
@@ -639,8 +689,8 @@ var Tegaki = {
     if (opts.canvasOptions) {
       btn = T$.el('select');
       btn.id = 'tegaki-canvas-select';
-      btn.title = 'Change canvas';
-      btn.innerHTML = '<option value="0">Blank</option>';
+      btn.title = TegakiStrings.changeCanvas;
+      btn.innerHTML = '<option value="0">' + TegakiStrings.blank + '</option>';
       opts.canvasOptions(btn);
       T$.on(btn, 'change', Tegaki.onCanvasSelected);
       T$.on(btn, 'focus', Tegaki.onCanvasSelectFocused);
@@ -649,32 +699,32 @@ var Tegaki = {
     
     btn = T$.el('span');
     btn.className = 'tegaki-tb-btn'
-    btn.textContent = 'New';
+    btn.textContent = TegakiStrings.newCanvas;
     T$.on(btn, 'click', Tegaki.onNewClick);
     el.appendChild(btn);
     
     btn = T$.el('span');
     btn.className = 'tegaki-tb-btn'
-    btn.textContent = 'Undo';
+    btn.textContent = TegakiStrings.undo;
     T$.on(btn, 'click', Tegaki.onUndoClick);
     el.appendChild(btn);
     
     btn = T$.el('span');
     btn.className = 'tegaki-tb-btn'
-    btn.textContent = 'Redo';
+    btn.textContent = TegakiStrings.redo;
     T$.on(btn, 'click', Tegaki.onRedoClick);
     el.appendChild(btn);
     
     btn = T$.el('span');
     btn.className = 'tegaki-tb-btn'
-    btn.textContent = 'Close';
+    btn.textContent = TegakiStrings.close;
     T$.on(btn, 'click', Tegaki.onCancelClick);
     el.appendChild(btn);
     
     btn = T$.el('span');
     btn.id = 'tegaki-finish-btn';
     btn.className = 'tegaki-tb-btn'
-    btn.textContent = 'Finish';
+    btn.textContent = TegakiStrings.finish;
     T$.on(btn, 'click', Tegaki.onDoneClick);
     el.appendChild(btn);
     
@@ -704,7 +754,7 @@ var Tegaki = {
     
     self.initTools();
     
-    self.setTool('Pen');
+    self.setTool('pen');
     
     self.updateUI();
     
@@ -1130,11 +1180,17 @@ var Tegaki = {
   onNewClick: function() {
     var width, height, tmp;
     
-    width = +prompt('Width in pixels');
-    height = +prompt('Height in pixels');
+    width = prompt(TegakiStrings.promptHeight, Tegaki.canvas.width);
+    if (!width) { return; }
+    
+    height = prompt(TegakiStrings.promptHeight, Tegaki.canvas.height);
+    if (!height) { return; }
+    
+    width = +width;
+    height = +height;
     
     if (width < 1 || height < 1) {
-      alert('Invalid dimensions.');
+      alert(TegakiStrings.badDimensions);
       return;
     }
     
@@ -1162,7 +1218,7 @@ var Tegaki = {
   },
   
   onCancelClick: function() {
-    if (!confirm('Are you sure? Your work will be lost.')) {
+    if (!confirm(TegakiStrings.confirmCancel)) {
       return;
     }
     
@@ -1208,11 +1264,10 @@ var Tegaki = {
     selectedOptions = T$.selectedOptions(sel);
     
     if (Tegaki.layers.length === selectedOptions.length) {
-      alert("Can't delete last layer.");
       return;
     }
     
-    if (!confirm('Delete selected layers?')) {
+    if (!confirm(TegakiStrings.confirmDelLayers)) {
       return;
     }
     
@@ -1272,11 +1327,11 @@ var Tegaki = {
     }
     
     if (ary.length < 2) {
-      alert("You need to select at least 2 layers.");
+      alert(TegakiStrings.errorMergeOneLayer);
       return;
     }
     
-    if (!confirm('Merge selected layers?')) {
+    if (!confirm(TegakiStrings.confirmMergeLayers)) {
       return;
     }
     
@@ -1306,7 +1361,7 @@ var Tegaki = {
   onCanvasSelected: function(e) {
     var img;
     
-    if (!confirm('Are you sure? Changing the canvas will clear all layers and history.')) {
+    if (!confirm(TegakiStrings.confirmChangeCanvas)) {
       this.selectedIndex = +this.getAttribute('data-current');
       return;
     }
@@ -1348,7 +1403,7 @@ var Tegaki = {
     el.selectedIndex = +el.getAttribute('data-current');
     el.disabled = false;
     
-    alert("Couldn't load the image.");
+    alert(TegakiStrings.errorLoadImage);
   },
   
   resizeCanvas: function(width, height) {
@@ -1578,11 +1633,11 @@ var Tegaki = {
   
   onMouseDown: function(e) {
     if (Tegaki.activeLayer === null) {
-      alert('No active layer.');
+      alert(TegakiStrings.noActiveLayer);
       return;
     }
     if (!Tegaki.layers[Tegaki.activeLayer].visible) {
-      alert('Active layer is not visible.');
+      alert(TegakiStrings.hiddenActiveLayer);
       return;
     }
     if (e.which === 3 || e.altKey) {
