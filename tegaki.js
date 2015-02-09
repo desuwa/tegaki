@@ -1134,7 +1134,7 @@ var Tegaki = {
     height = +prompt('Height in pixels');
     
     if (width < 1 || height < 1) {
-      alert('Invalid dimensions');
+      alert('Invalid dimensions.');
       return;
     }
     
@@ -1162,7 +1162,7 @@ var Tegaki = {
   },
   
   onCancelClick: function() {
-    if (!confirm('Sure?')) {
+    if (!confirm('Are you sure? Your work will be lost.')) {
       return;
     }
     
@@ -1208,7 +1208,7 @@ var Tegaki = {
     selectedOptions = T$.selectedOptions(sel);
     
     if (Tegaki.layers.length === selectedOptions.length) {
-      alert("Can't delete last layer");
+      alert("Can't delete last layer.");
       return;
     }
     
@@ -1272,7 +1272,7 @@ var Tegaki = {
     }
     
     if (ary.length < 2) {
-      alert("You need to select at least 2 layers");
+      alert("You need to select at least 2 layers.");
       return;
     }
     
@@ -1306,7 +1306,7 @@ var Tegaki = {
   onCanvasSelected: function(e) {
     var img;
     
-    if (!confirm('Changing the canvas will clear all layers and history.')) {
+    if (!confirm('Are you sure? Changing the canvas will clear all layers and history.')) {
       this.selectedIndex = +this.getAttribute('data-current');
       return;
     }
@@ -1348,7 +1348,7 @@ var Tegaki = {
     el.selectedIndex = +el.getAttribute('data-current');
     el.disabled = false;
     
-    alert("Couldn't load the image");
+    alert("Couldn't load the image.");
   },
   
   resizeCanvas: function(width, height) {
@@ -1578,11 +1578,11 @@ var Tegaki = {
   
   onMouseDown: function(e) {
     if (Tegaki.activeLayer === null) {
-      alert('No active layer');
+      alert('No active layer.');
       return;
     }
     if (!Tegaki.layers[Tegaki.activeLayer].visible) {
-      alert('Active layer is not visible');
+      alert('Active layer is not visible.');
       return;
     }
     if (e.which === 3 || e.altKey) {
