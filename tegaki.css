@@ -87,17 +87,15 @@
 .tegaki-tb-btn {
   margin-left: 10px;
   cursor: pointer;
-  color: #007FFF;
   text-decoration: none;
 }
 
 .tegaki-tb-btn:hover {
-  color: #C41E3A;
-  text-decoration: underline;
+  color: #007FFF;
 }
 
 .tegaki-tb-btn:focus {
-  color: #C41E3A;
+  color: #007FFF;
   outline: none;
 }
 
@@ -164,7 +162,7 @@
 }
 
 #tegaki-layer-grp span:hover {
-  color: #C41E3A;
+  color: #007FFF;
 }
 
 #tegaki-color::-moz-focus-inner {
