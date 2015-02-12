@@ -1180,7 +1180,7 @@ var Tegaki = {
   onNewClick: function() {
     var width, height, tmp;
     
-    width = prompt(TegakiStrings.promptHeight, Tegaki.canvas.width);
+    width = prompt(TegakiStrings.promptWidth, Tegaki.canvas.width);
     if (!width) { return; }
     
     height = prompt(TegakiStrings.promptHeight, Tegaki.canvas.height);
