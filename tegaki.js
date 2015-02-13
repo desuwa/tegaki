@@ -1605,7 +1605,7 @@ var Tegaki = {
     radius = 0 | (Tegaki.tool.size / 2);
     
     if (Tegaki.tool.noCursor || radius < 1) {
-      Tegaki.layersCnt.style.cursor = '';
+      Tegaki.layersCnt.style.cursor = 'default';
       return;
     }
     
