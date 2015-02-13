@@ -761,9 +761,8 @@ var Tegaki = {
     self.updateCursor();
     self.updatePosOffset();
     
-    T$.on(self.layersCnt, 'mousemove', self.onMouseMove);
-    T$.on(self.layersCnt, 'mousedown', self.onMouseDown);
-    T$.on(self.layersCnt, 'mouseover', self.onMouseOver);
+    T$.on(self.bg, 'mousemove', self.onMouseMove);
+    T$.on(self.bg, 'mousedown', self.onMouseDown);
     T$.on(self.layersCnt, 'contextmenu', self.onDummy);
     
     T$.on(document, 'mouseup', self.onMouseUp);
@@ -844,10 +843,9 @@ var Tegaki = {
   },
   
   destroy: function() {
-    T$.on(Tegaki.layersCnt, 'mousemove', Tegaki.onMouseMove);
-    T$.on(Tegaki.layersCnt, 'mousedown', Tegaki.onMouseDown);
-    T$.on(Tegaki.layersCnt, 'mouseover', Tegaki.onMouseOver);
-    T$.on(Tegaki.layersCnt, 'contextmenu', Tegaki.onDummy);
+    T$.off(Tegaki.bg, 'mousemove', Tegaki.onMouseMove);
+    T$.off(Tegaki.bg, 'mousedown', Tegaki.onMouseDown);
+    T$.off(Tegaki.layersCnt, 'contextmenu', Tegaki.onDummy);
     
     T$.off(document, 'mouseup', Tegaki.onMouseUp);
     T$.off(window, 'resize', Tegaki.updatePosOffset);
@@ -1632,14 +1630,20 @@ var Tegaki = {
   },
   
   onMouseDown: function(e) {
-    if (Tegaki.activeLayer === null) {
-      alert(TegakiStrings.noActiveLayer);
+    if (e.target.parentNode === Tegaki.layersCnt) {
+      if (Tegaki.activeLayer === null) {
+        alert(TegakiStrings.noActiveLayer);
+        return;
+      }
+      if (!Tegaki.layers[Tegaki.activeLayer].visible) {
+        alert(TegakiStrings.hiddenActiveLayer);
+        return;
+      }
+    }
+    else if (e.target !== Tegaki.bg) {
       return;
     }
-    if (!Tegaki.layers[Tegaki.activeLayer].visible) {
-      alert(TegakiStrings.hiddenActiveLayer);
-      return;
-    }
+    
     if (e.which === 3 || e.altKey) {
       Tegaki.isColorPicking = true;
       TegakiPipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
@@ -1658,13 +1662,6 @@ var Tegaki = {
     else if (Tegaki.isColorPicking) {
       e.preventDefault();
       Tegaki.isColorPicking = false;
-    }
-  },
-  
-  onMouseOver: function(e) {
-    if (Tegaki.tool.posX !== undefined) {
-      Tegaki.tool.posX = Tegaki.getCursorPos(e, 0);
-      Tegaki.tool.posY = Tegaki.getCursorPos(e, 1);
     }
   },
   
