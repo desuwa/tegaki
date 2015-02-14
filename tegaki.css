@@ -133,6 +133,7 @@
   content: ' ' attr(data-value);
 }
 
+#tegaki-ghost-layer,
 .tegaki-layer {
   position: absolute;
   left: 0;

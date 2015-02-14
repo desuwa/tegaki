@@ -1,79 +1,32 @@
-var TegakiPen = {
-  init: function() {
-    this.size = 4;
-    this.alpha = 1.0;
-    this.step = 0.25;
-  },
-  
-  draw: function(x, y, pt) {
-    var ctx = Tegaki.activeCtx;
-    if (pt === true) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    }
-    else {
-      if (((x - this.posX) * (x - this.posX)
-        + (y - this.posY) * (y - this.posY)) < this.stepSize) {
-        return;
-      }
-      ctx.beginPath();
-      ctx.moveTo(this.posX, this.posY);
-    }
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    ctx.closePath();
-    this.posX = x;
-    this.posY = y;
-  },
-  
-  setSize: function(size) {
-    this.size = size;
-    this.stepSize = Math.pow(Math.floor(this.size * this.step), 2);
-    Tegaki.activeCtx.lineWidth = size;
-  },
-  
-  setAlpha: function(alpha) {
-    this.alpha = alpha;
-    Tegaki.activeCtx.globalAlpha = alpha;
-  },
-  
-  setColor: function(color) {
-    Tegaki.activeCtx.strokeStyle = color;
-  },
-  
-  set: function() {
-    this.setSize(this.size);
-    this.setAlpha(this.alpha);
-    this.setColor(Tegaki.toolColor);
-    Tegaki.activeCtx.lineCap = Tegaki.activeCtx.lineJoin = 'round';
-  }
-};
-
-var TegakiPipette = {
-  size: 1,
-  alpha: 1,
-  noCursor: true,
-  
-  draw: function(posX, posY, pt) {
-    var c, ctx;
-    
-    if (true) {
-      ctx = Tegaki.flatten().getContext('2d');
-    }
-    else {
-      ctx = Tegaki.activeCtx;
-    }
-    
-    c = Tegaki.getColorAt(ctx, posX, posY);
-    
-    Tegaki.setToolColor(c);
-    Tegaki.updateUI('color');
-  }
-};
-
 var TegakiBrush = {
   brushFn: function(x, y) {
-    Tegaki.activeCtx.drawImage(this.brush, x, y);
+    var i, ctx, dest, data, len, kernel, w, h;
+    
+    x = 0 | x;
+    y = 0 | y;
+    
+    ctx = Tegaki.ghostCtx;
+    dest = ctx.getImageData(x, y, this.brushSize, this.brushSize);
+    data = dest.data;
+    kernel = this.kernel;
+    len = kernel.length;
+    
+    i = 0;
+    while (i < len) {
+      data[i] = this.rgb[0]; ++i;
+      data[i] = this.rgb[1]; ++i;
+      data[i] = this.rgb[2]; ++i;
+      data[i] += kernel[i] * (1.0 - data[i] / 255); ++i;
+    }
+    
+    ctx.putImageData(dest, x, y);
+  },
+  
+  commit: function() {
+    Tegaki.activeCtx.drawImage(Tegaki.ghostCanvas, 0, 0);
+    Tegaki.ghostCtx.clearRect(0, 0,
+      Tegaki.ghostCanvas.width, Tegaki.ghostCanvas.height
+    );
   },
   
   draw: function(posX, posY, pt) {
@@ -123,53 +76,67 @@ var TegakiBrush = {
   },
   
   generateBrush: function() {
-    var r, tmpBrush, tmpCtx, brush, ctx, size, c, a, grad, frac, acc;
+    var i, size, r, brush, ctx, dest, data, len, sqd, sqlen, hs, col, row,
+      ecol, erow, a;
     
     size = this.size * 2;
     r = size / 2;
     
-    tmpBrush = T$.el('canvas');
-    tmpBrush.width = tmpBrush.height = size;
-    tmpCtx = tmpBrush.getContext('2d');
-    c = Tegaki.hexToRgb(Tegaki.toolColor).join(',');
-    
-    frac = 1 / r;
-    acc = frac;
-    grad = tmpCtx.createRadialGradient(r, r, 0, r, r, r);
-    grad.addColorStop(0, 'rgba(' + c + ',1)');
-    
-    for (var i = 1; i < r; ++i) {
-      a = i / r;
-      a = (1 - Math.exp(1 - 1 / a) / a);
-      a = (0 | (a * 100 + 0.5)) / 100;
-      grad.addColorStop(acc, 'rgba(' + c + ',' + a + ')');
-      acc += frac;
-    }
-    
-    grad.addColorStop(1, 'rgba(' + c + ',0)');
-    
-    tmpCtx.beginPath();
-    tmpCtx.fillStyle = grad;
-    tmpCtx.arc(r, r, r, 0, Tegaki.TWOPI, false);
-    tmpCtx.fill();
-    tmpCtx.closePath();
-    
-    if (this.flow > 1) {
-      this.brushAlpha = Math.pow(this.alpha, this.flow);
-    }
-    else {
-      this.brushAlpha = this.alpha * this.flow;
-    }
-    
     brush = T$.el('canvas');
     brush.width = brush.height = size;
     ctx = brush.getContext('2d');
-    ctx.globalAlpha = this.brushAlpha;
-    ctx.drawImage(tmpBrush, 0, 0)
+    dest = ctx.getImageData(0, 0, size, size);
+    data = dest.data;
+    len = size * size * 4;
+    sqlen = Math.sqrt(r * r);
+    hs = Math.round(r);
+    col = row = -hs;
+    
+    i = 0;
+    while (i < len) {
+      if (col >= hs) {
+        col = -hs;
+        ++row;
+        continue;
+      }
+      
+      ecol = col;
+      erow = row;
+      
+      if (ecol < 0) { ecol = -ecol; }
+      if (erow < 0) { erow = -erow; }
+      
+      sqd = Math.sqrt(ecol * ecol + erow * erow);
+      
+      if (sqd > sqlen) {
+        a = 0;
+      }
+      else {
+        a = sqd / sqlen;
+        a = (Math.exp(1 - 1 / a) / a);
+        a = 255 - ((0 | (a * 100 + 0.5)) / 100) * 255;
+      }
+      
+      if (this.alphaDamp) {
+        a *= this.alpha * this.alphaDamp;
+      }
+      else {
+        a *= this.alpha;
+      }
+      
+      data[i + 3] = a;
+      
+      i += 4;
+      
+      ++col;
+    }
+    
+    ctx.putImageData(dest, 0, 0);
     
     this.center = r;
     this.brushSize = size;
     this.brush = brush;
+    this.kernel = data;
   },
   
   setSize: function(size, noBrush) {
@@ -181,32 +148,100 @@ var TegakiBrush = {
   setAlpha: function(alpha, noBrush) {
     this.alpha = alpha;
     if (!noBrush) this.generateBrush();
-    Tegaki.activeCtx.globalAlpha = 1;
   },
   
   setColor: function(color, noBrush) {
+    this.rgb = Tegaki.hexToRgb(color);
     if (!noBrush) this.generateBrush();
   },
   
   set: function() {
     this.setAlpha(this.alpha, true);
     this.setSize(this.size, true);
+    this.setColor(Tegaki.toolColor, true);
     this.generateBrush();
+  }
+};
+
+var TegakiPen = {
+  init: function() {
+    this.size = 4;
+    this.alpha = 1.0;
+    this.step = 0.25;
+    this.stepAcc = 0;
+  },
+  
+  draw: TegakiBrush.draw,
+  
+  commit: TegakiBrush.commit,
+  
+  brushFn: TegakiBrush.brushFn,
+  
+  generateBrush: function() {
+    var i, size, r, brush, ctx;
+    
+    size = this.size;
+    r = size / 2;
+    
+    brush = T$.el('canvas');
+    brush.width = brush.height = size;
+    ctx = brush.getContext('2d');
+    ctx.globalAlpha = this.alpha;
+    ctx.beginPath();
+    ctx.arc(r, r, r, 0, Tegaki.TWOPI, false);
+    ctx.fillStyle = '#000000';
+    ctx.fill();
+    ctx.closePath();
+    
+    this.center = r;
+    this.brushSize = size;
+    this.brush = brush;
+    this.kernel = ctx.getImageData(0, 0, this.brushSize, this.brushSize).data;
+  },
+  
+  setSize: TegakiBrush.setSize,
+  
+  setAlpha: TegakiBrush.setAlpha,
+  
+  setColor: TegakiBrush.setColor,
+  
+  set: TegakiBrush.set
+};
+
+var TegakiPipette = {
+  size: 1,
+  alpha: 1,
+  noCursor: true,
+  
+  draw: function(posX, posY, pt) {
+    var c, ctx;
+    
+    if (true) {
+      ctx = Tegaki.flatten().getContext('2d');
+    }
+    else {
+      ctx = Tegaki.activeCtx;
+    }
+    
+    c = Tegaki.getColorAt(ctx, posX, posY);
+    
+    Tegaki.setToolColor(c);
+    Tegaki.updateUI('color');
   }
 };
 
 var TegakiAirbrush = {
   init: function() {
     this.size = 32;
-    this.hardness = 0;
     this.alpha = 0.5;
-    this.flow = 2;
+    this.alphaDamp = 0.2;
     this.step = 0.25;
     this.stepAcc = 0;
-    this.generateBrush();
   },
   
   draw: TegakiBrush.draw,
+  
+  commit: TegakiBrush.commit,
   
   brushFn: TegakiBrush.brushFn,
   
@@ -221,19 +256,103 @@ var TegakiAirbrush = {
   set: TegakiBrush.set
 };
 
+var TegakiPencil = {
+  init: function() {
+    this.size = 4;
+    this.alpha = 1.0;
+    this.step = 0.25;
+    this.stepAcc = 0;
+  },
+  
+  draw: TegakiBrush.draw,
+  
+  commit: TegakiBrush.commit,
+  
+  brushFn: function(x, y) {
+    var i, ctx, dest, data, len, kernel, a;
+    
+    x = 0 | x;
+    y = 0 | y;
+    
+    ctx = Tegaki.ghostCtx;
+    dest = ctx.getImageData(x, y, this.brushSize, this.brushSize);
+    data = dest.data;
+    kernel = this.kernel;
+    len = kernel.length;
+    
+    a = this.alpha * 255;
+    
+    i = 0;
+    while (i < len) {
+      data[i] = this.rgb[0]; ++i;
+      data[i] = this.rgb[1]; ++i;
+      data[i] = this.rgb[2]; ++i;
+      if (kernel[i] > 0) {
+        data[i] = a;
+      }
+      ++i;
+    }
+    
+    ctx.putImageData(dest, x, y);
+  },
+  
+  generateBrush: TegakiPen.generateBrush,
+  
+  setSize: TegakiBrush.setSize,
+  
+  setAlpha: TegakiBrush.setAlpha,
+  
+  setColor: TegakiBrush.setColor,
+  
+  set: TegakiBrush.set
+};
+
+var TegakiEraser = {
+  init: function() {
+    this.size = 8;
+    this.alpha = 1.0;
+    this.step = 0.25;
+    this.stepAcc = 0;
+  },
+  
+  draw: TegakiBrush.draw,
+  
+  commit: TegakiBrush.commit,
+  
+  brushFn: function(x, y) {
+    x = 0 | x;
+    y = 0 | y;
+    
+    Tegaki.activeCtx.globalCompositeOperation = 'destination-out';
+    Tegaki.activeCtx.drawImage(this.brush, x, y);
+    Tegaki.activeCtx.globalCompositeOperation = 'source-over';
+  },
+  
+  generateBrush: TegakiPen.generateBrush,
+  
+  setSize: TegakiBrush.setSize,
+  
+  setAlpha: TegakiBrush.setAlpha,
+  
+  setColor: TegakiBrush.setColor,
+  
+  set: TegakiBrush.set
+};
+
 var TegakiDodge = {
   init: function() {
     this.size = 24;
-    this.hardness = 0;
     this.alpha = 0.25;
-    this.flow = 0.05;
+    this.alphaDamp = 0.05;
     this.step = 0.25;
     this.stepAcc = 0;
-    this.generateBrush();
   },
   
   brushFn: function(x, y) {
     var i, a, aa, ctx, dest, data, len, kernel;
+    
+    x = 0 | x;
+    y = 0 | y;
     
     ctx = Tegaki.activeCtx;
     dest = ctx.getImageData(x, y, this.brushSize, this.brushSize);
@@ -256,11 +375,7 @@ var TegakiDodge = {
   
   draw: TegakiBrush.draw,
   
-  generateBrush: function() {
-    TegakiBrush.generateBrush.call(this);
-    this.kernel = this.brush.getContext('2d')
-      .getImageData(0, 0, this.brushSize, this.brushSize).data
-  },
+  generateBrush: TegakiBrush.generateBrush,
   
   setSize: TegakiBrush.setSize,
   
@@ -276,6 +391,9 @@ var TegakiBurn = {
   
   brushFn: function(x, y) {
     var i, a, ctx, dest, data, len, kernel;
+    
+    x = 0 | x;
+    y = 0 | y;
     
     ctx = Tegaki.activeCtx;
     dest = ctx.getImageData(x, y, this.brushSize, this.brushSize);
@@ -314,6 +432,9 @@ var TegakiBlur = {
   brushFn: function(x, y) {
     var i, j, ctx, src, size, srcData, dest, data, lim, kernel,
       sx, sy, r, g, b, a, aa, acc, kx, ky;
+    
+    x = 0 | x;
+    y = 0 | y;
     
     size = this.brushSize;
     ctx = Tegaki.activeCtx;
@@ -444,7 +565,6 @@ var TegakiStrings = {
   moveLayerUp: 'Move up',
   moveLayerDown: 'Move down',
   tool: 'Tool',
-  eraser: 'Eraser',
   changeCanvas: 'Change canvas',
   blank: 'Blank',
   newCanvas: 'New',
@@ -455,11 +575,13 @@ var TegakiStrings = {
   
   // Tools
   pen: 'Pen',
+  pencil: 'Pencil',
   airbrush: 'Airbrush',
   pipette: 'Pipette',
   dodge: 'Dodge',
   burn: 'Burn',
-  blur: 'Blur'
+  blur: 'Blur',
+  eraser: 'Eraser'
 }
 
 var Tegaki = {
@@ -471,6 +593,8 @@ var Tegaki = {
   ctx: null,
   layers: [],
   layersCnt: null,
+  ghostCanvas: null,
+  ghostCtx: null,
   activeCtx: null,
   activeLayer: null,
   layerIndex: null,
@@ -488,11 +612,13 @@ var Tegaki = {
   
   tools: {
     pen: TegakiPen,
+    pencil: TegakiPencil,
     airbrush: TegakiAirbrush,
     pipette: TegakiPipette,
     dodge: TegakiDodge,
     burn: TegakiBurn,
     blur: TegakiBlur,
+    eraser: TegakiEraser
   },
   
   tool: null,
@@ -530,10 +656,6 @@ var Tegaki = {
     canvas.id = 'tegaki-canvas';
     canvas.width = self.baseWidth = opts.width;
     canvas.height = self.baseHeight = opts.height;
-    
-    el = T$.el('canvas');
-    el.width = canvas.width;
-    el.height = canvas.height;
     
     el = T$.el('div');
     el.id = 'tegaki-layers';
@@ -667,20 +789,6 @@ var Tegaki = {
     grp.appendChild(el);
     ctrl.appendChild(grp);
     
-    // Eraser toggle
-    grp = T$.el('div');
-    grp.className = 'tegaki-ctrlgrp';
-    el = T$.el('input')
-    el.id = 'tegaki-eraser';
-    el.type = 'checkbox';
-    lbl = T$.el('div');
-    lbl.className = 'tegaki-label';
-    lbl.textContent = TegakiStrings.eraser;
-    grp.appendChild(lbl);
-    T$.on(el, 'change', self.onEraserChange);
-    grp.appendChild(el);
-    ctrl.appendChild(grp);
-    
     cnt.appendChild(ctrl);
     
     el = T$.el('div');
@@ -749,6 +857,14 @@ var Tegaki = {
     self.addLayer();
     
     self.setActiveLayer();
+    
+    el = T$.el('canvas');
+    el.id = 'tegaki-ghost-layer';
+    el.width = canvas.width;
+    el.height = canvas.height;
+    self.ghostCanvas = el;
+    self.ghostCtx = el.getContext('2d');
+    self.layersCnt.appendChild(el);
     
     self.initHistory();
     
@@ -1350,12 +1466,6 @@ var Tegaki = {
     Tegaki.updateCursor();
   },
   
-  onEraserChange: function(e) {
-    Tegaki.isErasing = this.checked;
-    
-    Tegaki.updateEraserMode();
-  },
-  
   onCanvasSelected: function(e) {
     var img;
     
@@ -1409,6 +1519,9 @@ var Tegaki = {
     
     Tegaki.canvas.width = width;
     Tegaki.canvas.height = height;
+    Tegaki.ghostCanvas.width = width;
+    Tegaki.ghostCanvas.height = height;
+    
     Tegaki.ctx.fillStyle = Tegaki.bgColor;
     Tegaki.ctx.fillRect(0, 0, width, height);
     
@@ -1423,15 +1536,6 @@ var Tegaki = {
     
     Tegaki.addLayer();
     Tegaki.setActiveLayer();
-  },
-  
-  updateEraserMode: function() {
-    if (Tegaki.isErasing) {
-      Tegaki.activeCtx.globalCompositeOperation = 'destination-out';
-    }
-    else {
-      Tegaki.activeCtx.globalCompositeOperation = 'source-over';
-    }
   },
   
   getLayerIndex: function(id) {
@@ -1451,7 +1555,7 @@ var Tegaki = {
   },
   
   addLayer: function() {
-    var id, cnt, opt, canvas, layer;
+    var id, cnt, opt, canvas, layer, nodes, last;
     
     canvas = T$.el('canvas');
     canvas.className = 'tegaki-layer';
@@ -1478,7 +1582,16 @@ var Tegaki = {
     opt.textContent = layer.name;
     cnt.insertBefore(opt, cnt.firstElementChild);
     
-    Tegaki.layersCnt.appendChild(canvas);
+    nodes = T$.cls('tegaki-layer', Tegaki.layersCnt);
+    
+    if (nodes.length) {
+      last = nodes[nodes.length - 1];
+    }
+    else {
+      last = Tegaki.canvas;
+    }
+    
+    Tegaki.layersCnt.insertBefore(canvas, last.nextElementSibling);
   },
   
   deleteLayers: function(ids) {
@@ -1656,6 +1769,7 @@ var Tegaki = {
   
   onMouseUp: function(e) {
     if (Tegaki.isPainting) {
+      Tegaki.tool.commit && Tegaki.tool.commit();
       Tegaki.pushHistory();
       Tegaki.isPainting = false;
     }
