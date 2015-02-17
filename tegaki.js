@@ -166,8 +166,8 @@ var TegakiBrush = {
 var TegakiPen = {
   init: function() {
     this.size = 4;
-    this.alpha = 1.0;
-    this.step = 0.25;
+    this.alpha = 0.5;
+    this.step = 0.1;
     this.stepAcc = 0;
   },
   
