@@ -317,8 +317,6 @@ var TegakiEraser = {
   
   draw: TegakiBrush.draw,
   
-  commit: TegakiBrush.commit,
-  
   brushFn: function(x, y) {
     x = 0 | x;
     y = 0 | y;
