@@ -41,6 +41,10 @@
   -ms-user-select: none;
   overflow: auto;
   z-index: 9999;
+  image-rendering: optimizeSpeed;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
 }
 
 #tegaki-debug {
