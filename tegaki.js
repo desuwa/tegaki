@@ -621,8 +621,8 @@ var Tegaki = {
   TWOPI: 2 * Math.PI,
   
   tools: {
-    pen: TegakiPen,
     pencil: TegakiPencil,
+    pen: TegakiPen,
     airbrush: TegakiAirbrush,
     pipette: TegakiPipette,
     dodge: TegakiDodge,
@@ -879,7 +879,7 @@ var Tegaki = {
     
     self.initTools();
     
-    self.setTool('pen');
+    self.setTool('pencil');
     
     self.updateUI();
     
