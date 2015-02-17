@@ -845,6 +845,13 @@ var Tegaki = {
     document.body.appendChild(bg);
     document.body.classList.add('tegaki-backdrop');
     
+    el = T$.el('canvas');
+    el.id = 'tegaki-ghost-layer';
+    el.width = canvas.width;
+    el.height = canvas.height;
+    self.ghostCanvas = el;
+    self.ghostCtx = el.getContext('2d');
+    
     self.cnt = cnt;
     self.centerCnt();
     
@@ -857,14 +864,6 @@ var Tegaki = {
     self.addLayer();
     
     self.setActiveLayer();
-    
-    el = T$.el('canvas');
-    el.id = 'tegaki-ghost-layer';
-    el.width = canvas.width;
-    el.height = canvas.height;
-    self.ghostCanvas = el;
-    self.ghostCtx = el.getContext('2d');
-    self.layersCnt.appendChild(el);
     
     self.initHistory();
     
@@ -1654,6 +1653,8 @@ var Tegaki = {
       tmpId = idx - 1;
     }
     
+    Tegaki.updateGhostLayerPos();
+    
     tmp = Tegaki.layers[tmpId];
     Tegaki.layers[tmpId] = Tegaki.layers[idx];
     Tegaki.layers[idx] = tmp;
@@ -1699,6 +1700,15 @@ var Tegaki = {
     Tegaki.activeCtx = ctx;
     Tegaki.activeLayer = idx;
     T$.id('tegaki-layer').selectedIndex = Tegaki.layers.length - idx - 1;
+    
+    Tegaki.updateGhostLayerPos();
+  },
+  
+  updateGhostLayerPos: function() {
+    Tegaki.layersCnt.insertBefore(
+      Tegaki.ghostCanvas,
+      Tegaki.activeCtx.canvas.nextElementSibling
+    );
   },
   
   copyContextState: function(src, dest) {
