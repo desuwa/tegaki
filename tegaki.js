@@ -318,12 +318,24 @@ var TegakiEraser = {
   draw: TegakiBrush.draw,
   
   brushFn: function(x, y) {
+    var i, ctx, dest, data, len, kernel;
+    
     x = 0 | x;
     y = 0 | y;
     
-    Tegaki.activeCtx.globalCompositeOperation = 'destination-out';
-    Tegaki.activeCtx.drawImage(this.brush, x, y);
-    Tegaki.activeCtx.globalCompositeOperation = 'source-over';
+    ctx = Tegaki.activeCtx;
+    dest = ctx.getImageData(x, y, this.brushSize, this.brushSize);
+    data = dest.data;
+    kernel = this.kernel;
+    len = kernel.length;
+    
+    for (i = 3; i < len; i += 4) {
+      if (kernel[i] > 0) {
+        data[i] = 0;
+      }
+    }
+    
+    ctx.putImageData(dest, x, y);
   },
   
   generateBrush: TegakiPen.generateBrush,
