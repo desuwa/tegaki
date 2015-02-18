@@ -258,7 +258,7 @@ var TegakiAirbrush = {
 
 var TegakiPencil = {
   init: function() {
-    this.size = 4;
+    this.size = 1;
     this.alpha = 1.0;
     this.step = 0.25;
     this.stepAcc = 0;
