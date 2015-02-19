@@ -501,6 +501,97 @@ var TegakiBlur = {
   set: TegakiBrush.set
 };
 
+var TegakiHistory = {
+  maxSize: 10,
+  
+  undoStack: [],
+  redoStack: [],
+  
+  pendingAction: null,
+  
+  clear: function() {
+    this.undoStack = [];
+    this.redoStack = [];
+    this.pendingAction = null;
+  },
+  
+  push: function(action) {
+    this.undoStack.push(action);
+    
+    if (this.undoStack.length > this.maxSize) {
+      this.undoStack.shift;
+    }
+    
+    if (this.redoStack.length > 0) {
+      this.redoStack = [];
+    }
+  },
+  
+  undo: function() {
+    var action;
+    
+    if (!this.undoStack.length) {
+      return;
+    }
+    
+    action = this.undoStack.pop();
+    action.undo();
+    
+    this.redoStack.push(action);
+  },
+  
+  redo: function() {
+    var action;
+    
+    if (!this.redoStack.length) {
+      return;
+    }
+    
+    action = this.redoStack.pop();
+    action.redo();
+    
+    this.undoStack.push(action);
+  }
+};
+
+var TegakiHistoryActions = {
+  Draw: function(layerId) {
+    this.canvasBefore = null;
+    this.canvasAfter = null;
+    this.layerId = layerId;
+  }
+};
+
+TegakiHistoryActions.Draw.prototype.addCanvasState = function(canvas, type) {
+  if (type) {
+    this.canvasAfter = T$.copyCanvas(canvas);
+  }
+  else {
+    this.canvasBefore = T$.copyCanvas(canvas);
+  }
+};
+
+TegakiHistoryActions.Draw.prototype.exec = function(type) {
+  var i, layer;
+  
+  for (i in Tegaki.layers) {
+    layer = Tegaki.layers[i];
+    
+    if (layer.id === this.layerId) {
+      layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+      layer.ctx.drawImage(type ? this.canvasAfter: this.canvasBefore, 0, 0);
+    }
+  }
+};
+
+TegakiHistoryActions.Draw.prototype.undo = function() {
+  this.exec(0);
+};
+
+TegakiHistoryActions.Draw.prototype.redo = function() {
+  this.exec(1);
+};
+
 var T$ = {
   docEl: document.documentElement,
   
@@ -546,6 +637,15 @@ var T$ = {
     }
     
     return sel;
+  },
+  
+  copyCanvas: function(source) {
+    var canvas = T$.el('canvas');
+    canvas.width = source.width;
+    canvas.height = source.height;
+    canvas.getContext('2d').drawImage(source, 0, 0);
+    
+    return canvas;
   }
 };
 
@@ -609,8 +709,6 @@ var Tegaki = {
   activeLayer: null,
   layerIndex: null,
   
-  history: null,
-  
   isPainting: false,
   isErasing: false,
   isColorPicking: false,
@@ -637,7 +735,6 @@ var Tegaki = {
   bgColor: '#ffffff',
   maxSize: 32,
   maxLayers: 25,
-  maxHistory: 5,
   baseWidth: null,
   baseHeight: null,
   
@@ -875,8 +972,6 @@ var Tegaki = {
     
     self.setActiveLayer();
     
-    self.initHistory();
-    
     self.initTools();
     
     self.setTool('pencil');
@@ -976,6 +1071,8 @@ var Tegaki = {
     T$.off(window, 'resize', Tegaki.updatePosOffset);
     
     Tegaki.bg.parentNode.removeChild(Tegaki.bg);
+    
+    TegakiHistory.clear();
     
     document.body.classList.remove('tegaki-backdrop');
     
@@ -1172,134 +1269,6 @@ var Tegaki = {
     ctx.globalAlpha = a;
   },
   
-  initHistory: function() {
-    var i, canvas, states, maxStates = Tegaki.maxHistory;
-    
-    states = new Array(maxStates);
-    
-    for (i = 0; i < maxStates; ++i) {
-      canvas = T$.el('canvas');
-      canvas.width = Tegaki.canvas.width;
-      canvas.height = Tegaki.canvas.height;
-      states[i] = {
-        canvas: canvas,
-        ctx: canvas.getContext('2d'),
-        layer: 0
-      };
-    }
-    
-    Tegaki.history = {
-      length: maxStates,
-      limit: maxStates - 1,
-      states: states,
-      current: 0,
-      undoCount: 0,
-      redoCount: 0
-    };
-  },
-  
-  pushHistory: function() {
-    var state, cur, history = Tegaki.history;
-    
-    cur = history.current;
-    
-    ++cur;
-    
-    if (cur === history.length) {
-      cur = 0;
-    }
-    
-    state = history.states[cur];
-    state.layer = Tegaki.activeLayer;
-    state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
-    state.ctx.drawImage(Tegaki.activeCtx.canvas, 0, 0);
-    
-    if (history.undoCount < history.limit) {
-      history.undoCount++;
-    }
-    
-    history.redoCount = 0;
-    
-    history.current = cur;
-  },
-  
-  undoHistory: function() {
-    var alpha, op, state, layer, history = Tegaki.history;
-    
-    if (!history.undoCount) {
-      return false;
-    }
-    
-    history.current--;
-    
-    if (history.current < 0) {
-      history.current = history.limit;
-    }
-    
-    state = history.states[history.current];
-    
-    layer = Tegaki.layers[state.layer].ctx;
-    alpha = layer.globalAlpha;
-    op = layer.globalCompositeOperation;
-    layer.globalAlpha = 1;
-    layer.globalCompositeOperation = 'source-over';
-    layer.clearRect(0, 0, state.canvas.width, state.canvas.height);
-    layer.drawImage(state.canvas, 0, 0);
-    layer.globalAlpha = alpha;
-    layer.globalCompositeOperation = op;
-    
-    history.undoCount--;
-    ++history.redoCount;
-  },
-  
-  redoHistory: function() {
-    var alpha, op, state, layer, history = Tegaki.history;
-    
-    if (!history.redoCount) {
-      return false;
-    }
-    
-    ++history.current;
-    
-    if (history.current === history.length) {
-      history.current = 0;
-    }
-    
-    history.redoCount--;
-    ++history.undoCount;
-    
-    state = history.states[history.current];
-    
-    layer = Tegaki.layers[state.layer].ctx;
-    alpha = layer.globalAlpha;
-    op = layer.globalCompositeOperation;
-    layer.globalAlpha = 1;
-    layer.globalCompositeOperation = 'source-over';
-    layer.clearRect(0, 0, state.canvas.width, state.canvas.height);
-    layer.drawImage(state.canvas, 0, 0);
-    layer.globalAlpha = alpha;
-    layer.globalCompositeOperation = op;
-  },
-  
-  debugDrawHistoryStack: function() {
-    var i, s;
-    var cnt = T$.id('tegaki-debug');
-    if (!cnt) {
-      cnt = T$.el('div');
-      cnt.id = 'tegaki-debug';
-      document.body.appendChild(cnt);
-    }
-    else {
-      cnt.innerHTML = '';
-    }
-    for (i = 0; s = Tegaki.history.states[i]; ++i) {
-      if (i == Tegaki.history.current) {
-        cnt.appendChild(document.createTextNode('--- ' + i));
-      }
-      cnt.appendChild(s.canvas);
-    }
-  },
-  
   onNewClick: function() {
     var width, height, tmp;
     
@@ -1322,17 +1291,17 @@ var Tegaki = {
     Tegaki.resizeCanvas(width, height);
     Tegaki.copyContextState(tmp, Tegaki.activeCtx);
     
-    Tegaki.initHistory();
+    TegakiHistory.clear();
     Tegaki.centerCnt();
     Tegaki.updatePosOffset();
   },
   
   onUndoClick: function() {
-    Tegaki.undoHistory();
+    TegakiHistory.undo();
   },
   
   onRedoClick: function() {
-    Tegaki.redoHistory();
+    TegakiHistory.redo();
   },
   
   onDoneClick: function() {
@@ -1376,7 +1345,6 @@ var Tegaki = {
   
   onLayerAdd: function(e) {
     Tegaki.setActiveLayer(Tegaki.addLayer());
-    Tegaki.pushHistory();
   },
   
   onLayerDelete: function(e) {
@@ -1406,6 +1374,8 @@ var Tegaki = {
     }
     
     Tegaki.deleteLayers(ary);
+    
+    TegakiHistory.clear();
   },
   
   onLayerVisibilityChange: function(e) {
@@ -1459,6 +1429,8 @@ var Tegaki = {
     }
     
     Tegaki.mergeLayers(ary);
+    
+    TegakiHistory.clear();
   },
   
   onMoveLayer: function(e) {
@@ -1508,7 +1480,7 @@ var Tegaki = {
     Tegaki.activeCtx.drawImage(this, 0, 0);
     Tegaki.copyContextState(tmp, Tegaki.activeCtx);
     
-    Tegaki.initHistory();
+    TegakiHistory.clear();
     Tegaki.centerCnt();
     Tegaki.updatePosOffset();
   },
@@ -1615,8 +1587,6 @@ var Tegaki = {
       Tegaki.layersCnt.removeChild(Tegaki.layers[idx].canvas);
       Tegaki.layers.splice(idx, 1);
     }
-    
-    Tegaki.initHistory();
     
     Tegaki.setActiveLayer();
   },
@@ -1783,6 +1753,10 @@ var Tegaki = {
     }
     else {
       Tegaki.isPainting = true;
+      TegakiHistory.pendingAction = new TegakiHistoryActions.Draw(
+        Tegaki.layers[Tegaki.activeLayer].id
+      );
+      TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 0);
       Tegaki.tool.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1), true);
     }
   },
@@ -1790,7 +1764,8 @@ var Tegaki = {
   onMouseUp: function(e) {
     if (Tegaki.isPainting) {
       Tegaki.tool.commit && Tegaki.tool.commit();
-      Tegaki.pushHistory();
+      TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 1);
+      TegakiHistory.push(TegakiHistory.pendingAction);
       Tegaki.isPainting = false;
     }
     else if (Tegaki.isColorPicking) {
