@@ -559,6 +559,14 @@ var TegakiHistoryActions = {
     this.canvasBefore = null;
     this.canvasAfter = null;
     this.layerId = layerId;
+  },
+  
+  DestroyLayers: function(indices, layers) {
+    this.indices = indices;
+    this.layers = layers;
+    this.canvasBefore = null;
+    this.canvasAfter = null;
+    this.layerId = null;
   }
 };
 
@@ -592,6 +600,61 @@ TegakiHistoryActions.Draw.prototype.redo = function() {
   this.exec(1);
 };
 
+TegakiHistoryActions.DestroyLayers.prototype.undo = function() {
+  var i, ii, len, layers, idx, layer, frag, layer;
+  
+  layers = new Array(len);
+  
+  for (i = 0; (idx = this.indices[i]) !== undefined; ++i) {
+    layers[idx] = this.layers[i];
+  }
+  
+  i = ii = 0;
+  len = Tegaki.layers.length + this.layers.length;
+  frag = T$.frag();
+  
+  while (i < len) {
+    if (!layers[i]) {
+      layer = layers[i] = Tegaki.layers[ii];
+      Tegaki.layersCnt.removeChild(layer.canvas);
+      ++ii;
+    }
+    
+    if (this.layerId && layer.id === this.layerId) {
+      layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+      layer.ctx.drawImage(this.canvasBefore, 0, 0);
+    }
+    
+    frag.appendChild(layers[i].canvas);
+    
+    ++i;
+  }
+  
+  Tegaki.layersCnt.insertBefore(frag, Tegaki.canvas.nextElementSibling);
+  
+  Tegaki.layers = layers;
+  
+  Tegaki.setActiveLayer();
+  
+  Tegaki.rebuildLayerCtrl();
+}
+
+TegakiHistoryActions.DestroyLayers.prototype.redo = function() {
+  var i, layer, ids = [];
+  
+  for (i = 0; layer = this.layers[i]; ++i) {
+    ids.push(layer.id);
+  }
+  
+  if (this.layerId) {
+    ids.push(this.layerId);
+    Tegaki.mergeLayers(ids)
+  }
+  else {
+    Tegaki.deleteLayers(ids);
+  }
+}
+
 var T$ = {
   docEl: document.documentElement,
   
@@ -613,6 +676,10 @@ var T$ = {
   
   el: function(name) {
     return document.createElement(name);
+  },
+  
+  frag: function() {
+    return document.createDocumentFragment();
   },
   
   extend: function(destination, source) {
@@ -1121,6 +1188,21 @@ var Tegaki = {
     }
   },
   
+  rebuildLayerCtrl: function() {
+    var i, layer, sel, opt;
+    
+    sel = T$.id('tegaki-layer');
+    
+    sel.textContent = '';
+    
+    for (i = Tegaki.layers.length - 1; layer = Tegaki.layers[i]; i--) {
+      opt = T$.el('option');
+      opt.value = layer.id;
+      opt.textContent = layer.name;
+      sel.appendChild(opt);
+    }
+  },
+  
   getColorAt: function(ctx, posX, posY) {
     var rgba = ctx.getImageData(posX, posY, 1, 1).data;
     
@@ -1348,7 +1430,7 @@ var Tegaki = {
   },
   
   onLayerDelete: function(e) {
-    var i, ary, sel, opt, selectedOptions;
+    var i, ary, sel, opt, selectedOptions, action;
     
     sel = T$.id('tegaki-layer');
     
@@ -1373,9 +1455,9 @@ var Tegaki = {
       ary = [+sel.value];
     }
     
-    Tegaki.deleteLayers(ary);
+    action = Tegaki.deleteLayers(ary);
     
-    TegakiHistory.clear();
+    TegakiHistory.push(action);
   },
   
   onLayerVisibilityChange: function(e) {
@@ -1402,7 +1484,7 @@ var Tegaki = {
   },
   
   onMergeLayers: function(e) {
-    var i, ary, sel, opt, selectedOptions;
+    var i, ary, sel, opt, selectedOptions, action;
     
     sel = T$.id('tegaki-layer');
     
@@ -1428,9 +1510,9 @@ var Tegaki = {
       return;
     }
     
-    Tegaki.mergeLayers(ary);
+    action = Tegaki.mergeLayers(ary);
     
-    TegakiHistory.clear();
+    TegakiHistory.push(action);
   },
   
   onMoveLayer: function(e) {
@@ -1576,23 +1658,32 @@ var Tegaki = {
   },
   
   deleteLayers: function(ids) {
-    var i, id, len, sel, idx;
+    var i, id, len, sel, idx, layers;
     
     sel = T$.id('tegaki-layer');
+    
+    indices = [];
+    layers = [];
     
     for (i = 0, len = ids.length; i < len; ++i) {
       id = ids[i];
       idx = Tegaki.getLayerIndex(id);
       sel.removeChild(sel.options[Tegaki.layers.length - 1 - idx]);
       Tegaki.layersCnt.removeChild(Tegaki.layers[idx].canvas);
+      
+      indices.push(idx);
+      layers.push(Tegaki.layers[idx]);
+      
       Tegaki.layers.splice(idx, 1);
     }
     
     Tegaki.setActiveLayer();
+    
+    return new TegakiHistoryActions.DestroyLayers(indices, layers);
   },
   
   mergeLayers: function(ids) {
-    var i, id, len, sel, idx, canvas, destId, dest;
+    var i, id, len, sel, idx, canvasBefore, destId, dest, action;
     
     sel = T$.id('tegaki-layer');
     
@@ -1600,15 +1691,22 @@ var Tegaki = {
     idx = Tegaki.getLayerIndex(destId);
     dest = Tegaki.layers[idx].ctx;
     
+    canvasBefore = T$.copyCanvas(Tegaki.layers[idx].canvas);
+    
     for (i = ids.length - 1; i >= 0; i--) {
       id = ids[i];
       idx = Tegaki.getLayerIndex(id);
       dest.drawImage(Tegaki.layers[idx].canvas, 0, 0);
     }
     
-    Tegaki.deleteLayers(ids);
+    action = Tegaki.deleteLayers(ids);
+    action.layerId = destId;
+    action.canvasBefore = canvasBefore;
+    action.canvasAfter = T$.copyCanvas(dest.canvas);
     
     Tegaki.setActiveLayer(destId);
+    
+    return action;
   },
   
   moveLayer: function(id, up) {
@@ -1621,8 +1719,10 @@ var Tegaki = {
     opt = sel.options[Tegaki.layers.length - 1 - idx];
     
     if (up) {
-      if (!canvas.nextElementSibling) { return; }
-      canvas.parentNode.insertBefore(canvas, canvas.nextElementSibling.nextElementSibling);
+      if (!Tegaki.ghostCanvas.nextElementSibling) { return; }
+      canvas.parentNode.insertBefore(canvas,
+        Tegaki.ghostCanvas.nextElementSibling.nextElementSibling
+      );
       opt.parentNode.insertBefore(opt, opt.previousElementSibling);
       tmpId = idx + 1;
     }
