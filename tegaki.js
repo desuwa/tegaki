@@ -567,6 +567,15 @@ var TegakiHistoryActions = {
     this.canvasBefore = null;
     this.canvasAfter = null;
     this.layerId = null;
+  },
+  
+  AddLayer: function(layerId) {
+    this.layerId = layerId;
+  },
+  
+  MoveLayer: function(layerId, up) {
+    this.layerId = layerId;
+    this.up = up;
   }
 };
 
@@ -654,6 +663,26 @@ TegakiHistoryActions.DestroyLayers.prototype.redo = function() {
     Tegaki.deleteLayers(ids);
   }
 }
+
+TegakiHistoryActions.MoveLayer.prototype.undo = function() {
+  Tegaki.setActiveLayer(this.layerId);
+  Tegaki.moveLayer(this.layerId, !this.up);
+};
+
+TegakiHistoryActions.MoveLayer.prototype.redo = function() {
+  Tegaki.setActiveLayer(this.layerId);
+  Tegaki.moveLayer(this.layerId, this.up);
+};
+
+TegakiHistoryActions.AddLayer.prototype.undo = function() {
+  Tegaki.deleteLayers([this.layerId]);
+  Tegaki.layerIndex--;
+};
+
+TegakiHistoryActions.AddLayer.prototype.redo = function() {
+  Tegaki.addLayer();
+  Tegaki.setActiveLayer();
+};
 
 var T$ = {
   docEl: document.documentElement,
@@ -1426,7 +1455,8 @@ var Tegaki = {
   },
   
   onLayerAdd: function(e) {
-    Tegaki.setActiveLayer(Tegaki.addLayer());
+    TegakiHistory.push(Tegaki.addLayer());
+    Tegaki.setActiveLayer();
   },
   
   onLayerDelete: function(e) {
@@ -1516,11 +1546,15 @@ var Tegaki = {
   },
   
   onMoveLayer: function(e) {
-    var id, sel = T$.id('tegaki-layer');
+    var id, action, sel;
+    
+    sel = T$.id('tegaki-layer');
     
     id = +sel.options[sel.selectedIndex].value;
     
-    Tegaki.moveLayer(id, e.target.hasAttribute('data-up'));
+    if (action = Tegaki.moveLayer(id, e.target.hasAttribute('data-up'))) {
+      TegakiHistory.push(action);
+    }
   },
   
   onToolChange: function(e) {
@@ -1655,6 +1689,8 @@ var Tegaki = {
     }
     
     Tegaki.layersCnt.insertBefore(canvas, last.nextElementSibling);
+    
+    return new TegakiHistoryActions.AddLayer(id);
   },
   
   deleteLayers: function(ids) {
@@ -1719,7 +1755,7 @@ var Tegaki = {
     opt = sel.options[Tegaki.layers.length - 1 - idx];
     
     if (up) {
-      if (!Tegaki.ghostCanvas.nextElementSibling) { return; }
+      if (!Tegaki.ghostCanvas.nextElementSibling) { return false; }
       canvas.parentNode.insertBefore(canvas,
         Tegaki.ghostCanvas.nextElementSibling.nextElementSibling
       );
@@ -1727,7 +1763,7 @@ var Tegaki = {
       tmpId = idx + 1;
     }
     else {
-      if (canvas.previousElementSibling.id === 'tegaki-canvas') { return; }
+      if (canvas.previousElementSibling.id === 'tegaki-canvas') { return false; }
       canvas.parentNode.insertBefore(canvas, canvas.previousElementSibling);
       opt.parentNode.insertBefore(opt, opt.nextElementSibling.nextElementSibling);
       tmpId = idx - 1;
@@ -1738,6 +1774,8 @@ var Tegaki = {
     tmp = Tegaki.layers[tmpId];
     Tegaki.layers[tmpId] = Tegaki.layers[idx];
     Tegaki.layers[idx] = tmp;
+    
+    return new TegakiHistoryActions.MoveLayer(id, up);
   },
   
   setLayerVisibility: function(ids, flag) {
