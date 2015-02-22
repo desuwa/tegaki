@@ -519,7 +519,7 @@ var TegakiHistory = {
     this.undoStack.push(action);
     
     if (this.undoStack.length > this.maxSize) {
-      this.undoStack.shift;
+      this.undoStack.shift();
     }
     
     if (this.redoStack.length > 0) {
