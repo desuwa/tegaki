@@ -1,6 +1,6 @@
 var TegakiBrush = {
   brushFn: function(x, y) {
-    var i, ctx, dest, data, len, kernel, w, h;
+    var i, ctx, dest, data, len, kernel;
     
     x = 0 | x;
     y = 0 | y;
@@ -178,7 +178,7 @@ var TegakiPen = {
   brushFn: TegakiBrush.brushFn,
   
   generateBrush: function() {
-    var i, size, r, brush, ctx;
+    var size, r, brush, ctx;
     
     size = this.size;
     r = size / 2;
@@ -213,7 +213,7 @@ var TegakiPipette = {
   alpha: 1,
   noCursor: true,
   
-  draw: function(posX, posY, pt) {
+  draw: function(posX, posY) {
     var c, ctx;
     
     if (true) {
@@ -440,7 +440,7 @@ var TegakiBlur = {
   init: TegakiDodge.init,
   
   brushFn: function(x, y) {
-    var i, j, ctx, src, size, srcData, dest, data, lim, kernel,
+    var i, j, ctx, src, size, srcData, dest, destData, lim, kernel,
       sx, sy, r, g, b, a, aa, acc, kx, ky;
     
     x = 0 | x;
@@ -610,7 +610,7 @@ TegakiHistoryActions.Draw.prototype.redo = function() {
 };
 
 TegakiHistoryActions.DestroyLayers.prototype.undo = function() {
-  var i, ii, len, layers, idx, layer, frag, layer;
+  var i, ii, len, layers, idx, layer, frag;
   
   layers = new Array(len);
   
@@ -646,7 +646,7 @@ TegakiHistoryActions.DestroyLayers.prototype.undo = function() {
   Tegaki.setActiveLayer();
   
   Tegaki.rebuildLayerCtrl();
-}
+};
 
 TegakiHistoryActions.DestroyLayers.prototype.redo = function() {
   var i, layer, ids = [];
@@ -657,12 +657,12 @@ TegakiHistoryActions.DestroyLayers.prototype.redo = function() {
   
   if (this.layerId) {
     ids.push(this.layerId);
-    Tegaki.mergeLayers(ids)
+    Tegaki.mergeLayers(ids);
   }
   else {
     Tegaki.deleteLayers(ids);
   }
-}
+};
 
 TegakiHistoryActions.MoveLayer.prototype.undo = function() {
   Tegaki.setActiveLayer(this.layerId);
@@ -788,7 +788,7 @@ var TegakiStrings = {
   burn: 'Burn',
   blur: 'Blur',
   eraser: 'Eraser'
-}
+};
 
 var Tegaki = {
   VERSION: '0.0.1',
@@ -838,7 +838,7 @@ var Tegaki = {
   onCancelCb: null,
   
   open: function(opts) {
-    var bg, cnt, el, el2, tool, lbl, btn, ctrl, canvas, ctx, grp, self = Tegaki;
+    var bg, cnt, el, el2, tool, lbl, btn, ctrl, canvas, grp, self = Tegaki;
     
     if (self.bg) {
       self.resume();
@@ -873,7 +873,7 @@ var Tegaki = {
     // Colorpicker
     grp = T$.el('div');
     grp.className = 'tegaki-ctrlgrp';
-    el = T$.el('input')
+    el = T$.el('input');
     el.id = 'tegaki-color';
     el.value = self.toolColor;
     try {
@@ -892,7 +892,7 @@ var Tegaki = {
     // Size control
     grp = T$.el('div');
     grp.className = 'tegaki-ctrlgrp';
-    el = T$.el('input')
+    el = T$.el('input');
     el.id = 'tegaki-size';
     el.min = 1;
     el.max = self.maxSize;
@@ -908,7 +908,7 @@ var Tegaki = {
     // Alpha control
     grp = T$.el('div');
     grp.className = 'tegaki-ctrlgrp';
-    el = T$.el('input')
+    el = T$.el('input');
     el.id = 'tegaki-alpha';
     el.min = 0;
     el.max = 1;
@@ -926,7 +926,7 @@ var Tegaki = {
     grp = T$.el('div');
     grp.className = 'tegaki-ctrlgrp';
     grp.id = 'tegaki-layer-grp';
-    el = T$.el('select')
+    el = T$.el('select');
     el.id = 'tegaki-layer';
     el.multiple = true;
     el.size = 3;
@@ -976,7 +976,7 @@ var Tegaki = {
     // Tool selector
     grp = T$.el('div');
     grp.className = 'tegaki-ctrlgrp';
-    el = T$.el('select')
+    el = T$.el('select');
     el.id = 'tegaki-tool';
     for (tool in Tegaki.tools) {
       el2 = T$.el('option');
@@ -1009,32 +1009,32 @@ var Tegaki = {
     }
     
     btn = T$.el('span');
-    btn.className = 'tegaki-tb-btn'
+    btn.className = 'tegaki-tb-btn';
     btn.textContent = TegakiStrings.newCanvas;
     T$.on(btn, 'click', Tegaki.onNewClick);
     el.appendChild(btn);
     
     btn = T$.el('span');
-    btn.className = 'tegaki-tb-btn'
+    btn.className = 'tegaki-tb-btn';
     btn.textContent = TegakiStrings.undo;
     T$.on(btn, 'click', Tegaki.onUndoClick);
     el.appendChild(btn);
     
     btn = T$.el('span');
-    btn.className = 'tegaki-tb-btn'
+    btn.className = 'tegaki-tb-btn';
     btn.textContent = TegakiStrings.redo;
     T$.on(btn, 'click', Tegaki.onRedoClick);
     el.appendChild(btn);
     
     btn = T$.el('span');
-    btn.className = 'tegaki-tb-btn'
+    btn.className = 'tegaki-tb-btn';
     btn.textContent = TegakiStrings.close;
     T$.on(btn, 'click', Tegaki.onCancelClick);
     el.appendChild(btn);
     
     btn = T$.el('span');
     btn.id = 'tegaki-finish-btn';
-    btn.className = 'tegaki-tb-btn'
+    btn.className = 'tegaki-tb-btn';
     btn.textContent = TegakiStrings.finish;
     T$.on(btn, 'click', Tegaki.onDoneClick);
     el.appendChild(btn);
@@ -1203,7 +1203,7 @@ var Tegaki = {
   },
   
   updateUI: function(type) {
-    var i, type, ary, el, tool = Tegaki.tool;
+    var i, ary, el, tool = Tegaki.tool;
     
     ary = type ? [type] : ['size', 'alpha', 'color'];
     
@@ -1238,13 +1238,13 @@ var Tegaki = {
     return '#'
       + ('0' + rgba[0].toString(16)).slice(-2)
       + ('0' + rgba[1].toString(16)).slice(-2)
-      + ('0' + rgba[2].toString(16)).slice(-2)
+      + ('0' + rgba[2].toString(16)).slice(-2);
   },
   
   renderCircle: function(r) {
-    var i, canvas, ctx, d, e, x, y, dx, dy, idata, data, size, c, color;
+    var i, canvas, ctx, d, e, x, y, dx, dy, idata, data, c, color;
     
-    e = 1 - r
+    e = 1 - r;
     dx = 0;
     dy = -2 * r;
     x = 0;
@@ -1273,7 +1273,7 @@ var Tegaki = {
       }
       
       ++x;
-      dx += 2
+      dx += 2;
       e += dx;
       
       data[(c + x + (c + y) * d) * 4 + 3] = color;
@@ -1320,7 +1320,7 @@ var Tegaki = {
   },
   
   debugDumpPixelData: function(canvas) {
-    var idata, data, len, out;
+    var i, idata, data, len, out, el;
     
     idata = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
     data = idata.data;
@@ -1341,7 +1341,7 @@ var Tegaki = {
   },
   
   debugDrawColors: function(sat) {
-    var i, sa, ea, ctx, grad, a;
+    var i, ctx, grad, a;
     
     Tegaki.resizeCanvas(360, 360);
     
@@ -1429,21 +1429,21 @@ var Tegaki = {
     Tegaki.onCancelCb();
   },
   
-  onColorChange: function(e) {
+  onColorChange: function() {
     Tegaki.setToolColor(this.value);
   },
   
-  onSizeChange: function(e) {
+  onSizeChange: function() {
     this.previousElementSibling.setAttribute('data-value', this.value);
     Tegaki.setToolSize(+this.value);
   },
   
-  onAlphaChange: function(e) {
+  onAlphaChange: function() {
     this.previousElementSibling.setAttribute('data-value', this.value);
     Tegaki.setToolAlpha(+this.value);
   },
   
-  onLayerChange: function(e) {
+  onLayerChange: function() {
     var selectedOptions = T$.selectedOptions(this);
     
     if (selectedOptions.length > 1) {
@@ -1454,12 +1454,12 @@ var Tegaki = {
     }
   },
   
-  onLayerAdd: function(e) {
+  onLayerAdd: function() {
     TegakiHistory.push(Tegaki.addLayer());
     Tegaki.setActiveLayer();
   },
   
-  onLayerDelete: function(e) {
+  onLayerDelete: function() {
     var i, ary, sel, opt, selectedOptions, action;
     
     sel = T$.id('tegaki-layer');
@@ -1490,7 +1490,7 @@ var Tegaki = {
     TegakiHistory.push(action);
   },
   
-  onLayerVisibilityChange: function(e) {
+  onLayerVisibilityChange: function() {
     var i, ary, sel, opt, flag, selectedOptions;
     
     sel = T$.id('tegaki-layer');
@@ -1513,7 +1513,7 @@ var Tegaki = {
     Tegaki.setLayerVisibility(ary, flag);
   },
   
-  onMergeLayers: function(e) {
+  onMergeLayers: function() {
     var i, ary, sel, opt, selectedOptions, action;
     
     sel = T$.id('tegaki-layer');
@@ -1557,13 +1557,13 @@ var Tegaki = {
     }
   },
   
-  onToolChange: function(e) {
+  onToolChange: function() {
     Tegaki.setTool(this.value);
     Tegaki.updateUI();
     Tegaki.updateCursor();
   },
   
-  onCanvasSelected: function(e) {
+  onCanvasSelected: function() {
     var img;
     
     if (!confirm(TegakiStrings.confirmChangeCanvas)) {
@@ -1694,7 +1694,7 @@ var Tegaki = {
   },
   
   deleteLayers: function(ids) {
-    var i, id, len, sel, idx, layers;
+    var i, id, len, sel, idx, indices, layers;
     
     sel = T$.id('tegaki-layer');
     
@@ -1719,7 +1719,7 @@ var Tegaki = {
   },
   
   mergeLayers: function(ids) {
-    var i, id, len, sel, idx, canvasBefore, destId, dest, action;
+    var i, id, sel, idx, canvasBefore, destId, dest, action;
     
     sel = T$.id('tegaki-layer');
     
@@ -1751,7 +1751,7 @@ var Tegaki = {
     sel = T$.id('tegaki-layer');
     idx = Tegaki.getLayerIndex(id);
     
-    canvas = Tegaki.layers[idx].canvas
+    canvas = Tegaki.layers[idx].canvas;
     opt = sel.options[Tegaki.layers.length - 1 - idx];
     
     if (up) {
