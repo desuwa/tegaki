@@ -1775,6 +1775,8 @@ var Tegaki = {
     Tegaki.layers[tmpId] = Tegaki.layers[idx];
     Tegaki.layers[idx] = tmp;
     
+    Tegaki.activeLayer = tmpId;
+    
     return new TegakiHistoryActions.MoveLayer(id, up);
   },
   
