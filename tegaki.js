@@ -1083,6 +1083,7 @@ var Tegaki = {
     
     T$.on(document, 'mouseup', self.onMouseUp);
     T$.on(window, 'resize', self.updatePosOffset);
+    T$.on(window, 'scroll', self.updatePosOffset);
   },
   
   initTools: function() {
@@ -1148,6 +1149,7 @@ var Tegaki = {
     
     T$.on(document, 'mouseup', Tegaki.onMouseUp);
     T$.on(window, 'resize', Tegaki.updatePosOffset);
+    T$.on(window, 'scroll', Tegaki.updatePosOffset);
   },
   
   hide: function() {
@@ -1156,6 +1158,7 @@ var Tegaki = {
     
     T$.off(document, 'mouseup', Tegaki.onMouseUp);
     T$.off(window, 'resize', Tegaki.updatePosOffset);
+    T$.off(window, 'scroll', Tegaki.updatePosOffset);
   },
   
   destroy: function() {
@@ -1165,6 +1168,7 @@ var Tegaki = {
     
     T$.off(document, 'mouseup', Tegaki.onMouseUp);
     T$.off(window, 'resize', Tegaki.updatePosOffset);
+    T$.off(window, 'scroll', Tegaki.updatePosOffset);
     
     Tegaki.bg.parentNode.removeChild(Tegaki.bg);
     
