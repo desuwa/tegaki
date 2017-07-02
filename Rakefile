@@ -16,5 +16,5 @@ task :jshint do |t|
     '-W079' => true # no-native-reassign
   }
   
-  puts Jshintrb.report("'use strict';" + File.read('tegaki.js'), opts)
+  puts Jshintrb.report(File.read('tegaki.js'), opts)
 end

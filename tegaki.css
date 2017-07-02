@@ -41,10 +41,14 @@
   -ms-user-select: none;
   overflow: auto;
   z-index: 9999;
+}
+
+#tegaki canvas {
   image-rendering: optimizeSpeed;
+  image-rendering: -moz-crisp-edges;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
+  -ms-interpolation-mode: nearest-neighbor;
 }
 
 #tegaki-debug {
@@ -118,7 +122,15 @@
 
 #tegaki-layers {
   display: inline-block;
+  position: relative;
+  overflow: auto;
   font-size: 0;
+}
+
+#tegaki-layers canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 #tegaki-finish-btn {
@@ -135,12 +147,6 @@
 
 .tegaki-label:after {
   content: ' ' attr(data-value);
-}
-
-#tegaki-ghost-layer,
-.tegaki-layer {
-  position: absolute;
-  left: 0;
 }
 
 #tegaki-ctrl {
@@ -175,8 +181,7 @@
   padding: 0;
 }
 
-#tegaki-alpha,
-#tegaki-size {
+#tegaki-ctrl input[type=range] {
   width: 90%;
   margin: auto;
 }

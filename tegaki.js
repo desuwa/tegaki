@@ -1,3 +1,5 @@
+'use strict';
+
 var TegakiBrush = {
   brushFn: function(x, y) {
     var i, ctx, dest, data, len, kernel;
@@ -24,9 +26,7 @@ var TegakiBrush = {
   
   commit: function() {
     Tegaki.activeCtx.drawImage(Tegaki.ghostCanvas, 0, 0);
-    Tegaki.ghostCtx.clearRect(0, 0,
-      Tegaki.ghostCanvas.width, Tegaki.ghostCanvas.height
-    );
+    Tegaki.clearCtx(Tegaki.ghostCtx);
   },
   
   draw: function(posX, posY, pt) {
@@ -165,7 +165,7 @@ var TegakiBrush = {
 
 var TegakiPen = {
   init: function() {
-    this.size = 4;
+    this.size = 8;
     this.alpha = 0.5;
     this.step = 0.1;
     this.stepAcc = 0;
@@ -258,7 +258,7 @@ var TegakiAirbrush = {
 
 var TegakiPencil = {
   init: function() {
-    this.size = 1;
+    this.size = 8;
     this.alpha = 1.0;
     this.step = 0.25;
     this.stepAcc = 0;
@@ -269,7 +269,7 @@ var TegakiPencil = {
   commit: TegakiBrush.commit,
   
   brushFn: function(x, y) {
-    var i, ctx, dest, data, len, kernel, a;
+    var i, ctx, dest, data, len, a, kernel;
     
     x = 0 | x;
     y = 0 | y;
@@ -280,7 +280,7 @@ var TegakiPencil = {
     kernel = this.kernel;
     len = kernel.length;
     
-    a = this.alpha * 255;
+    a = 0 | (this.alpha * 255);
     
     i = 0;
     while (i < len) {
@@ -294,6 +294,239 @@ var TegakiPencil = {
     }
     
     ctx.putImageData(dest, x, y);
+  },
+  
+  generateBrush: function() {
+    var brush, ctx, e, x, y, imageData, data,
+      c, color, size, r, rr;
+    
+    size = 0 | this.size;
+    
+    r = 0 | ((size) / 2);
+    
+    rr = 0 | ((size + 1) % 2);
+    
+    brush = T$.el('canvas');
+    brush.width = brush.height = size;
+    ctx = brush.getContext('2d');
+    
+    imageData = ctx.getImageData(0, 0, size, size);
+    data = new Uint32Array(imageData.data.buffer);
+    
+    color = 0xFF000000;
+    
+    x = r;
+    y = 0 | 0;
+    e = 1 - r;
+    c = r;
+    
+    while (x >= y) {
+      data[c + x - rr + (c + y - rr) * size] = color;
+      data[c + y - rr + (c + x - rr) * size] = color;
+      
+      data[c - y + (c + x - rr) * size] = color;
+      data[c - x + (c + y - rr) * size] = color;
+      
+      data[c - y + (c - x) * size] = color;
+      data[c - x + (c - y) * size] = color;
+      
+      data[c + y - rr + (c - x) * size] = color;
+      data[c + x - rr + (c - y) * size] = color;
+      
+      ++y;
+      
+      if (e <= 0) {
+        e += 2 * y + 1;
+      }
+      else {
+        x--;
+        e += 2 * (y - x) + 1;
+      }
+    }
+    
+    if (r > 0) {
+      TegakiBucket.fill(imageData, imageData, r, r, this.rgb, this.alpha);
+    }
+    
+    this.center = r;
+    this.brushSize = size;
+    this.brush = brush;
+    this.kernel = imageData.data;
+  },
+  
+  setSize: TegakiBrush.setSize,
+  
+  setAlpha: TegakiBrush.setAlpha,
+  
+  setColor: TegakiBrush.setColor,
+  
+  set: TegakiBrush.set
+};
+
+var TegakiBucket = {
+  noCursor: true,
+  
+  init: function() {
+    this.size = 1;
+    this.alpha = 1.0;
+    this.step = 100.0;
+    this.stepAcc = 0;
+  },
+  
+  commit: TegakiBrush.commit,
+  
+  draw: TegakiBrush.draw,
+  
+  fill: function(srcId, destId, x, y, color, alpha) {
+    var r, g, b, a, px, tr, tg, tb, ta, q, pxMap, yy, xx, yn, ys,
+      yyy, yyn, yys, xd, srcData, destData, w, h;
+    
+    x = 0 | x;
+    y = 0 | y;
+    
+    w = 0 | srcId.width;
+    h = 0 | srcId.height;
+    
+    r = 0 | color[0];
+    g = 0 | color[1];
+    b = 0 | color[2];
+    a = 0 | (alpha * 255);
+    
+    px = 0 | ((y * w + x) * 4);
+    
+    srcData = srcId.data;
+    destData = destId.data;
+    
+    tr = 0 | srcData[px];
+    tg = 0 | srcData[px + 1];
+    tb = 0 | srcData[px + 2];
+    ta = 0 | srcData[px + 3];
+    
+    pxMap = new Uint8Array(w * h * 4);
+    
+    q = [];
+    
+    q[0] = x;
+    q[1] = y;
+    
+    while (q.length) {
+      yy = q.pop();
+      xx = q.pop();
+      
+      yn = (yy - 1);
+      ys = (yy + 1);
+      
+      yyy = yy * w;
+      yyn = yn * w;
+      yys = ys * w;
+      
+      xd = xx;
+      
+      while (xd >= 0) {
+        px = (yyy + xd) * 4;
+        
+        if (!this.testPixel(srcData, px, pxMap, tr, tg, tb, ta)) {
+          break;
+        }
+        
+        this.setPixel(destData, px, r, g, b, a);
+        
+        pxMap[px] = 1;
+        
+        if (yn >= 0) {
+          px = (yyn + xd) * 4;
+          
+          if (this.testPixel(srcData, px, pxMap, tr, tg, tb, ta)) {
+            q.push(xd);
+            q.push(yn);
+          }
+        }
+        
+        if (ys < h) {
+          px = (yys + xd) * 4;
+          
+          if (this.testPixel(srcData, px, pxMap, tr, tg, tb, ta)) {
+            q.push(xd);
+            q.push(ys);
+          }
+        }
+        
+        xd--;
+      }
+      
+      xd = xx + 1;
+      
+      while (xd < w) {
+        px = (yyy + xd) * 4;
+        
+        if (!this.testPixel(srcData, px, pxMap, tr, tg, tb, ta)) {
+          break;
+        }
+        
+        this.setPixel(destData, px, r, g, b, a);
+        
+        pxMap[px] = 1;
+        
+        if (yn >= 0) {
+          px = (yyn + xd) * 4;
+          
+          if (this.testPixel(srcData, px, pxMap, tr, tg, tb, ta)) {
+            q.push(xd);
+            q.push(yn);
+          }
+        }
+        
+        if (ys < h) {
+          px = (yys + xd) * 4;
+          
+          if (this.testPixel(srcData, px, pxMap, tr, tg, tb, ta)) {
+            q.push(xd);
+            q.push(ys);
+          }
+        }
+        
+        ++xd;
+      }
+    }
+  },
+  
+  brushFn: function(x, y) {
+    var aCtx, gCtx, w, h, srcId, destId;
+    
+    x = 0 | x;
+    y = 0 | y;
+    
+    aCtx = Tegaki.activeCtx;
+    gCtx = Tegaki.ghostCtx;
+    
+    w = aCtx.canvas.width;
+    h = aCtx.canvas.height;
+    
+    if (x < 0 || y < 0 || x >= w || y >= h) {
+      return;
+    }
+    
+    srcId = aCtx.getImageData(0, 0, w, h);
+    destId = gCtx.getImageData(0, 0, w, h);
+    
+    this.fill(srcId, destId, x, y, this.rgb, this.alpha);
+    
+    gCtx.putImageData(destId, 0, 0);
+  },
+  
+  setPixel: function(data, px, r, g, b, a) {
+    data[px] = r; ++px;
+    data[px] = g; ++px;
+    data[px] = b; ++px;
+    data[px] = a;
+  },
+  
+  testPixel: function(data, px, pxMap, tr, tg, tb, ta) {
+    return !pxMap[px] && (data[px] == tr
+      && data[++px] == tg
+      && data[++px] == tb
+      && data[++px] == ta)
+    ;
   },
   
   generateBrush: TegakiPen.generateBrush,
@@ -499,6 +732,113 @@ var TegakiBlur = {
   setColor: TegakiBrush.setColor,
   
   set: TegakiBrush.set
+};
+
+var TegakiTone = {
+  matrix: [
+    [0, 8, 2, 10],
+    [12, 4, 14, 6],
+    [3, 11, 1 ,9],
+    [15, 7, 13, 5]
+  ],
+  
+  data: null,
+  
+  dataAlpha: null,
+  dataWidth: null,
+  dataHeight: null,
+  
+  init: function() {
+    this.size = 8;
+    this.alpha = 0.5;
+    this.step = 0.25;
+    this.stepAcc = 0;
+  },
+  
+  draw: TegakiBrush.draw,
+  
+  commit: TegakiBrush.commit,
+  
+  brushFn: function(x, y) {
+    var ctx, dest, data, kernel, brushSize, map,
+      px, mapWidth, mapHeight, xx, yy;
+    
+    x = 0 | x;
+    y = 0 | y;
+    
+    ctx = Tegaki.ghostCtx;
+    dest = ctx.getImageData(x, y, this.brushSize, this.brushSize);
+    data = dest.data;
+    kernel = this.kernel;
+    
+    brushSize = this.brushSize;
+    
+    mapWidth = Tegaki.canvas.width;
+    mapHeight = Tegaki.canvas.height;
+    
+    map = this.generate(mapWidth, mapHeight);
+    
+    for (yy = 0; yy < brushSize; ++yy) {
+      for (xx = 0; xx < brushSize; ++xx) {
+        px = (brushSize * yy + xx) * 4;
+        
+        if (kernel[px + 3] === 0) {
+          continue;
+        }
+        
+        if (map[(yy + y) * mapWidth + xx + x] === 0) {
+          data[px] = this.rgb[0]; ++px;
+          data[px] = this.rgb[1]; ++px;
+          data[px] = this.rgb[2]; ++px;
+          data[px] = 255;
+        }
+      }
+    }
+    
+    ctx.putImageData(dest, x, y);
+  },
+  
+  generateBrush: TegakiPencil.generateBrush,
+  
+  setSize: TegakiBrush.setSize,
+  
+  setAlpha: TegakiBrush.setAlpha,
+  
+  setColor: TegakiBrush.setColor,
+  
+  set: TegakiBrush.set,
+  
+  generate: function(w, h) {
+    var data, x, y, a;
+    
+    if (this.alpha == this.dataAlpha
+      && w === this.dataWidth
+      && h === this.dataHeight) {
+      return this.data;
+    }
+    
+    data = new Uint8Array(w * h);
+    
+    if (this.alpha <= 1.0) {
+      a = this.alpha * 15;
+      
+      for (y = 0; y < h; ++y) {
+        for (x = 0; x < w; ++x) {
+          if (a < this.matrix[y % 4][x % 4]) {
+            data[w * y + x] = 1;
+          }
+        }
+      }
+    }
+    
+    this.dataAlpha = this.alpha;
+    this.dataWidth = w;
+    this.dataHeight = h;
+    
+    this.data = data;
+    
+    return data;
+  }
 };
 
 var TegakiHistory = {
@@ -763,6 +1103,7 @@ var TegakiStrings = {
   color: 'Color',
   size: 'Size',
   alpha: 'Opacity',
+  zoom: 'Zoom',
   layers: 'Layers',
   addLayer: 'Add layer',
   delLayers: 'Delete layers',
@@ -787,7 +1128,9 @@ var TegakiStrings = {
   dodge: 'Dodge',
   burn: 'Burn',
   blur: 'Blur',
-  eraser: 'Eraser'
+  eraser: 'Eraser',
+  bucket: 'Bucket',
+  tone: 'Tone'
 };
 
 var Tegaki = {
@@ -799,8 +1142,11 @@ var Tegaki = {
   ctx: null,
   layers: [],
   layersCnt: null,
+  cursorCanvas: null,
+  cursorCtx: null,
   ghostCanvas: null,
   ghostCtx: null,
+  flatCtx: null,
   activeCtx: null,
   activeLayer: null,
   layerIndex: null,
@@ -812,12 +1158,18 @@ var Tegaki = {
   offsetX: 0,
   offsetY: 0,
   
+  zoomLevel: 1,
+  zoomMax: 4,
+  zoomMin: 1,
+  
   TWOPI: 2 * Math.PI,
   
   tools: {
     pencil: TegakiPencil,
     pen: TegakiPen,
     airbrush: TegakiAirbrush,
+    bucket: TegakiBucket,
+    tone: TegakiTone,
     pipette: TegakiPipette,
     dodge: TegakiDodge,
     burn: TegakiBurn,
@@ -992,6 +1344,24 @@ var Tegaki = {
     grp.appendChild(el);
     ctrl.appendChild(grp);
     
+    // Zoom control
+    grp = T$.el('div');
+    grp.className = 'tegaki-ctrlgrp';
+    el = T$.el('input');
+    el.id = 'tegaki-zoom';
+    el.min = self.zoomMin;
+    el.max = self.zoomMax;
+    el.step = 1;
+    el.type = 'range';
+    lbl = T$.el('div');
+    lbl.className = 'tegaki-label';
+    lbl.textContent = TegakiStrings.zoom;
+    grp.appendChild(lbl);
+    T$.on(el, 'change', self.onZoomChange);
+    grp.appendChild(el);
+    ctrl.appendChild(grp);
+    
+    // ---
     cnt.appendChild(ctrl);
     
     el = T$.el('div');
@@ -1048,13 +1418,6 @@ var Tegaki = {
     document.body.appendChild(bg);
     document.body.classList.add('tegaki-backdrop');
     
-    el = T$.el('canvas');
-    el.id = 'tegaki-ghost-layer';
-    el.width = canvas.width;
-    el.height = canvas.height;
-    self.ghostCanvas = el;
-    self.ghostCtx = el.getContext('2d');
-    
     self.cnt = cnt;
     self.centerCnt();
     
@@ -1063,6 +1426,8 @@ var Tegaki = {
     self.ctx = canvas.getContext('2d');
     self.ctx.fillStyle = self.bgColor;
     self.ctx.fillRect(0, 0, opts.width, opts.height);
+    
+    self.initGhostLayers();
     
     self.addLayer();
     
@@ -1074,16 +1439,12 @@ var Tegaki = {
     
     self.updateUI();
     
-    self.updateCursor();
+    self.updateCursorStatus();
     self.updatePosOffset();
     
-    T$.on(self.bg, 'mousemove', self.onMouseMove);
-    T$.on(self.bg, 'mousedown', self.onMouseDown);
-    T$.on(self.layersCnt, 'contextmenu', self.onDummy);
+    self.updateFlatCtx();
     
-    T$.on(document, 'mouseup', self.onMouseUp);
-    T$.on(window, 'resize', self.updatePosOffset);
-    T$.on(window, 'scroll', self.updatePosOffset);
+    self.bindGlobalEvents();
   },
   
   initTools: function() {
@@ -1108,10 +1469,69 @@ var Tegaki = {
     return null;
   },
   
+  bindGlobalEvents: function() {
+    var self = Tegaki;
+    
+    T$.on(self.bg, 'mousemove', self.onMouseMove);
+    T$.on(self.bg, 'mousedown', self.onMouseDown);
+    T$.on(self.layersCnt, 'contextmenu', self.onDummy);
+    
+    T$.on(document, 'mouseup', self.onMouseUp);
+    T$.on(window, 'resize', self.updatePosOffset);
+    T$.on(window, 'scroll', self.updatePosOffset);
+  },
+  
+  unBindGlobalEvents: function() {
+    var self = Tegaki;
+    
+    T$.off(self.bg, 'mousemove', self.onMouseMove);
+    T$.off(self.bg, 'mousedown', self.onMouseDown);
+    T$.off(self.layersCnt, 'contextmenu', self.onDummy);
+    
+    T$.off(document, 'mouseup', self.onMouseUp);
+    T$.off(window, 'resize', self.updatePosOffset);
+    T$.off(window, 'scroll', self.updatePosOffset);
+  },
+  
+  initGhostLayers: function() {
+    var el;
+    
+    el = T$.el('canvas');
+    el.id = 'tegaki-ghost-layer';
+    el.width = Tegaki.baseWidth;
+    el.height = Tegaki.baseHeight;
+    Tegaki.ghostCanvas = el;
+    Tegaki.ghostCtx = el.getContext('2d');
+    
+    el = T$.el('canvas');
+    el.id = 'tegaki-cursor-layer';
+    el.width = Tegaki.baseWidth;
+    el.height = Tegaki.baseHeight;
+    Tegaki.layersCnt.appendChild(el);
+    Tegaki.cursorCanvas = el;
+    Tegaki.cursorCtx = el.getContext('2d');
+    
+    el = T$.el('canvas');
+    el.width = Tegaki.baseWidth;
+    el.height = Tegaki.baseHeight;
+    Tegaki.flatCtx = el.getContext('2d');
+  },
+  
+  disableSmoothing: function(ctx) {
+    ctx.mozImageSmoothingEnabled = false;
+    ctx.webkitImageSmoothingEnabled = false;
+    ctx.msImageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = false;
+  },
+  
   centerCnt: function() {
     var aabb, cnt;
     
+    Tegaki.layersCnt.style.width = Tegaki.baseWidth + 'px';
+    Tegaki.layersCnt.style.height = Tegaki.baseHeight + 'px';
+    
     cnt = Tegaki.cnt;
+    
     aabb = cnt.getBoundingClientRect();
     
     if (aabb.width > T$.docEl.clientWidth || aabb.height > T$.docEl.clientHeight) {
@@ -1133,42 +1553,41 @@ var Tegaki = {
   
   getCursorPos: function(e, axis) {
     if (axis === 0) {
-      return e.clientX + window.pageXOffset + Tegaki.bg.scrollLeft - Tegaki.offsetX;
+      return 0 | ((
+        e.clientX
+          + window.pageXOffset
+          + Tegaki.bg.scrollLeft
+          + Tegaki.layersCnt.scrollLeft
+          - Tegaki.offsetX
+        ) / Tegaki.zoomLevel);
     }
     else {
-      return e.clientY + window.pageYOffset + Tegaki.bg.scrollTop - Tegaki.offsetY;
+      return 0 | ((
+        e.clientY
+          + window.pageYOffset
+          + Tegaki.bg.scrollTop
+          + Tegaki.layersCnt.scrollTop
+          - Tegaki.offsetY
+        ) / Tegaki.zoomLevel);
     }
   },
   
   resume: function() {
     Tegaki.bg.classList.remove('tegaki-hidden');
     document.body.classList.add('tegaki-backdrop');
-    
     Tegaki.centerCnt();
     Tegaki.updatePosOffset();
-    
-    T$.on(document, 'mouseup', Tegaki.onMouseUp);
-    T$.on(window, 'resize', Tegaki.updatePosOffset);
-    T$.on(window, 'scroll', Tegaki.updatePosOffset);
+    Tegaki.bindGlobalEvents();
   },
   
   hide: function() {
     Tegaki.bg.classList.add('tegaki-hidden');
     document.body.classList.remove('tegaki-backdrop');
-    
-    T$.off(document, 'mouseup', Tegaki.onMouseUp);
-    T$.off(window, 'resize', Tegaki.updatePosOffset);
-    T$.off(window, 'scroll', Tegaki.updatePosOffset);
+    Tegaki.unBindGlobalEvents();
   },
   
   destroy: function() {
-    T$.off(Tegaki.bg, 'mousemove', Tegaki.onMouseMove);
-    T$.off(Tegaki.bg, 'mousedown', Tegaki.onMouseDown);
-    T$.off(Tegaki.layersCnt, 'contextmenu', Tegaki.onDummy);
-    
-    T$.off(document, 'mouseup', Tegaki.onMouseUp);
-    T$.off(window, 'resize', Tegaki.updatePosOffset);
-    T$.off(window, 'scroll', Tegaki.updatePosOffset);
+    Tegaki.unBindGlobalEvents();
     
     Tegaki.bg.parentNode.removeChild(Tegaki.bg);
     
@@ -1182,17 +1601,28 @@ var Tegaki = {
     Tegaki.ctx = null;
     Tegaki.layers = [];
     Tegaki.layerIndex = 0;
+    Tegaki.zoomLevel = 1;
     Tegaki.activeCtx = null;
+    Tegaki.ghostCtx = null;
+    Tegaki.ghostCanvas = null;
+    Tegaki.cursorCtx = null;
+    Tegaki.cursorCanvas = null;
+    Tegaki.flatCtx = null;
   },
   
-  flatten: function() {
-    var i, layer, canvas, ctx;
+  flatten: function(ctx) {
+    var i, layer, canvas;
     
-    canvas = T$.el('canvas');
+    if (!ctx) {
+      canvas = T$.el('canvas');
+      ctx = canvas.getContext('2d');
+    }
+    else {
+      canvas = ctx.canvas;
+    }
+    
     canvas.width = Tegaki.canvas.width;
     canvas.height = Tegaki.canvas.height;
-    
-    ctx = canvas.getContext('2d');
     
     ctx.drawImage(Tegaki.canvas, 0, 0);
     
@@ -1209,14 +1639,23 @@ var Tegaki = {
   updateUI: function(type) {
     var i, ary, el, tool = Tegaki.tool;
     
-    ary = type ? [type] : ['size', 'alpha', 'color'];
+    ary = type ? [type] : ['size', 'alpha', 'color', 'zoom'];
     
     for (i = 0; type = ary[i]; ++i) {
       el = T$.id('tegaki-' + type);
-      el.value = type === 'color' ? Tegaki.toolColor : tool[type];
+      
+      if (type === 'color') {
+        el.value = Tegaki.toolColor;
+      }
+      else if (type === 'zoom') {
+        el.value = Tegaki.zoomLevel;
+      }
+      else {
+        el.value = tool[type];
+      }
       
       if (el.type === 'range') {
-        el.previousElementSibling.setAttribute('data-value', tool[type]);
+        el.previousElementSibling.setAttribute('data-value', el.value);
       }
     }
   },
@@ -1245,66 +1684,69 @@ var Tegaki = {
       + ('0' + rgba[2].toString(16)).slice(-2);
   },
   
-  renderCircle: function(r) {
-    var i, canvas, ctx, d, e, x, y, dx, dy, idata, data, c, color;
+  renderCursor: function(x0, y0) {
+    var canvas, e, x, y, imageData, data, side,
+      srcImageData, srcData, c, color, r, rr;
     
+    side = 0 | Tegaki.tool.size;
+    r = 0 | (side / 2);
+    rr = 0 | ((side + 1) % 2);
+    
+    Tegaki.clearCtx(Tegaki.cursorCtx);
+    
+    srcImageData = Tegaki.flatCtx.getImageData(x0 - r, y0 - r, side, side);
+    srcData = new Uint32Array(srcImageData.data.buffer);
+    
+    imageData = Tegaki.cursorCtx.getImageData(x0 - r, y0 - r, side, side);
+    data = new Uint32Array(imageData.data.buffer);
+    
+    color = 0x00FFFF7F;
+    
+    x = r;
+    y = 0;
     e = 1 - r;
-    dx = 0;
-    dy = -2 * r;
-    x = 0;
-    y = r;
-    d = 33;
-    c = 16;
+    c = r;
     
-    canvas = T$.el('canvas');
-    canvas.width = canvas.height = d;
-    ctx = canvas.getContext('2d');
-    idata = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
-    data = idata.data;
-    
-    color = 255;
-    
-    data[(c + (c + r) * d) * 4 + 3] = color;
-    data[(c + (c - r) * d) * 4 + 3] = color;
-    data[(c + r + c * d) * 4 + 3] = color;
-    data[(c - r + c * d) * 4 + 3] = color;
-    
-    while (x < y) {
-      if (e >= 0) {
-        y--;
-        dy += 2;
-        e += dy;
+    while (x >= y) {
+      data[(c + x - rr + (c + y - rr) * side)] =
+        srcData[(c + x - rr + (c + y - rr) * side)] ^ color;
+      data[(c + y - rr + (c + x - rr) * side)] =
+        srcData[(c + y - rr + (c + x - rr) * side)] ^ color;
+      
+      data[(c - y + (c + x - rr) * side)] =
+        srcData[(c - y + (c + x - rr) * side)] ^ color;
+      data[(c - x + (c + y - rr) * side)] =
+        srcData[(c - x + (c + y - rr) * side)] ^ color;
+      
+      data[(c - x + (c - y) * side)] =
+        srcData[(c - x + (c - y) * side)] ^ color;
+      data[(c - y + (c - x) * side)] =
+        srcData[(c - y + (c - x) * side)] ^ color;
+      
+      data[(c + y - rr + (c - x) * side)] =
+        srcData[(c + y - rr + (c - x) * side)] ^ color;
+      data[(c + x - rr + (c - y) * side)] =
+        srcData[(c + x - rr + (c - y) * side)] ^ color;
+        
+      ++y;
+      
+      if (e <= 0) {
+        e += 2 * y + 1;
       }
-      
-      ++x;
-      dx += 2;
-      e += dx;
-      
-      data[(c + x + (c + y) * d) * 4 + 3] = color;
-      data[(c - x + (c + y) * d) * 4 + 3] = color;
-      data[(c + x + (c - y) * d) * 4 + 3] = color;
-      data[(c - x + (c - y) * d) * 4 + 3] = color;
-      data[(c + y + (c + x) * d) * 4 + 3] = color;
-      data[(c - y + (c + x) * d) * 4 + 3] = color;
-      data[(c + y + (c - x) * d) * 4 + 3] = color;
-      data[(c - y + (c - x) * d) * 4 + 3] = color;
+      else {
+        --x;
+        e += 2 * (y - x) + 1;
+      }
     }
     
-    if (r > 0) {
-      for (i = 0; i < 3; ++i) {
-        data[(c + c * d) * 4 + i] = 127;
-      }
-      data[(c + c * d) * 4 + i] = color;
-    }
-    
-    ctx.putImageData(idata, 0, 0);
+    Tegaki.cursorCtx.putImageData(imageData, x0 - r, y0 - r);
     
     return canvas;
   },
   
   setToolSize: function(size) {
     Tegaki.tool.setSize && Tegaki.tool.setSize(size);
-    Tegaki.updateCursor();
+    Tegaki.updateCursorStatus();
   },
   
   setToolAlpha: function(alpha) {
@@ -1314,7 +1756,6 @@ var Tegaki = {
   setToolColor: function(color) {
     Tegaki.toolColor = color;
     Tegaki.tool.setColor && Tegaki.tool.setColor(color);
-    Tegaki.updateCursor();
   },
   
   setTool: function(tool) {
@@ -1323,65 +1764,34 @@ var Tegaki = {
     tool.set && tool.set();
   },
   
-  debugDumpPixelData: function(canvas) {
-    var i, idata, data, len, out, el;
+  setZoom: function(level) {
+    var el, nodes, i;
     
-    idata = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
-    data = idata.data;
-    len = data.length;
-    
-    out = '';
-    
-    for (i = 0; i < len; i += 4) {
-      out += data[i] + ' ' + data[i+1] + ' ' + data[i+2] + ' ' + data[i+3] + '%0a';
+    if (level > Tegaki.zoomMax || level < Tegaki.zoomMin) {
+      return;
     }
     
-    el = document.createElement('a');
-    el.href = 'data:,' + out;
-    el.download = 'dump.txt';
-    document.body.appendChild(el);
-    el.click();
-    document.body.removeChild(el);
+    Tegaki.zoomLevel = level;
+    
+    nodes = Tegaki.layersCnt.children;
+    
+    for (i = 0; el = nodes[i]; ++i) {
+      Tegaki.updateCanvasZoomSize(el);
+    }
+    
+    Tegaki.layersCnt.style.overflow = level === 1 ? 'hidden' : 'auto'; // Chrome
+    
+    Tegaki.updateFlatCtx();
   },
   
-  debugDrawColors: function(sat) {
-    var i, ctx, grad, a;
-    
-    Tegaki.resizeCanvas(360, 360);
-    
-    ctx = Tegaki.activeCtx;
-    a = ctx.globalAlpha;
-    ctx.globalAlpha = 1;
-    
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, 360, 360);
-    
-    for (i = 0; i < 360; ++i) {
-      if (sat) {
-        grad = ctx.createLinearGradient(0, 0, 10, 360);
-        grad.addColorStop(0, 'hsl(' + i + ', 0%, ' + '50%)');
-        grad.addColorStop(1, 'hsl(' + i + ', 100%, ' + '50%)');
-        ctx.strokeStyle = grad;
-      }
-      else {
-        ctx.strokeStyle = 'hsl(' + i + ', 100%, ' + '50%)';
-      }
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i, 360);
-      ctx.stroke();
-      ctx.closePath();
-    }
-    
-    if (!sat) {
-      grad = ctx.createLinearGradient(0, 0, 10, 360);
-      grad.addColorStop(0, '#000000');
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 360, 360);
-    }
-    
-    ctx.globalAlpha = a;
+  updateCanvasZoomSize: function(el) {
+    el.style.width = Tegaki.baseWidth * Tegaki.zoomLevel + 'px';
+    el.style.height = Tegaki.baseHeight * Tegaki.zoomLevel + 'px';
+  },
+  
+  onZoomChange: function() {
+    this.previousElementSibling.setAttribute('data-value', this.value);
+    Tegaki.setZoom(+this.value);
   },
   
   onNewClick: function() {
@@ -1564,7 +1974,7 @@ var Tegaki = {
   onToolChange: function() {
     Tegaki.setTool(this.value);
     Tegaki.updateUI();
-    Tegaki.updateCursor();
+    Tegaki.updateCursorStatus();
   },
   
   onCanvasSelected: function() {
@@ -1618,10 +2028,15 @@ var Tegaki = {
   resizeCanvas: function(width, height) {
     var i, layer;
     
+    Tegaki.baseWidth = width;
+    Tegaki.baseHeight = height;
+    
     Tegaki.canvas.width = width;
     Tegaki.canvas.height = height;
     Tegaki.ghostCanvas.width = width;
     Tegaki.ghostCanvas.height = height;
+    Tegaki.cursorCanvas.width = width;
+    Tegaki.cursorCanvas.height = height;
     
     Tegaki.ctx.fillStyle = Tegaki.bgColor;
     Tegaki.ctx.fillRect(0, 0, width, height);
@@ -1635,8 +2050,12 @@ var Tegaki = {
     Tegaki.layerIndex = 0;
     T$.id('tegaki-layer').textContent = '';
     
+    Tegaki.setZoom(1);
+    Tegaki.updateUI('zoom');
+    
     Tegaki.addLayer();
     Tegaki.setActiveLayer();
+    Tegaki.updateFlatCtx();
   },
   
   getLayerIndex: function(id) {
@@ -1691,6 +2110,8 @@ var Tegaki = {
     else {
       last = Tegaki.canvas;
     }
+    
+    Tegaki.updateCanvasZoomSize(canvas);
     
     Tegaki.layersCnt.insertBefore(canvas, last.nextElementSibling);
     
@@ -1835,6 +2256,14 @@ var Tegaki = {
     );
   },
   
+  clearCtx: function(ctx) {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  },
+  
+  updateFlatCtx: function() {
+    Tegaki.flatten(Tegaki.flatCtx);
+  },
+  
   copyContextState: function(src, dest) {
     var i, p, props = [
       'lineCap', 'lineJoin', 'strokeStyle', 'fillStyle', 'globalAlpha',
@@ -1846,25 +2275,23 @@ var Tegaki = {
     }
   },
   
-  updateCursor: function() {
-    var radius;
-    
-    radius = 0 | (Tegaki.tool.size / 2);
-    
-    if (Tegaki.tool.noCursor || radius < 1) {
-      Tegaki.layersCnt.style.cursor = 'default';
+  updateCursorStatus: function() {
+    if (Tegaki.tool.noCursor || Tegaki.tool.size < 2) {
+      Tegaki.cursor = false;
+      Tegaki.clearCtx(Tegaki.cursorCtx);
       return;
     }
     
-    Tegaki.layersCnt.style.cursor = 'url("'
-      + Tegaki.renderCircle(radius).toDataURL('image/png')
-      + '") 16 16, default';
+    Tegaki.cursor = true;
   },
   
   updatePosOffset: function() {
     var aabb = Tegaki.canvas.getBoundingClientRect();
-    Tegaki.offsetX = aabb.left + window.pageXOffset + Tegaki.cnt.scrollLeft;
-    Tegaki.offsetY = aabb.top + window.pageYOffset + Tegaki.cnt.scrollTop;
+    
+    Tegaki.offsetX = aabb.left + window.pageXOffset
+      + Tegaki.cnt.scrollLeft + Tegaki.layersCnt.scrollLeft;
+    Tegaki.offsetY = aabb.top + window.pageYOffset
+      + Tegaki.cnt.scrollTop + Tegaki.layersCnt.scrollTop;
   },
   
   onMouseMove: function(e) {
@@ -1873,6 +2300,9 @@ var Tegaki = {
     }
     else if (Tegaki.isColorPicking) {
       TegakiPipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+    }
+    else if (Tegaki.cursor) {
+      Tegaki.renderCursor(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
     }
   },
   
@@ -1892,15 +2322,25 @@ var Tegaki = {
     }
     
     if (e.which === 3 || e.altKey) {
+      e.preventDefault();
+      
       Tegaki.isColorPicking = true;
+      
       TegakiPipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
     }
-    else {
+    else if (e.which === 1) {
+      e.preventDefault();
+      
       Tegaki.isPainting = true;
+      
+      Tegaki.clearCtx(Tegaki.cursorCtx);
+      
       TegakiHistory.pendingAction = new TegakiHistoryActions.Draw(
         Tegaki.layers[Tegaki.activeLayer].id
       );
+      
       TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 0);
+      
       Tegaki.tool.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1), true);
     }
   },
@@ -1911,6 +2351,7 @@ var Tegaki = {
       TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 1);
       TegakiHistory.push(TegakiHistory.pendingAction);
       Tegaki.isPainting = false;
+      Tegaki.updateFlatCtx();
     }
     else if (Tegaki.isColorPicking) {
       e.preventDefault();
