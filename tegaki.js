@@ -820,7 +820,7 @@ var TegakiTone = {
     data = new Uint8Array(w * h);
     
     if (this.alpha <= 1.0) {
-      a = this.alpha * 15;
+      a = this.alpha * 16 - 1;
       
       for (y = 0; y < h; ++y) {
         for (x = 0; x < w; ++x) {
