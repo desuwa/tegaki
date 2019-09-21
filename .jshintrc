@@ -1,0 +1,43 @@
+{
+  "laxbreak": true,
+  "boss": true,
+  "expr": true,
+  "sub": true,
+  "browser": true,
+  "devel": true,
+  "strict": "implied",
+  "multistr": true,
+  "scripturl": true,
+  "unused": "vars",
+  "undef": true,
+  "-W079": true,
+  "esversion": 6,
+  
+  "globals": {
+    "$T": true,
+    "Tegaki": true,
+    "TegakiPencil": true,
+    "TegakiPen": true,
+    "TegakiAirbrush": true,
+    "TegakiBucket": true,
+    "TegakiTone": true,
+    "TegakiPipette": true,
+    "TegakiDodge": true,
+    "TegakiBurn": true,
+    "TegakiBlur": true,
+    "TegakiEraser": true,
+    "TegakiBrush": true,
+    "TegakiPressure": true,
+    "TegakiStrings": true,
+    "TegakiUI": true,
+    "TegakiKeybinds": true,
+    "TegakiHistory": true,
+    "TegakiHistoryActions": true
+  },
+  
+  "overrides": {
+    "tegaki.js": {
+      "strict": "global"
+    }
+  }
+}
