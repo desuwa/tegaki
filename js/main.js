@@ -61,7 +61,7 @@ Tegaki = {
   
   bgColor: '#ffffff',
   maxSize: 64,
-  maxLayers: 20,
+  maxLayers: 25,
   baseWidth: null,
   baseHeight: null,
   
@@ -713,12 +713,17 @@ Tegaki = {
     }
   },
   
-  onLayerAdd: function() {
+  onLayerAddClick: function() {
+    if (Tegaki.layers.length >= Tegaki.maxLayers) {
+      alert(TegakiStrings.tooManyLayers);
+      return;
+    }
+    
     TegakiHistory.push(Tegaki.addLayer());
     Tegaki.setActiveLayer();
   },
   
-  onLayerDelete: function() {
+  onLayerDeleteClick: function() {
     var i, ary, sel, opt, selectedOptions, action;
     
     sel = $T.id('tegaki-layer-sel');
@@ -772,7 +777,7 @@ Tegaki = {
     Tegaki.setLayerVisibility(ary, flag);
   },
   
-  onMergeLayers: function() {
+  onMergeLayersClick: function() {
     var i, ary, sel, opt, selectedOptions, action;
     
     sel = $T.id('tegaki-layer-sel');
@@ -804,7 +809,7 @@ Tegaki = {
     TegakiHistory.push(action);
   },
   
-  onMoveLayer: function(e) {
+  onMoveLayerClick: function(e) {
     var id, action, sel;
     
     sel = $T.id('tegaki-layer-sel');
@@ -916,6 +921,10 @@ Tegaki = {
   
   addLayer: function() {
     var id, cnt, opt, canvas, layer, nodes, last;
+    
+    if (Tegaki.layers.length >= Tegaki.maxLayers) {
+      return false;
+    }
     
     canvas = $T.el('canvas');
     canvas.className = 'tegaki-layer';
@@ -1072,7 +1081,7 @@ Tegaki = {
     
     idx = id ? Tegaki.getLayerIndex(id) : Tegaki.layers.length - 1;
     
-    if (idx < 0 || idx > Tegaki.maxLayers) {
+    if (idx < 0) {
       return;
     }
     

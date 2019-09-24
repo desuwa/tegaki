@@ -106,13 +106,13 @@ TegakiUI = {
     el = $T.el('span');
     el.title = TegakiStrings.addLayer;
     el.className = 'tegaki-ui-btn tegaki-icon tegaki-plus';
-    $T.on(el, 'click', Tegaki.onLayerAdd);
+    $T.on(el, 'click', Tegaki.onLayerAddClick);
     row.appendChild(el);
     
     el = $T.el('span');
     el.title = TegakiStrings.delLayers;
     el.className = 'tegaki-ui-btn tegaki-icon tegaki-minus';
-    $T.on(el, 'click', Tegaki.onLayerDelete);
+    $T.on(el, 'click', Tegaki.onLayerDeleteClick);
     row.appendChild(el);
     
     el = $T.el('span');
@@ -126,7 +126,7 @@ TegakiUI = {
     el.id = 'tegaki-layer-merge';
     el.title = TegakiStrings.mergeLayers;
     el.className = 'tegaki-ui-btn tegaki-icon tegaki-level-down';
-    $T.on(el, 'click', Tegaki.onMergeLayers);
+    $T.on(el, 'click', Tegaki.onMergeLayersClick);
     row.appendChild(el);
     
     el = $T.el('span');
@@ -134,14 +134,14 @@ TegakiUI = {
     el.title = TegakiStrings.moveLayerUp;
     el.setAttribute('data-up', '1');
     el.className = 'tegaki-ui-btn tegaki-icon tegaki-up-open';
-    $T.on(el, 'click', Tegaki.onMoveLayer);
+    $T.on(el, 'click', Tegaki.onMoveLayerClick);
     row.appendChild(el);
     
     el = $T.el('span');
     el.id = 'tegaki-layer-down';
     el.title = TegakiStrings.moveLayerDown;
     el.className = 'tegaki-ui-btn tegaki-icon tegaki-down-open';
-    $T.on(el, 'click', Tegaki.onMoveLayer);
+    $T.on(el, 'click', Tegaki.onMoveLayerClick);
     row.appendChild(el);
     
     ctrl.appendChild(row);

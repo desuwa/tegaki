@@ -8,6 +8,7 @@ TegakiStrings = {
   confirmDelLayers: 'Delete selected layers?',
   errorMergeOneLayer: 'You need to select at least 2 layers.',
   confirmMergeLayers: 'Merge selected layers?',
+  tooManyLayers: 'Layer limit reached.',
   errorLoadImage: 'Could not load the image.',
   noActiveLayer: 'No active layer.',
   hiddenActiveLayer: 'The active layer is not visible.',
