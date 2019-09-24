@@ -31,9 +31,16 @@ TegakiUI = {
     frag.appendChild(btn);
     
     btn = $T.el('span');
+    btn.className = 'tegaki-tb-btn tegaki-ui-ellipsis';
+    btn.textContent = TegakiStrings.saveAs;
+    $T.on(btn, 'click', Tegaki.onSaveAsClick);
+    frag.appendChild(btn);
+    
+    btn = $T.el('span');
     btn.id = 'tegaki-undo-btn';
     btn.className = 'tegaki-tb-btn';
     btn.textContent = TegakiStrings.undo;
+    btn.title = 'Ctrl+Z';
     $T.on(btn, 'click', Tegaki.onUndoClick);
     frag.appendChild(btn);
     
@@ -41,6 +48,7 @@ TegakiUI = {
     btn.id = 'tegaki-redo-btn';
     btn.className = 'tegaki-tb-btn';
     btn.textContent = TegakiStrings.redo;
+    btn.title = 'Ctrl+Y';
     $T.on(btn, 'click', Tegaki.onRedoClick);
     frag.appendChild(btn);
     

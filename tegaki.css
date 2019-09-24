@@ -140,6 +140,7 @@
   text-decoration: none;
   display: inline-block;
   padding: 0 6px;
+  word-spacing: -1px;
 }
 
 .tegaki-tb-btn:hover:not(.tegaki-disabled),
@@ -224,6 +225,11 @@
 
 .tegaki-ui-cb-a:hover::after {
   background-color: #222;
+}
+
+.tegaki-ui-ellipsis::after {
+  content: '...';
+  letter-spacing: -1px;
 }
 
 .tegaki-ui-btn {

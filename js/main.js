@@ -624,6 +624,18 @@ Tegaki = {
     }
   },
   
+  onSaveAsClick: function() {
+    Tegaki.flatten().toBlob(function(b) {
+      var el = $T.el('a');
+      el.className = 'tegaki-hidden';
+      el.download = 'tegaki.png';
+      el.href = URL.createObjectURL(b);
+      Tegaki.bg.appendChild(el);
+      el.click();
+      Tegaki.bg.removeChild(el);
+    }, 'image/png');
+  },
+  
   onUndoClick: function() {
     TegakiHistory.undo();
   },

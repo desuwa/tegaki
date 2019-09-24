@@ -35,6 +35,8 @@ TegakiStrings = {
   // Menu bar
   newCanvas: 'New',
   open: 'Open',
+  save: 'Save',
+  saveAs: 'Save As',
   undo: 'Undo',
   redo: 'Redo',
   close: 'Close',
