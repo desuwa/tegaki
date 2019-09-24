@@ -22,6 +22,8 @@ Tegaki = {
   activeLayer: null,
   layerIndex: null,
   
+  skipPointerMove: false,
+  
   isPainting: false,
   isErasing: false,
   isColorPicking: false,
@@ -1156,6 +1158,11 @@ Tegaki = {
   },
   
   onPointerMove: function(e) {
+    if (Tegaki.skipPointerMove) {
+      Tegaki.skipPointerMove = false;
+      return;
+    }
+    
     if (Tegaki.isPainting) {
       TegakiPressure.push(e.pressure);
       Tegaki.tool.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
@@ -1214,6 +1221,8 @@ Tegaki = {
   },
   
   onPointerUp: function(e) {
+    Tegaki.skipPointerMove = true;
+    
     if (Tegaki.isPainting) {
       Tegaki.tool.commit && Tegaki.tool.commit();
       TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 1);
