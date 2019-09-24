@@ -9,7 +9,7 @@ TegakiAirbrush = {
     this.size = 32;
     this.alpha = 0.5;
     this.alphaDamp = 0.2;
-    this.step = 0.25;
+    this.step = 0.15;
     this.stepAcc = 0;
 
     this.draw = TegakiBrush.draw;  

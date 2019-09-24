@@ -9,9 +9,9 @@ TegakiPencil = {
   pressureCache: [],
   
   init: function() {
-    this.size = 8;
+    this.size = 1;
     this.alpha = 1.0;
-    this.step = 0.25;
+    this.step = 0.10;
     this.stepAcc = 0;
     
     this.draw = TegakiBrush.draw;
