@@ -1,6 +1,65 @@
 var TegakiUI;
 
 TegakiUI = {
+  buildDummyFilePicker: function() {
+    var el = $T.el('input');
+    
+    el.type = 'file';
+    el.id = 'tegaki-filepicker';
+    el.className = 'tegaki-hidden';
+    el.accept = 'image/png, image/jpeg';
+    $T.on(el, 'change', Tegaki.onOpenFileSelected);
+    
+    return el;
+  },
+  
+  buildMenuBar: function() {
+    var frag, btn;
+    
+    frag = $T.frag();
+    
+    btn = $T.el('span');
+    btn.className = 'tegaki-tb-btn';
+    btn.textContent = TegakiStrings.newCanvas;
+    $T.on(btn, 'click', Tegaki.onNewClick);
+    frag.appendChild(btn);
+    
+    btn = $T.el('span');
+    btn.className = 'tegaki-tb-btn';
+    btn.textContent = TegakiStrings.open;
+    $T.on(btn, 'click', Tegaki.onOpenClick);
+    frag.appendChild(btn);
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-undo-btn';
+    btn.className = 'tegaki-tb-btn';
+    btn.textContent = TegakiStrings.undo;
+    $T.on(btn, 'click', Tegaki.onUndoClick);
+    frag.appendChild(btn);
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-redo-btn';
+    btn.className = 'tegaki-tb-btn';
+    btn.textContent = TegakiStrings.redo;
+    $T.on(btn, 'click', Tegaki.onRedoClick);
+    frag.appendChild(btn);
+    
+    btn = $T.el('span');
+    btn.className = 'tegaki-tb-btn';
+    btn.textContent = TegakiStrings.close;
+    $T.on(btn, 'click', Tegaki.onCancelClick);
+    frag.appendChild(btn);
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-finish-btn';
+    btn.className = 'tegaki-tb-btn';
+    btn.textContent = TegakiStrings.finish;
+    $T.on(btn, 'click', Tegaki.onDoneClick);
+    frag.appendChild(btn);
+    
+    return frag;
+  },
+  
   buildCtrlGroup: function(id, title) {
     var cnt, el;
     
@@ -162,38 +221,6 @@ TegakiUI = {
     return ctrl;
   },
   
-  updateSize: function() {
-    $T.id('tegaki-size-lbl').value = Tegaki.tool.size;
-    $T.id('tegaki-size').value = Tegaki.tool.size;
-  },
-  
-  updateAlpha: function() {
-    $T.id('tegaki-alpha-lbl').value = Tegaki.tool.alpha;
-    $T.id('tegaki-alpha').value = Tegaki.tool.alpha;
-  },
-  
-  updateDynamics: function() {
-    var ctrl, cb;
-    
-    ctrl = $T.id('tegaki-ctrlgrp-dynamics');
-    
-    if (!Tegaki.tool.setSizePressureCtrl) {
-      ctrl.classList.add('tegaki-hidden');
-    }
-    else {
-      ctrl.classList.remove('tegaki-hidden');
-      
-      cb = $T.id('tegaki-size-p-cb');
-      
-      if (Tegaki.tool.sizePressureCtrl) {
-        cb.classList.add('tegaki-ui-cb-a');
-      }
-      else {
-        cb.classList.remove('tegaki-ui-cb-a');
-      }
-    }
-  },
-  
   buildZoomCtrlGroup: function() {
     var el, btn, ctrl;
     
@@ -218,24 +245,6 @@ TegakiUI = {
     ctrl.appendChild(el);
     
     return ctrl;
-  },
-  
-  updateZoomLevel: function() {
-    $T.id('tegaki-zoom-lbl').textContent = (Tegaki.zoomLevel * 100) + '%';
-    
-    if (Tegaki.zoomLevel === Tegaki.zoomMax) {
-      $T.id('tegaki-zoomin-btn').classList.add('tegaki-disabled');
-    }
-    else {
-      $T.id('tegaki-zoomin-btn').classList.remove('tegaki-disabled');
-    }
-    
-    if (Tegaki.zoomLevel === Tegaki.zoomMin) {
-      $T.id('tegaki-zoomout-btn').classList.add('tegaki-disabled');
-    }
-    else {
-      $T.id('tegaki-zoomout-btn').classList.remove('tegaki-disabled');
-    }
   },
   
   buildColorCtrlGroup: function(mainColor, colorPalette) {
@@ -292,5 +301,86 @@ TegakiUI = {
     cnt.appendChild(el);
     
     return cnt;
+  },
+  
+  // ---
+  
+  updateSize: function() {
+    $T.id('tegaki-size-lbl').value = Tegaki.tool.size;
+    $T.id('tegaki-size').value = Tegaki.tool.size;
+  },
+  
+  updateAlpha: function() {
+    $T.id('tegaki-alpha-lbl').value = Tegaki.tool.alpha;
+    $T.id('tegaki-alpha').value = Tegaki.tool.alpha;
+  },
+  
+  updateDynamics: function() {
+    var ctrl, cb;
+    
+    ctrl = $T.id('tegaki-ctrlgrp-dynamics');
+    
+    if (!Tegaki.tool.setSizePressureCtrl) {
+      ctrl.classList.add('tegaki-hidden');
+    }
+    else {
+      ctrl.classList.remove('tegaki-hidden');
+      
+      cb = $T.id('tegaki-size-p-cb');
+      
+      if (Tegaki.tool.sizePressureCtrl) {
+        cb.classList.add('tegaki-ui-cb-a');
+      }
+      else {
+        cb.classList.remove('tegaki-ui-cb-a');
+      }
+    }
+  },
+  
+  updateUndoRedo: function(undoSize, redoSize) {
+    var u, r;
+    
+    u = $T.id('tegaki-undo-btn').classList;
+    r = $T.id('tegaki-redo-btn').classList;
+    
+    if (undoSize) {
+      if (u.contains('tegaki-disabled')) {
+        u.remove('tegaki-disabled');
+      }
+    }
+    else {
+      if (!u.contains('tegaki-disabled')) {
+        u.add('tegaki-disabled');
+      }
+    }
+    
+    if (redoSize) {
+      if (r.contains('tegaki-disabled')) {
+        r.remove('tegaki-disabled');
+      }
+    }
+    else {
+      if (!r.contains('tegaki-disabled')) {
+        r.add('tegaki-disabled');
+      }
+    }
+  },
+  
+  updateZoomLevel: function() {
+    $T.id('tegaki-zoom-lbl').textContent = (Tegaki.zoomLevel * 100) + '%';
+    
+    if (Tegaki.zoomLevel === Tegaki.zoomMax) {
+      $T.id('tegaki-zoomin-btn').classList.add('tegaki-disabled');
+    }
+    else {
+      $T.id('tegaki-zoomin-btn').classList.remove('tegaki-disabled');
+    }
+    
+    if (Tegaki.zoomLevel === Tegaki.zoomMin) {
+      $T.id('tegaki-zoomout-btn').classList.add('tegaki-disabled');
+    }
+    else {
+      $T.id('tegaki-zoomout-btn').classList.remove('tegaki-disabled');
+    }
   }
 };

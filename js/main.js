@@ -14,9 +14,6 @@ Tegaki = {
   cursorCanvas: null,
   ghostCanvas: null,
   
-  undoBtn: null,
-  redoBtn: null,
-  
   cursorCtx: null,
   ghostCtx: null,
   flatCtx: null,
@@ -70,7 +67,7 @@ Tegaki = {
   onCancelCb: null,
   
   open: function(opts) {
-    var bg, cnt, cnt2, el, tool, lbl, btn, ctrl, canvas, grp, self = Tegaki;
+    var bg, cnt, cnt2, el, tool, lbl, ctrl, canvas, grp, self = Tegaki;
     
     if (self.bg) {
       self.resume();
@@ -90,59 +87,19 @@ Tegaki = {
     bg = $T.el('div');
     bg.id = 'tegaki';
     
+    self.bg = bg;
+    
     //
     // Menu area
     //
     el = $T.el('div');
     el.id = 'tegaki-menu-cnt';
     
-    if (opts.canvasOptions) {
-      btn = $T.el('select');
-      btn.id = 'tegaki-canvas-select';
-      btn.title = TegakiStrings.changeCanvas;
-      btn.innerHTML = '<option value="0">' + TegakiStrings.blank + '</option>';
-      opts.canvasOptions(btn);
-      $T.on(btn, 'change', Tegaki.onCanvasSelected);
-      $T.on(btn, 'focus', Tegaki.onCanvasSelectFocused);
-      el.appendChild(btn);
-    }
-    
-    btn = $T.el('span');
-    btn.className = 'tegaki-tb-btn';
-    btn.textContent = TegakiStrings.newCanvas;
-    $T.on(btn, 'click', Tegaki.onNewClick);
-    el.appendChild(btn);
-    
-    btn = $T.el('span');
-    btn.id = 'tegaki-undo-btn';
-    btn.className = 'tegaki-tb-btn';
-    btn.textContent = TegakiStrings.undo;
-    $T.on(btn, 'click', Tegaki.onUndoClick);
-    self.undoBtn = btn;
-    el.appendChild(btn);
-    
-    btn = $T.el('span');
-    btn.id = 'tegaki-redo-btn';
-    btn.className = 'tegaki-tb-btn';
-    btn.textContent = TegakiStrings.redo;
-    $T.on(btn, 'click', Tegaki.onRedoClick);
-    self.redoBtn = btn;
-    el.appendChild(btn);
-    
-    btn = $T.el('span');
-    btn.className = 'tegaki-tb-btn';
-    btn.textContent = TegakiStrings.close;
-    $T.on(btn, 'click', Tegaki.onCancelClick);
-    el.appendChild(btn);
-    
-    btn = $T.el('span');
-    btn.id = 'tegaki-finish-btn';
-    btn.className = 'tegaki-tb-btn';
-    btn.textContent = TegakiStrings.finish;
-    $T.on(btn, 'click', Tegaki.onDoneClick);
-    el.appendChild(btn);
+    el.appendChild(TegakiUI.buildMenuBar());
     
     bg.appendChild(el);
+    
+    bg.appendChild(TegakiUI.buildDummyFilePicker());
     
     //
     // Tools area
@@ -240,7 +197,6 @@ Tegaki = {
 
     // ---
     
-    self.bg = bg;
     document.body.appendChild(bg);
     document.body.classList.add('tegaki-backdrop');
     
@@ -437,8 +393,6 @@ Tegaki = {
     Tegaki.cursorCtx = null;
     Tegaki.cursorCanvas = null;
     Tegaki.flatCtx = null;
-    Tegaki.undoBtn = null;
-    Tegaki.redoBtn = null;
   },
   
   flatten: function(ctx) {
@@ -659,6 +613,17 @@ Tegaki = {
     Tegaki.updatePosOffset();
   },
   
+  onOpenClick: function() {
+    var el, tainted;
+    
+    tainted = TegakiHistory.undoStack[0] || TegakiHistory.redoStack[0];
+    
+    if (!tainted || confirm(TegakiStrings.confirmChangeCanvas)) {
+      el = $T.id('tegaki-filepicker');
+      el.click();
+    }
+  },
+  
   onUndoClick: function() {
     TegakiHistory.undo();
   },
@@ -668,27 +633,7 @@ Tegaki = {
   },
   
   onHistoryChange: function(undoSize, redoSize) {
-    if (undoSize) {
-      if (Tegaki.undoBtn.classList.contains('tegaki-disabled')) {
-        Tegaki.undoBtn.classList.remove('tegaki-disabled');
-      }
-    }
-    else {
-      if (!Tegaki.undoBtn.classList.contains('tegaki-disabled')) {
-        Tegaki.undoBtn.classList.add('tegaki-disabled');
-      }
-    }
-    
-    if (redoSize) {
-      if (Tegaki.redoBtn.classList.contains('tegaki-disabled')) {
-        Tegaki.redoBtn.classList.remove('tegaki-disabled');
-      }
-    }
-    else {
-      if (!Tegaki.redoBtn.classList.contains('tegaki-disabled')) {
-        Tegaki.redoBtn.classList.add('tegaki-disabled');
-      }
-    }
+    TegakiUI.updateUndoRedo(undoSize, redoSize);
   },
   
   onDoneClick: function() {
@@ -878,33 +823,20 @@ Tegaki = {
     Tegaki.updateCursorStatus();
   },
   
-  onCanvasSelected: function() {
+  onOpenFileSelected: function() {
     var img;
     
-    if (!confirm(TegakiStrings.confirmChangeCanvas)) {
-      this.selectedIndex = +this.getAttribute('data-current');
-      return;
-    }
-    
-    if (this.value === '0') {
-      Tegaki.ctx.fillStyle = Tegaki.bgColor;
-      Tegaki.ctx.fillRect(0, 0, Tegaki.baseWidth, Tegaki.baseHeight);
-    }
-    else {
-      img = $T.el('img');
-      img.onload = Tegaki.onImageLoaded;
-      img.onerror = Tegaki.onImageError;
-      this.disabled = true;
-      img.src = this.value;
+    if (this.files && this.files[0]) {
+      img = new Image();
+      img.onload = Tegaki.onOpenImageLoaded;
+      img.onerror = Tegaki.onOpenImageError;
+      
+      img.src = URL.createObjectURL(this.files[0]);
     }
   },
   
-  onImageLoaded: function() {
-    var el, tmp = {};
-    
-    el = $T.id('tegaki-canvas-select');
-    el.setAttribute('data-current', el.selectedIndex);
-    el.disabled = false;
+  onOpenImageLoaded: function() {
+    var tmp = {};
     
     Tegaki.copyContextState(Tegaki.activeCtx, tmp);
     Tegaki.resizeCanvas(this.naturalWidth, this.naturalHeight);
@@ -916,13 +848,7 @@ Tegaki = {
     Tegaki.updatePosOffset();
   },
   
-  onImageError: function() {
-    var el;
-    
-    el = $T.id('tegaki-canvas-select');
-    el.selectedIndex = +el.getAttribute('data-current');
-    el.disabled = false;
-    
+  onOpenImageError: function() {
     alert(TegakiStrings.errorLoadImage);
   },
   

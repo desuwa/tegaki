@@ -12,7 +12,7 @@ TegakiStrings = {
   noActiveLayer: 'No active layer.',
   hiddenActiveLayer: 'The active layer is not visible.',
   confirmCancel: 'Are you sure? Your work will be lost.',
-  confirmChangeCanvas: 'Changing the canvas will clear all layers and history.',
+  confirmChangeCanvas: 'Are you sure? Changing the canvas will clear all layers and history.',
   
   // UI
   color: 'Color',
@@ -31,7 +31,10 @@ TegakiStrings = {
   tool: 'Tool',
   changeCanvas: 'Change canvas',
   blank: 'Blank',
+  
+  // Menu bar
   newCanvas: 'New',
+  open: 'Open',
   undo: 'Undo',
   redo: 'Redo',
   close: 'Close',
