@@ -110,7 +110,7 @@ TegakiBrush = {
       if (stepAcc > this.stepSize) {
         if (this.sizePressureCtrl) {
           distLeft = (posX - fromX) * (posX - fromX) + (posY - fromY) * (posY - fromY);
-          if (this.updateDynamics(distLeft / distBase)) {
+          if (this.updateDynamics(1.0 - (distLeft / distBase))) {
             this.brushFn(fromX - this.center, fromY - this.center);
           }
         }
