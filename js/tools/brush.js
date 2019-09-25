@@ -46,11 +46,7 @@ TegakiBrush = {
     pressure = TegakiPressure.lerp(t);
     
     if (this.sizePressureCtrl === true) {
-      size = 0 | Math.round(pressure * this.size);
-      
-      if (size === 0) {
-        return false;
-      }
+      size = 0 | Math.ceil(pressure * this.size);
       
       d = 0 | Math.round((size - this.size) / 2);
       
@@ -62,8 +58,6 @@ TegakiBrush = {
       
       this.brushSize = size;
     }
-    
-    return true;
   },
   
   commit: function() {
@@ -82,9 +76,12 @@ TegakiBrush = {
       this.posX = posX; 
       this.posY = posY;
       
-      if (!this.sizePressureCtrl || this.updateDynamics(1.0)) {
-        this.brushFn(posX - this.center, posY - this.center);
+      if (this.sizePressureCtrl) {
+        this.updateDynamics(1.0);
       }
+      
+      this.brushFn(posX - this.center, posY - this.center);
+      
       return;
     }
     
@@ -110,9 +107,8 @@ TegakiBrush = {
       if (stepAcc > this.stepSize) {
         if (this.sizePressureCtrl) {
           distLeft = Math.sqrt((posX - fromX) * (posX - fromX) + (posY - fromY) * (posY - fromY));
-          if (this.updateDynamics(1.0 - (distLeft / distBase))) {
-            this.brushFn(fromX - this.center, fromY - this.center);
-          }
+          this.updateDynamics(1.0 - (distLeft / distBase));
+          this.brushFn(fromX - this.center, fromY - this.center);
         }
         else {
           this.brushFn(fromX - this.center, fromY - this.center);
