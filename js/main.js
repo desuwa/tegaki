@@ -247,7 +247,7 @@ Tegaki = {
   bindGlobalEvents: function() {
     var self = Tegaki;
     
-    $T.on(self.bg, 'pointermove', self.onPointerMove);
+    $T.on(self.canvasCnt, 'pointermove', self.onPointerMove);
     $T.on(self.canvasCnt, 'pointerdown', self.onPointerDown);
     $T.on(self.bg, 'contextmenu', self.onDummy);
     
@@ -264,7 +264,7 @@ Tegaki = {
   unBindGlobalEvents: function() {
     var self = Tegaki;
     
-    $T.off(self.bg, 'pointermove', self.onPointerMove);
+    $T.off(self.canvasCnt, 'pointermove', self.onPointerMove);
     $T.off(self.canvasCnt, 'pointerdown', self.onPointerDown);
     $T.off(self.bg, 'contextmenu', self.onDummy);
     
@@ -1167,20 +1167,32 @@ Tegaki = {
   },
   
   onPointerMove: function(e) {
+    var events;
+    
     if (Tegaki.activePointerId !== e.pointerId) {
       Tegaki.activePointerId = e.pointerId;
       return;
     }
     
-    if (Tegaki.isPainting) {
-      TegakiPressure.push(e.pressure);
-      Tegaki.tool.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+    if (Tegaki.isPainting && e.getCoalescedEvents) {
+      events = e.getCoalescedEvents();
+      
+      for (e of events) {
+        TegakiPressure.push(e.pressure);
+        Tegaki.tool.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+      }
     }
-    else if (Tegaki.isColorPicking) {
-      TegakiPipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
-    }
-    else if (Tegaki.cursor) {
-      Tegaki.renderCursor(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+    else {
+      if (Tegaki.isPainting) {
+        TegakiPressure.push(e.pressure);
+        Tegaki.tool.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+      }
+      else if (Tegaki.isColorPicking) {
+        TegakiPipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+      }
+      else if (Tegaki.cursor) {
+        Tegaki.renderCursor(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+      }
     }
   },
   
@@ -1190,6 +1202,8 @@ Tegaki = {
     }
     
     Tegaki.activePointerId = e.pointerId;
+    
+    Tegaki.canvasCnt.setPointerCapture(e.pointerId);
     
     if (e.target.parentNode === Tegaki.layersCnt) {
       if (Tegaki.activeLayer === null) {
@@ -1233,6 +1247,8 @@ Tegaki = {
   
   onPointerUp: function(e) {
     Tegaki.activePointerId = e.pointerId;
+    
+    Tegaki.canvasCnt.releasePointerCapture(e.pointerId);
     
     if (Tegaki.isPainting) {
       Tegaki.tool.commit && Tegaki.tool.commit();
