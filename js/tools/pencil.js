@@ -5,6 +5,7 @@ TegakiPencil = {
   
   keybind: 'b',
   
+  useGhostLayer: true,
   sizePressureCtrl: false,
   pressureCache: [],
   
@@ -25,34 +26,35 @@ TegakiPencil = {
     this.generateBrushCache  = TegakiBrush.generateBrushCache;
   },
   
-  brushFn: function(x, y) {
-    var i, ctx, dest, data, len, a, kernel;
+  brushFn: function(x, y, imgData) {
+    var i, data, a, kernel, w, xx, yy, px, brushSize;
     
     x = 0 | x;
     y = 0 | y;
     
-    ctx = Tegaki.ghostCtx;
+    brushSize = this.brushSize;
     
-    dest = ctx.getImageData(x, y, this.brushSize, this.brushSize);
     kernel = this.kernel;
-    len = kernel.length;
     
-    data = dest.data;
+    data = imgData.data;
+    w = imgData.width;
     
     a = 0 | (this.alpha * 255);
     
-    i = 0;
-    while (i < len) {
-      data[i] = this.rgb[0]; ++i;
-      data[i] = this.rgb[1]; ++i;
-      data[i] = this.rgb[2]; ++i;
-      if (kernel[i] > 0) {
-        data[i] = a;
+    for (yy = 0; yy < brushSize; ++yy) {
+      for (xx = 0; xx < brushSize; ++xx) {
+        i = (yy * brushSize + xx) * 4;
+        px = ((y + yy) * w + (x + xx)) * 4;
+        
+        data[px] = this.rgb[0]; ++px;
+        data[px] = this.rgb[1]; ++px;
+        data[px] = this.rgb[2]; ++px;
+        
+        if (kernel[i + 3] > 0) {
+          data[px] = a;
+        }
       }
-      ++i;
     }
-    
-    ctx.putImageData(dest, x, y);
   },
   
   generateBrush: function() {
@@ -108,6 +110,7 @@ TegakiPencil = {
     }
     
     this.center = r;
+    this.stepSize = 0 | Math.min(Math.floor(size * this.step), 8);
     this.brushSize = size;
     this.brush = brush;
     this.kernel = imageData.data;

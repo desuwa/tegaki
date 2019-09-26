@@ -14,7 +14,6 @@ TegakiBucket = {
     this.stepAcc = 0;
     
     this.commit = TegakiBrush.commit;  
-    this.draw = TegakiBrush.draw;  
     this.generateBrush = TegakiPen.generateBrush;  
     this.setSize = TegakiBrush.setSize;  
     this.setAlpha = TegakiBrush.setAlpha;  
@@ -174,9 +173,11 @@ TegakiBucket = {
     ;
   },
   
-  commit: null,
+  draw: function(x, y, pt) {
+    this.brushFn(x, y);
+  },
   
-  draw: null,
+  commit: null,
   
   generateBrush: null,
   

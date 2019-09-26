@@ -19,25 +19,28 @@ TegakiEraser = {
     this.set = TegakiBrush.set;
   },
   
-  brushFn: function(x, y) {
-    var i, ctx, dest, data, len, kernel;
+  brushFn: function(x, y, imgData) {
+    var data, a, kernel, w, xx, yy, brushSize;
     
     x = 0 | x;
     y = 0 | y;
     
-    ctx = Tegaki.activeCtx;
-    dest = ctx.getImageData(x, y, this.brushSize, this.brushSize);
-    data = dest.data;
-    kernel = this.kernel;
-    len = kernel.length;
+    brushSize = this.brushSize;
     
-    for (i = 3; i < len; i += 4) {
-      if (kernel[i] > 0) {
-        data[i] = 0;
+    kernel = this.kernel;
+    
+    data = imgData.data;
+    w = imgData.width;
+    
+    a = 0 | (this.alpha * 255);
+    
+    for (yy = 0; yy < brushSize; ++yy) {
+      for (xx = 0; xx < brushSize; ++xx) {
+        if (kernel[(yy * brushSize + xx) * 4 + 3] > 0) {
+          data[((y + yy) * w + (x + xx)) * 4 + 3] = 0;
+        }
       }
     }
-    
-    ctx.putImageData(dest, x, y);
   },
   
   draw: null,

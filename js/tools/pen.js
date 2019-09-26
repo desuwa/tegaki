@@ -5,6 +5,7 @@ TegakiPen = {
   
   keybind: 'p',
   
+  useGhostLayer: true,
   sizePressureCtrl: false,
   pressureCache: [],
   
@@ -18,7 +19,6 @@ TegakiPen = {
     this.commit = TegakiBrush.commit;
     this.brushFn = TegakiBrush.brushFn;
     this.setSize = TegakiBrush.setSize;
-    this.setAlpha = TegakiBrush.setAlpha;
     this.setColor = TegakiBrush.setColor;
     this.set = TegakiBrush.set;
     this.setSizePressureCtrl = TegakiBrush.setSizePressureCtrl;
@@ -43,9 +43,23 @@ TegakiPen = {
     ctx.closePath();
     
     this.center = r;
+    this.stepSize = 0 | Math.min(Math.floor(size * this.step), 8);
     this.brushSize = size;
     this.brush = brush;
     this.kernel = ctx.getImageData(0, 0, this.brushSize, this.brushSize).data;
+  },
+  
+  setAlpha: function(alpha, noBrush) {
+    this.alpha = alpha;
+    
+    if (!noBrush) {
+      if (this.sizePressureCtrl === true) {
+        this.generateBrushCache(true);
+      }
+      else {
+        this.generateBrush();
+      }
+    }
   },
   
   draw: null,
@@ -55,8 +69,6 @@ TegakiPen = {
   brushFn: null,
   
   setSize: null,
-  
-  setAlpha: null,
   
   setColor: null,
   

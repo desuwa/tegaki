@@ -1,7 +1,7 @@
 var Tegaki;
 
 Tegaki = {
-  VERSION: '0.2.1',
+  VERSION: '0.3.0',
   
   bg: null,
   canvas: null,
@@ -22,7 +22,7 @@ Tegaki = {
   activeLayer: null,
   layerIndex: null,
   
-  skipPointerMove: false,
+  activePointerId: 0,
   
   isPainting: false,
   isErasing: false,
@@ -1167,8 +1167,8 @@ Tegaki = {
   },
   
   onPointerMove: function(e) {
-    if (Tegaki.skipPointerMove) {
-      Tegaki.skipPointerMove = false;
+    if (Tegaki.activePointerId !== e.pointerId) {
+      Tegaki.activePointerId = e.pointerId;
       return;
     }
     
@@ -1188,6 +1188,8 @@ Tegaki = {
     if (Tegaki.isScrollbarClick(e)) {
       return;
     }
+    
+    Tegaki.activePointerId = e.pointerId;
     
     if (e.target.parentNode === Tegaki.layersCnt) {
       if (Tegaki.activeLayer === null) {
@@ -1230,7 +1232,7 @@ Tegaki = {
   },
   
   onPointerUp: function(e) {
-    Tegaki.skipPointerMove = true;
+    Tegaki.activePointerId = e.pointerId;
     
     if (Tegaki.isPainting) {
       Tegaki.tool.commit && Tegaki.tool.commit();

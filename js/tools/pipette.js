@@ -22,7 +22,6 @@ TegakiPipette = {
     c = Tegaki.getColorAt(ctx, posX, posY);
     
     Tegaki.setToolColor(c);
-    Tegaki.updateUI('color');
   },
   
   set: function() {

@@ -3,61 +3,75 @@ var TegakiBrush;
 TegakiBrush = {
   name: 'brush',
   
-  brushFn: function(x, y) {
-    var i, ctx, dest, data, len, kernel;
+  brushFn: function(x, y, imgData) {
+    var i, data, kernel, w, xx, yy, px, brushSize;
     
     x = 0 | x;
     y = 0 | y;
     
-    ctx = Tegaki.ghostCtx;
-    dest = ctx.getImageData(x, y, this.brushSize, this.brushSize);
-    data = dest.data;
+    brushSize = this.brushSize;
+    
     kernel = this.kernel;
-    len = kernel.length;
     
-    i = 0;
-    while (i < len) {
-      data[i] = this.rgb[0]; ++i;
-      data[i] = this.rgb[1]; ++i;
-      data[i] = this.rgb[2]; ++i;
-      data[i] += kernel[i] * (1.0 - data[i] / 255); ++i;
+    data = imgData.data;
+    w = imgData.width;
+    
+    for (yy = 0; yy < brushSize; ++yy) {
+      for (xx = 0; xx < brushSize; ++xx) {
+        i = (yy * brushSize + xx) * 4;
+        px = ((y + yy) * w + (x + xx)) * 4;
+        
+        data[px] = this.rgb[0]; ++px;
+        data[px] = this.rgb[1]; ++px;
+        data[px] = this.rgb[2]; ++px;
+        data[px] += kernel[i + 3] * (1.0 - data[px] / 255); ++i;
+      }
     }
-    
-    ctx.putImageData(dest, x, y);
   },
   
-  generateBrushCache: function() {
+  generateBrushCache: function(force) {
     var i, tmp;
+    
+    if (force || !this.pressureCache[0]) {
+      this.pressureCache = [];
+      i = 0;
+    }
+    else {
+      i = this.pressureCache.length;
+    }
     
     tmp = this.size;
     
-    for (i = this.pressureCache.length; i < tmp; ++i) {
+    for (; i < tmp; ++i) {
       this.size = i + 1;
+      
       this.generateBrush();
-      this.pressureCache.push(this.kernel);
+      
+      this.pressureCache[i] = {
+        kernel: this.kernel,
+        brushSize: this.brushSize,
+        center: this.center,
+        stepSize: this.stepSize
+      };
     }
     
     this.size = tmp;
   },
   
   updateDynamics: function(t) {
-    var pressure, size, d;
+    var pressure, brush;
     
     pressure = TegakiPressure.lerp(t);
     
-    if (this.sizePressureCtrl === true) {
-      size = 0 | Math.ceil(pressure * this.size);
-      
-      d = 0 | Math.round((size - this.size) / 2);
-      
-      this.center = 0 | (size / 2);
-      
-      this.kernel = this.pressureCache[size - 1];
-      
-      this.stepSize = 0 | Math.min(Math.floor(size * this.step), 8);
-      
-      this.brushSize = size;
-    }
+    brush = this.pressureCache[Math.ceil(pressure * this.size) - 1];
+    
+    this.center = brush.center;
+    
+    this.kernel = brush.kernel;
+    
+    this.stepSize = brush.stepSize;
+    
+    this.brushSize = brush.brushSize;
   },
   
   commit: function() {
@@ -66,10 +80,10 @@ TegakiBrush = {
   },
   
   draw: function(posX, posY, pt) {
-    var mx, my, fromX, fromY, dx, dy, err, derr, stepAcc,
-      distBase, distLeft;
+    var mx, my, fromX, fromY, offsetX, offsetY, dx, dy, err, derr, stepAcc,
+      distBase, distLeft, imgData, ctx, brush, center, brushSize;
     
-    stepAcc = this.stepAcc;
+    ctx = this.useGhostLayer ? Tegaki.ghostCtx : Tegaki.activeCtx;
     
     if (pt === true) {
       this.stepAcc = 0;
@@ -80,26 +94,49 @@ TegakiBrush = {
         this.updateDynamics(1.0);
       }
       
-      this.brushFn(posX - this.center, posY - this.center);
+      imgData = ctx.getImageData(
+        posX - this.center,
+        posY - this.center,
+        this.brushSize, this.brushSize
+      );
+      
+      this.brushFn(0, 0, imgData, posX - this.center, posY - this.center);
+      
+      ctx.putImageData(imgData, posX - this.center, posY - this.center);
       
       return;
     }
     
+    stepAcc = this.stepAcc;
+    
     fromX = this.posX;
     fromY = this.posY;
     
-    if (fromX < posX) { dx = posX - fromX; mx = 1; }
-    else { dx = fromX - posX; mx = -1; }
-    if (fromY < posY) { dy = posY - fromY; my = 1; }
-    else { dy = fromY - posY; my = -1; }
+    if (fromX < posX) { dx = posX - fromX; offsetX = fromX; mx = 1; }
+    else { dx = fromX - posX; offsetX = posX; mx = -1; }
     
-    err = (dx > dy ? dx : -dy) / 2;
+    if (fromY < posY) { dy = posY - fromY; offsetY = fromY; my = 1; }
+    else { dy = fromY - posY; offsetY = posY; my = -1; }
     
-    dx = -dx;
     
     if (this.sizePressureCtrl) {
+      brush = this.pressureCache[this.size - 1];
+      center = brush.center;
+      brushSize = brush.brushSize;
       distBase = Math.sqrt((posX - fromX) * (posX - fromX) + (posY - fromY) * (posY - fromY));
     }
+    else {
+      center = this.center;
+      brushSize = this.brushSize;
+    }
+    
+    offsetX -= center;
+    offsetY -= center;
+    
+    imgData = ctx.getImageData(offsetX, offsetY, dx + brushSize, dy + brushSize);
+    
+    err = (dx > dy ? dx : -dy) / 2;
+    dx = -dx;
     
     while (true) {
       ++stepAcc;
@@ -108,10 +145,10 @@ TegakiBrush = {
         if (this.sizePressureCtrl) {
           distLeft = Math.sqrt((posX - fromX) * (posX - fromX) + (posY - fromY) * (posY - fromY));
           this.updateDynamics(1.0 - (distLeft / distBase));
-          this.brushFn(fromX - this.center, fromY - this.center);
+          this.brushFn(fromX - this.center - offsetX, fromY - this.center - offsetY, imgData, offsetX, offsetY);
         }
         else {
-          this.brushFn(fromX - this.center, fromY - this.center);
+          this.brushFn(fromX - this.center - offsetX, fromY - this.center - offsetY, imgData, offsetX, offsetY);
         }
         
         stepAcc = 0;
@@ -130,6 +167,8 @@ TegakiBrush = {
     this.stepAcc = stepAcc;
     this.posX = posX; 
     this.posY = posY;
+    
+    ctx.putImageData(imgData, offsetX, offsetY);
   },
   
   generateBrush: function() {
@@ -191,6 +230,7 @@ TegakiBrush = {
     ctx.putImageData(dest, 0, 0);
     
     this.center = r;
+    this.stepSize = 0 | Math.min(Math.floor(size * this.step), 8);
     this.brushSize = size;
     this.brush = brush;
     this.kernel = data;
@@ -207,13 +247,11 @@ TegakiBrush = {
         this.generateBrush();
       }
     }
-    
-    this.stepSize = Math.min(Math.floor(this.size * this.step), 8);
   },
   
   setAlpha: function(alpha, noBrush) {
     this.alpha = alpha;
-    if (!noBrush) this.generateBrush();
+    if (!noBrush) { this.generateBrush(); }
   },
   
   setColor: function(color, noBrush) {

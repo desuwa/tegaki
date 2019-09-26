@@ -5,6 +5,8 @@ TegakiAirbrush = {
   
   keybind: 'a',
   
+  useGhostLayer: true,
+  
   init: function() {
     this.size = 32;
     this.alpha = 0.5;

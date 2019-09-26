@@ -14,6 +14,8 @@
   "esversion": 6,
   
   "globals": {
+    "ImageData": true,
+    
     "$T": true,
     "Tegaki": true,
     "TegakiPencil": true,

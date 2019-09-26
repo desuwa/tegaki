@@ -5,6 +5,8 @@ TegakiTone = {
   
   keybind: 't',
   
+  useGhostLayer: true,
+  
   matrix: null,
   
   data: null,
@@ -35,34 +37,36 @@ TegakiTone = {
     this.set = TegakiBrush.set;
   },
   
-  brushFn: function(x, y) {
-    var ctx, dest, data, kernel, brushSize, map,
-      px, mapWidth, mapHeight, xx, yy;
+  brushFn: function(x, y, imgData, offsetX, offsetY) {
+    var data, kernel, brushSize, map,
+      px, mapWidth, mapHeight, xx, yy, gx, gy, w;
     
     x = 0 | x;
     y = 0 | y;
     
-    ctx = Tegaki.ghostCtx;
-    dest = ctx.getImageData(x, y, this.brushSize, this.brushSize);
-    data = dest.data;
+    gx = 0 | (x + offsetX);
+    gy = 0 | (y + offsetY);
+    
+    data = imgData.data;
     kernel = this.kernel;
     
     brushSize = this.brushSize;
     
-    mapWidth = Tegaki.canvas.width;
-    mapHeight = Tegaki.canvas.height;
+    mapWidth = Tegaki.baseWidth;
+    mapHeight = Tegaki.baseHeight;
+    
+    w = imgData.width;
     
     map = this.generate(mapWidth, mapHeight);
     
     for (yy = 0; yy < brushSize; ++yy) {
       for (xx = 0; xx < brushSize; ++xx) {
-        px = (brushSize * yy + xx) * 4;
-        
-        if (kernel[px + 3] === 0) {
+        if (kernel[((yy * brushSize + xx) * 4) + 3] === 0) {
           continue;
         }
         
-        if (map[(yy + y) * mapWidth + xx + x] === 0) {
+        if (map[(yy + gy) * mapWidth + xx + gx] === 0) {
+          px = ((yy + y) * w + xx + x) * 4;
           data[px] = this.rgb[0]; ++px;
           data[px] = this.rgb[1]; ++px;
           data[px] = this.rgb[2]; ++px;
@@ -70,8 +74,6 @@ TegakiTone = {
         }
       }
     }
-    
-    ctx.putImageData(dest, x, y);
   },
   
   generate: function(w, h) {
