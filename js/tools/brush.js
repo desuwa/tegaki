@@ -59,11 +59,17 @@ TegakiBrush = {
   },
   
   updateDynamics: function(t) {
-    var pressure, brush;
+    var pressure, brush, size;
     
     pressure = TegakiPressure.lerp(t);
     
-    brush = this.pressureCache[Math.ceil(pressure * this.size) - 1];
+    size = Math.ceil(pressure * this.size);
+    
+    if (size === 0) {
+      return false;
+    }
+    
+    brush = this.pressureCache[size - 1];
     
     this.center = brush.center;
     
@@ -72,6 +78,8 @@ TegakiBrush = {
     this.stepSize = brush.stepSize;
     
     this.brushSize = brush.brushSize;
+    
+    return true;
   },
   
   commit: function() {
@@ -91,7 +99,9 @@ TegakiBrush = {
       this.posY = posY;
       
       if (this.sizePressureCtrl) {
-        this.updateDynamics(1.0);
+        if (!this.updateDynamics(1.0)) {
+          return false;
+        }
       }
       
       imgData = ctx.getImageData(
@@ -144,8 +154,10 @@ TegakiBrush = {
       if (stepAcc > this.stepSize) {
         if (this.sizePressureCtrl) {
           distLeft = Math.sqrt((posX - fromX) * (posX - fromX) + (posY - fromY) * (posY - fromY));
-          this.updateDynamics(1.0 - (distLeft / distBase));
-          this.brushFn(fromX - this.center - offsetX, fromY - this.center - offsetY, imgData, offsetX, offsetY);
+          
+          if (this.updateDynamics(1.0 - (distLeft / distBase))) {
+            this.brushFn(fromX - this.center - offsetX, fromY - this.center - offsetY, imgData, offsetX, offsetY);
+          }
         }
         else {
           this.brushFn(fromX - this.center - offsetX, fromY - this.center - offsetY, imgData, offsetX, offsetY);
