@@ -19,8 +19,9 @@ Tegaki = {
   flatCtx: null,
   activeCtx: null,
   
-  activeLayer: null,
-  layerIndex: null,
+  activeLayerId: null,
+  layerCounter: 0,
+  selectedLayers: new Set(),
   
   activePointerId: 0,
   activePointerIsPen: false,
@@ -213,9 +214,9 @@ Tegaki = {
     
     self.initGhostLayers();
     
-    self.addLayer();
+    TegakiLayers.addLayer();
     
-    self.setActiveLayer();
+    TegakiLayers.setActiveLayer(0);
     
     self.initKeybinds();
     
@@ -388,7 +389,7 @@ Tegaki = {
     Tegaki.canvas = null;
     Tegaki.ctx = null;
     Tegaki.layers = [];
-    Tegaki.layerIndex = 0;
+    Tegaki.layerCounter = 0;
     Tegaki.zoomLevel = 1;
     Tegaki.activeCtx = null;
     Tegaki.ghostCtx = null;
@@ -422,30 +423,6 @@ Tegaki = {
     }
     
     return canvas;
-  },
-  
-  rebuildLayerCtrl: function() {
-    var i, layer, sel, opt;
-    
-    sel = $T.id('tegaki-layer-sel');
-    
-    sel.textContent = '';
-    
-    for (i = Tegaki.layers.length - 1; layer = Tegaki.layers[i]; i--) {
-      opt = $T.el('option');
-      opt.value = layer.id;
-      opt.textContent = layer.name;
-      sel.appendChild(opt);
-    }
-  },
-  
-  getColorAt: function(ctx, posX, posY) {
-    var rgba = ctx.getImageData(posX, posY, 1, 1).data;
-    
-    return '#'
-      + ('0' + rgba[0].toString(16)).slice(-2)
-      + ('0' + rgba[1].toString(16)).slice(-2)
-      + ('0' + rgba[2].toString(16)).slice(-2);
   },
   
   onMainColorClick: function(e) {
@@ -703,123 +680,85 @@ Tegaki = {
     TegakiUI.updateDynamics();
   },
   
-  onLayerChange: function() {
-    var selectedOptions = $T.selectedOptions(this);
+  onLayerSelectorClick: function(e) {
+    var id = +this.getAttribute('data-id');
     
-    if (selectedOptions.length > 1) {
-      Tegaki.activeLayer = null;
+    if (e.ctrlKey) {
+      TegakiLayers.selectedLayersToggle(id);
     }
     else {
-      Tegaki.setActiveLayer(+this.value);
+      TegakiLayers.setActiveLayer(id);
     }
   },
   
   onLayerAddClick: function() {
+    var action;
+    
     if (Tegaki.layers.length >= Tegaki.maxLayers) {
       alert(TegakiStrings.tooManyLayers);
       return;
     }
     
-    TegakiHistory.push(Tegaki.addLayer());
-    Tegaki.setActiveLayer();
+    TegakiHistory.push(action = TegakiLayers.addLayer());
+    
+    TegakiLayers.setActiveLayer(action.aLayerIdAfter);
   },
   
   onLayerDeleteClick: function() {
-    var i, ary, sel, opt, selectedOptions, action;
+    var action;
     
-    sel = $T.id('tegaki-layer-sel');
-    
-    selectedOptions = $T.selectedOptions(sel);
-    
-    if (Tegaki.layers.length === selectedOptions.length) {
+    if (Tegaki.selectedLayers.size === Tegaki.layers.length) {
       return;
     }
     
-    if (!confirm(TegakiStrings.confirmDelLayers)) {
+    if (!Tegaki.selectedLayers.size || Tegaki.layers.length < 2) {
       return;
     }
     
-    if (selectedOptions.length > 1) {
-      ary = [];
-      
-      for (i = 0; opt = selectedOptions[i]; ++i) {
-        ary.push(+opt.value);
-      }
-    }
-    else {
-      ary = [+sel.value];
-    }
-    
-    action = Tegaki.deleteLayers(ary);
-    
-    TegakiHistory.push(action);
+    TegakiHistory.push(action = TegakiLayers.deleteLayers(Tegaki.selectedLayers));
+    TegakiLayers.selectedLayersClear();
+    TegakiLayers.setActiveLayer(action.aLayerIdAfter);
   },
   
-  onLayerVisibilityChange: function() {
-    var i, ary, sel, opt, flag, selectedOptions;
-    
-    sel = $T.id('tegaki-layer-sel');
-    
-    selectedOptions = $T.selectedOptions(sel);
-    
-    if (selectedOptions.length > 1) {
-      ary = [];
-      
-      for (i = 0; opt = selectedOptions[i]; ++i) {
-        ary.push(+opt.value);
-      }
-    }
-    else {
-      ary = [+sel.value];
-    }
-    
-    flag = !Tegaki.getLayerById(ary[0]).visible;
-    
-    Tegaki.setLayerVisibility(ary, flag);
+  onLayerToggleVisibilityClick: function() {
+    var layer = TegakiLayers.getLayerById(+this.getAttribute('data-id'));
+    TegakiLayers.setLayerVisibility(layer, !layer.visible);
   },
   
   onMergeLayersClick: function() {
-    var i, ary, sel, opt, selectedOptions, action;
+    var action;
     
-    sel = $T.id('tegaki-layer-sel');
-    
-    selectedOptions = $T.selectedOptions(sel);
-    
-    if (selectedOptions.length > 1) {
-      ary = [];
-      
-      for (i = 0; opt = selectedOptions[i]; ++i) {
-        ary.push(+opt.value);
+    if (Tegaki.selectedLayers.size) {
+      if (action = TegakiLayers.mergeLayers(Tegaki.selectedLayers)) {
+        TegakiHistory.push(action);
+        TegakiLayers.setActiveLayer(action.aLayerIdAfter);
       }
     }
-    else {
-      ary = [+sel.value];
-    }
-    
-    if (ary.length < 2) {
-      alert(TegakiStrings.errorMergeOneLayer);
-      return;
-    }
-    
-    if (!confirm(TegakiStrings.confirmMergeLayers)) {
-      return;
-    }
-    
-    action = Tegaki.mergeLayers(ary);
-    
-    TegakiHistory.push(action);
   },
   
   onMoveLayerClick: function(e) {
-    var id, action, sel;
+    var belowPos, up;
     
-    sel = $T.id('tegaki-layer-sel');
-    
-    id = +sel.options[sel.selectedIndex].value;
-    
-    if (action = Tegaki.moveLayer(id, e.target.hasAttribute('data-up'))) {
-      TegakiHistory.push(action);
+    if (!Tegaki.selectedLayers.size) {
+      return;
     }
+    
+    up = e.target.hasAttribute('data-up');
+    
+    belowPos = TegakiLayers.getSelectedEdgeLayerPos(up);
+    
+    if (belowPos < 0) {
+      return;
+    }
+    
+    if (up) {
+      belowPos += 2;
+    }
+    else if (belowPos >= 1) {
+      belowPos--;
+    }
+    
+    TegakiHistory.push(TegakiLayers.moveLayers(Tegaki.selectedLayers, belowPos));
   },
   
   onToolClick: function() {
@@ -892,211 +831,18 @@ Tegaki = {
       Tegaki.layersCnt.removeChild(layer.canvas);
     }
     
+    TegakiUI.updateLayersGridClear();
+    
     Tegaki.activeCtx = null;
     Tegaki.layers = [];
-    Tegaki.layerIndex = 0;
-    $T.id('tegaki-layer-sel').textContent = '';
+    Tegaki.layerCounter = 0;
     
     Tegaki.setZoom(1);
     
-    Tegaki.addLayer();
-    Tegaki.setActiveLayer();
+    TegakiLayers.addLayer();
+    TegakiLayers.setActiveLayer(0);
+    
     Tegaki.updateFlatCtx();
-  },
-  
-  getLayerIndex: function(id) {
-    var i, layer, layers = Tegaki.layers;
-    
-    for (i = 0; layer = layers[i]; ++i) {
-      if (layer.id === id) {
-        return i;
-      }
-    }
-    
-    return -1;
-  },
-  
-  getLayerById: function(id) {
-    return Tegaki.layers[Tegaki.getLayerIndex(id)];
-  },
-  
-  addLayer: function() {
-    var id, cnt, opt, canvas, layer, nodes, last;
-    
-    if (Tegaki.layers.length >= Tegaki.maxLayers) {
-      return false;
-    }
-    
-    canvas = $T.el('canvas');
-    canvas.className = 'tegaki-layer';
-    canvas.width = Tegaki.canvas.width;
-    canvas.height = Tegaki.canvas.height;
-    
-    id = ++Tegaki.layerIndex;
-    
-    layer = {
-      id: id,
-      name: 'Layer ' + id,
-      canvas: canvas,
-      ctx: canvas.getContext('2d'),
-      visible: true,
-      empty: true,
-      opacity: 1.0
-    };
-    
-    Tegaki.layers.push(layer);
-    
-    cnt = $T.id('tegaki-layer-sel');
-    opt = $T.el('option');
-    opt.value = layer.id;
-    opt.textContent = layer.name;
-    cnt.insertBefore(opt, cnt.firstElementChild);
-    
-    nodes = $T.cls('tegaki-layer', Tegaki.layersCnt);
-    
-    if (nodes.length) {
-      last = nodes[nodes.length - 1];
-    }
-    else {
-      last = Tegaki.canvas;
-    }
-    
-    Tegaki.updateCanvasZoomSize(canvas);
-    
-    Tegaki.layersCnt.insertBefore(canvas, last.nextElementSibling);
-    
-    return new TegakiHistoryActions.AddLayer(id);
-  },
-  
-  deleteLayers: function(ids) {
-    var i, id, len, sel, idx, indices, layers;
-    
-    sel = $T.id('tegaki-layer-sel');
-    
-    indices = [];
-    layers = [];
-    
-    for (i = 0, len = ids.length; i < len; ++i) {
-      id = ids[i];
-      idx = Tegaki.getLayerIndex(id);
-      sel.removeChild(sel.options[Tegaki.layers.length - 1 - idx]);
-      Tegaki.layersCnt.removeChild(Tegaki.layers[idx].canvas);
-      
-      indices.push(idx);
-      layers.push(Tegaki.layers[idx]);
-      
-      Tegaki.layers.splice(idx, 1);
-    }
-    
-    Tegaki.setActiveLayer();
-    
-    return new TegakiHistoryActions.DestroyLayers(indices, layers);
-  },
-  
-  mergeLayers: function(ids) {
-    var i, id, sel, idx, canvasBefore, destId, dest, action;
-    
-    sel = $T.id('tegaki-layer-sel');
-    
-    destId = ids.pop();
-    idx = Tegaki.getLayerIndex(destId);
-    dest = Tegaki.layers[idx].ctx;
-    
-    canvasBefore = $T.copyCanvas(Tegaki.layers[idx].canvas);
-    
-    for (i = ids.length - 1; i >= 0; i--) {
-      id = ids[i];
-      idx = Tegaki.getLayerIndex(id);
-      dest.drawImage(Tegaki.layers[idx].canvas, 0, 0);
-    }
-    
-    action = Tegaki.deleteLayers(ids);
-    action.layerId = destId;
-    action.canvasBefore = canvasBefore;
-    action.canvasAfter = $T.copyCanvas(dest.canvas);
-    
-    Tegaki.setActiveLayer(destId);
-    
-    return action;
-  },
-  
-  moveLayer: function(id, up) {
-    var idx, sel, opt, canvas, tmp, tmpId;
-    
-    sel = $T.id('tegaki-layer-sel');
-    idx = Tegaki.getLayerIndex(id);
-    
-    canvas = Tegaki.layers[idx].canvas;
-    opt = sel.options[Tegaki.layers.length - 1 - idx];
-    
-    if (up) {
-      if (!Tegaki.ghostCanvas.nextElementSibling) { return false; }
-      canvas.parentNode.insertBefore(canvas,
-        Tegaki.ghostCanvas.nextElementSibling.nextElementSibling
-      );
-      opt.parentNode.insertBefore(opt, opt.previousElementSibling);
-      tmpId = idx + 1;
-    }
-    else {
-      if (canvas.previousElementSibling.id === 'tegaki-canvas') { return false; }
-      canvas.parentNode.insertBefore(canvas, canvas.previousElementSibling);
-      opt.parentNode.insertBefore(opt, opt.nextElementSibling.nextElementSibling);
-      tmpId = idx - 1;
-    }
-    
-    Tegaki.updateGhostLayerPos();
-    
-    tmp = Tegaki.layers[tmpId];
-    Tegaki.layers[tmpId] = Tegaki.layers[idx];
-    Tegaki.layers[idx] = tmp;
-    
-    Tegaki.activeLayer = tmpId;
-    
-    return new TegakiHistoryActions.MoveLayer(id, up);
-  },
-  
-  setLayerVisibility: function(ids, flag) {
-    var i, len, sel, idx, layer, optIdx;
-    
-    sel = $T.id('tegaki-layer-sel');
-    optIdx = Tegaki.layers.length - 1;
-    
-    for (i = 0, len = ids.length; i < len; ++i) {
-      idx = Tegaki.getLayerIndex(ids[i]);
-      layer = Tegaki.layers[idx];
-      layer.visible = flag;
-      
-      if (flag) {
-        sel.options[optIdx - idx].classList.remove('tegaki-strike');
-        layer.canvas.classList.remove('tegaki-hidden');
-      }
-      else {
-        sel.options[optIdx - idx].classList.add('tegaki-strike');
-        layer.canvas.classList.add('tegaki-hidden');
-      }
-    }
-  },
-  
-  setActiveLayer: function(id) {
-    var ctx, idx;
-    
-    idx = id ? Tegaki.getLayerIndex(id) : Tegaki.layers.length - 1;
-    
-    if (idx < 0) {
-      return;
-    }
-    
-    ctx = Tegaki.layers[idx].ctx;
-    
-    if (Tegaki.activeCtx) {
-      Tegaki.copyContextState(Tegaki.activeCtx, ctx);
-    }
-    
-    Tegaki.activeCtx = ctx;
-    Tegaki.activeLayer = idx;
-    $T.id('tegaki-layer-sel').selectedIndex = Tegaki.layers.length - idx - 1;
-    
-    Tegaki.updateGhostLayerPos();
   },
   
   updateGhostLayerPos: function() {
@@ -1208,17 +954,18 @@ Tegaki = {
     
     //Tegaki.canvasCnt.setPointerCapture(e.pointerId);
     
-    if (e.target.parentNode === Tegaki.layersCnt) {
-      if (Tegaki.activeLayer === null) {
+    if (Tegaki.activeCtx === null) {
+      if (e.target.parentNode === Tegaki.layersCnt) {
         alert(TegakiStrings.noActiveLayer);
-        return;
       }
-      if (!Tegaki.layers[Tegaki.activeLayer].visible) {
-        alert(TegakiStrings.hiddenActiveLayer);
-        return;
-      }
+      
+      return;
     }
-    else if (e.target !== Tegaki.canvasCnt && e.target.parentNode !== Tegaki.canvasCnt) {
+    if (!TegakiLayers.getActiveLayer().visible) {
+      if (e.target.parentNode === Tegaki.layersCnt) {
+        alert(TegakiStrings.hiddenActiveLayer);
+      }
+      
       return;
     }
     
@@ -1239,7 +986,7 @@ Tegaki = {
       Tegaki.clearCtx(Tegaki.cursorCtx);
       
       TegakiHistory.pendingAction = new TegakiHistoryActions.Draw(
-        Tegaki.layers[Tegaki.activeLayer].id
+        Tegaki.activeLayerId
       );
       
       TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 0);

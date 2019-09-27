@@ -51,10 +51,18 @@ $T = {
     return sel;
   },
   
-  copyCanvas: function(source) {
-    var canvas = $T.el('canvas');
-    canvas.width = source.width;
-    canvas.height = source.height;
+  copyCanvas: function(source, clone) {
+    var canvas;
+    
+    if (!clone) {
+      canvas = $T.el('canvas');
+      canvas.width = source.width;
+      canvas.height = source.height;
+    }
+    else {
+      canvas = source.cloneNode(false);
+    }
+    
     canvas.getContext('2d').drawImage(source, 0, 0);
     
     return canvas;
@@ -72,5 +80,26 @@ $T = {
     }
     
     return null;
+  },
+  
+  getColorAt: function(ctx, posX, posY) {
+    var rgba = ctx.getImageData(posX, posY, 1, 1).data;
+    
+    return '#'
+      + ('0' + rgba[0].toString(16)).slice(-2)
+      + ('0' + rgba[1].toString(16)).slice(-2)
+      + ('0' + rgba[2].toString(16)).slice(-2);
+  },
+  
+  sortAscCb: function(a, b) {
+    if (a > b) { return 1; }
+    if (a < b) { return -1; }
+    return 0;
+  },
+  
+  sortDescCb: function(a, b) {
+    if (a > b) { return -1; }
+    if (a < b) { return 1; }
+    return 0;
   }
 };

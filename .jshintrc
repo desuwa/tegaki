@@ -16,6 +16,8 @@
   "globals": {
     "ImageData": true,
     
+    "TegakiDebug": true,
+    
     "$T": true,
     "Tegaki": true,
     "TegakiPencil": true,
@@ -34,7 +36,8 @@
     "TegakiUI": true,
     "TegakiKeybinds": true,
     "TegakiHistory": true,
-    "TegakiHistoryActions": true
+    "TegakiHistoryActions": true,
+    "TegakiLayers": true
   },
   
   "overrides": {

@@ -19,7 +19,7 @@ TegakiPipette = {
       ctx = Tegaki.activeCtx;
     }
     
-    c = Tegaki.getColorAt(ctx, posX, posY);
+    c = $T.getColorAt(ctx, posX, posY);
     
     Tegaki.setToolColor(c);
   },

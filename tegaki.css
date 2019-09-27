@@ -44,6 +44,10 @@
   display: none !important;
 }
 
+.tegaki-invis {
+  visibility: hidden !important;
+}
+
 #tegaki {
   position: fixed;
   width: 100%;
@@ -220,7 +224,7 @@
 }
 
 .tegaki-ui-cb:hover::after {
-  background-color: #444;
+  background-color: #555;
 }
 
 .tegaki-ui-cb-a:hover::after {
@@ -329,20 +333,73 @@
 }
 
 /* layers ctrl group */
+#tegaki-ctrlgrp-layers {
+  position: relative;
+}
+
 #tegaki-layers-ctrl {
   margin-top: 4px;
 }
 
-#tegaki-layer-sel {
-  width: 100%;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 0;
-  font-size: 10px;
-  margin: 0;
-  padding: 0;
-  box-shadow: 0 0 0 1px #a3b1bf;
+#tegaki-layers-grid {
+  height: 72px;
+  min-height: 72px;
+  overflow: auto;
+  background-color: #8d99a6;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #a3b1bf;
+  resize: vertical;
 }
 
-#tegaki-layer-sel option {
-  padding: 8px 8px;
+.tegaki-layers-cell {
+  box-sizing: border-box;
+  box-shadow: 0 1px 0 0px #a3b1bf;
+  padding: 0 6px;
+  height: 24px;
+  flex: none;
+  overflow: hidden;
+}
+
+.tegaki-layers-cell-s,
+.tegaki-layers-cell-a {
+  background-color: #a3b1bf7f;
+}
+
+.tegaki-layers-cell-a {
+  font-weight: bold;
+}
+
+.tegaki-layers-cell-v {
+  margin-right: 6px;
+  font-size: 11px;
+}
+
+.tegaki-layers-cell-d {
+  box-shadow: inset 0 -2px 0 0 #000;
+  z-index: 2;
+}
+
+#tegaki-layers-grid.tegaki-layers-cell-d {
+  box-shadow: 0 -2px 0 0px #000;
+}
+
+#tegaki-layers-cell-dx {
+  position: absolute;
+  background: transparent;
+  top: 0;
+  width: 100%;
+  height: 24px;
+}
+
+.tegaki-layers-cell-n {
+  font-size: 11px;
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 24px;
+  width: calc(100% - 18px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
 }

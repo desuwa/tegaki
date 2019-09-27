@@ -6,7 +6,7 @@ TegakiStrings = {
   promptWidth: 'Canvas width in pixels',
   promptHeight: 'Canvas height in pixels',
   confirmDelLayers: 'Delete selected layers?',
-  errorMergeOneLayer: 'You need to select at least 2 layers.',
+  errorMergeOneLayer: 'Nothing to merge.',
   confirmMergeLayers: 'Merge selected layers?',
   tooManyLayers: 'Layer limit reached.',
   errorLoadImage: 'Could not load the image.',

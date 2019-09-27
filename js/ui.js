@@ -1,6 +1,8 @@
 var TegakiUI;
 
 TegakiUI = {
+  draggedNode: null,
+  
   buildDummyFilePicker: function() {
     var el = $T.el('input');
     
@@ -93,11 +95,8 @@ TegakiUI = {
     
     ctrl = this.buildCtrlGroup('layers', TegakiStrings.layers);
     
-    el = $T.el('select');
-    el.id = 'tegaki-layer-sel';
-    el.multiple = true;
-    el.size = 3;
-    $T.on(el, 'change', Tegaki.onLayerChange);
+    el = $T.el('div');
+    el.id = 'tegaki-layers-grid';
     ctrl.appendChild(el);
     
     row = $T.el('div');
@@ -113,13 +112,6 @@ TegakiUI = {
     el.title = TegakiStrings.delLayers;
     el.className = 'tegaki-ui-btn tegaki-icon tegaki-minus';
     $T.on(el, 'click', Tegaki.onLayerDeleteClick);
-    row.appendChild(el);
-    
-    el = $T.el('span');
-    el.id = 'tegaki-layer-visibility';
-    el.title = TegakiStrings.showHideLayer;
-    el.className = 'tegaki-ui-btn tegaki-icon tegaki-eye';
-    $T.on(el, 'click', Tegaki.onLayerVisibilityChange);
     row.appendChild(el);
     
     el = $T.el('span');
@@ -311,7 +303,308 @@ TegakiUI = {
     return cnt;
   },
   
+  buildLayerGridCell: function(layer) {
+    var cnt, el;
+    
+    cnt = $T.el('div');
+    cnt.id = 'tegaki-layers-cell-' + layer.id;
+    cnt.className = 'tegaki-layers-cell';
+    cnt.setAttribute('data-id', layer.id);
+    
+    el = $T.el('span');
+    el.className = 'tegaki-layers-cell-v tegaki-ui-cb';
+    el.setAttribute('data-id', layer.id);
+    $T.on(el, 'click', Tegaki.onLayerToggleVisibilityClick);
+    
+    if (layer.visible) {
+      el.className += ' tegaki-ui-cb-a';
+    }
+    
+    cnt.appendChild(el);
+    
+    el = $T.el('span');
+    el.className = 'tegaki-layers-cell-n';
+    el.setAttribute('draggable', 'true');
+    el.setAttribute('data-id', layer.id);
+    el.textContent = 'Layer ' + layer.id;
+    $T.on(el, 'click', Tegaki.onLayerSelectorClick);
+    
+    $T.on(el, 'dragstart', TegakiUI.onLayerDragStart);
+    $T.on(el, 'dragover', TegakiUI.onLayerDragOver);
+    $T.on(el, 'drop', TegakiUI.onLayerDragDrop);
+    $T.on(el, 'dragend', TegakiUI.onLayerDragEnd);
+    $T.on(el, 'dragleave', TegakiUI.onLayerDragLeave);
+    $T.on(el, 'dragexit', TegakiUI.onLayerDragLeave);
+    
+    cnt.appendChild(el);
+    
+    return cnt;
+  },
+  
+  onLayerDragStart: function(e) {
+    var el;
+    
+    TegakiUI.draggedNode = null;
+    
+    if (!$T.id('tegaki-layers-grid').children[1]) {
+      e.preventDefault();
+      return;
+    }
+    
+    el = $T.el('div');
+    el.className = 'tegaki-invis';
+    e.dataTransfer.setDragImage(el, 0, 0);
+    e.dataTransfer.setData('text/plain', e.target.getAttribute('data-id'));
+    e.dataTransfer.effectAllowed = 'move';
+    
+    TegakiUI.draggedNode = e.target;
+    
+    TegakiUI.updateLayersGridDragExt(true);
+  },
+  
+  onLayerDragOver: function(e) {
+    e.preventDefault();
+    
+    e.dataTransfer.dropEffect = 'move';
+    
+    TegakiUI.updateLayersGridDragEffect(
+      e.target.parentNode,
+      +TegakiUI.draggedNode.getAttribute('data-id')
+    );
+  },
+  
+  onLayerDragLeave: function(e) {
+    TegakiUI.updateLayersGridDragEffect();
+  },
+  
+  onLayerDragEnd: function(e) {
+    TegakiUI.draggedNode = null;
+    TegakiUI.updateLayersGridDragExt(false);
+    TegakiUI.updateLayersGridDragEffect();
+  },
+  
+  onLayerDragDrop: function(e) {
+    var tgtId, srcId, belowPos, layers;
+    
+    e.preventDefault();
+    
+    TegakiUI.draggedNode = null;
+    
+    TegakiUI.updateLayersGridDragEffect(e.target.parentNode);
+    TegakiUI.updateLayersGridDragExt(false);
+    
+    tgtId = +e.target.getAttribute('data-id');
+    srcId = +e.dataTransfer.getData('text/plain');
+    
+    if (!TegakiUI.layersGridCanDrop(tgtId, srcId)) {
+      return;
+    }
+    
+    if (!tgtId) {
+      belowPos = Tegaki.layers.length;
+    }
+    else {
+      belowPos = TegakiLayers.getLayerPosById(tgtId);
+    }
+    
+    if (!TegakiLayers.selectedLayersHas(srcId)) {
+      layers = new Set([srcId]);
+    }
+    else {
+      layers = Tegaki.selectedLayers;
+    }
+    
+    TegakiHistory.push(TegakiLayers.moveLayers(layers, belowPos));
+  },
+  
+  updateLayersGridDragExt: function(flag) {
+    var cnt, el;
+    
+    cnt = $T.id('tegaki-layers-grid');
+    
+    if (!cnt.children[1]) {
+      return;
+    }
+    
+    if (flag) {
+      el = $T.el('div');
+      el.id = 'tegaki-layers-cell-dx';
+      $T.on(el, 'dragover', TegakiUI.onLayerDragOver);
+      $T.on(el, 'drop', TegakiUI.onLayerDragDrop);
+      cnt.parentNode.insertBefore(el, cnt);
+    }
+    else {
+      if (el = $T.id('tegaki-layers-cell-dx')) {
+        el.parentNode.removeChild(el);
+      }
+    }
+  },
+  
+  updateLayersGridDragEffect: function(tgt, srcId) {
+    var el, nodes, tgtId;
+    
+    nodes = $T.cls('tegaki-layers-cell-d', $T.id('tegaki-ctrlgrp-layers'));
+    
+    for (el of nodes) {
+      el.classList.remove('tegaki-layers-cell-d');
+    }
+    
+    if (!tgt || !srcId) {
+      return;
+    }
+    
+    tgtId = +tgt.getAttribute('data-id');
+    
+    if (!TegakiUI.layersGridCanDrop(tgtId, srcId)) {
+      return;
+    }
+    
+    if (!tgtId) {
+      tgt = $T.id('tegaki-layers-grid');
+    }
+    
+    tgt.classList.add('tegaki-layers-cell-d');
+  },
+  
+  layersGridCanDrop: function(tgtId, srcId) {
+    var srcEl;
+    
+    if (tgtId === srcId) {
+      return false;
+    }
+    
+    srcEl = $T.id('tegaki-layers-cell-' + srcId);
+    
+    if (!srcEl.previousElementSibling) {
+      if (!tgtId) {
+        return false;
+      }
+    }
+    else if (+srcEl.previousElementSibling.getAttribute('data-id') === tgtId) {
+      return false;
+    }
+    
+    return true;
+  },
+  
   // ---
+  
+  updateLayersGridClear: function() {
+    $T.id('tegaki-layers-grid').innerHTML = '';
+  },
+  
+  updateLayersGrid: function() {
+    var layer, el, frag, cnt;
+    
+    frag = $T.frag();
+    
+    for (layer of Tegaki.layers) {
+      el = TegakiUI.buildLayerGridCell(layer);
+      frag.insertBefore(el, frag.firstElementChild);
+    }
+    
+    TegakiUI.updateLayersGridClear();
+    
+    cnt.appendChild(frag);
+  },
+  
+  updateLayersGridActive: function(layerId) {
+    var el;
+    
+    el = $T.cls('tegaki-layers-cell-a', $T.id('tegaki-layers-grid'))[0];
+    
+    if (el) {
+      el.classList.remove('tegaki-layers-cell-a');
+    }
+    
+    el = $T.id('tegaki-layers-cell-' + layerId);
+    
+    if (el) {
+      el.classList.add('tegaki-layers-cell-a');
+    }
+  },
+  
+  updateLayersGridAdd: function(layer, aboveId) {
+    var el, cnt, ref;
+    
+    el = TegakiUI.buildLayerGridCell(layer);
+    
+    cnt = $T.id('tegaki-layers-grid');
+    
+    if (aboveId) {
+      ref = $T.id('tegaki-layers-cell-' + aboveId);
+    }
+    else {
+      ref = null;
+    }
+    
+    cnt.insertBefore(el, ref);
+  },
+  
+  updateLayersGridRemove: function(id) {
+    var el;
+    
+    if (el = $T.id('tegaki-layers-cell-' + id)) {
+      el.parentNode.removeChild(el);
+    }
+  },
+  
+  updayeLayersGridOrder: function() {
+    var layer, cnt, el;
+    
+    cnt = $T.id('tegaki-layers-grid');
+    
+    for (layer of Tegaki.layers) {
+      el = $T.id('tegaki-layers-cell-' + layer.id);
+      cnt.insertBefore(el, cnt.firstElementChild);
+    }
+  },
+  
+  updateLayersGridVisibility: function(id, flag) {
+    var el, cb;
+    
+    el = $T.id('tegaki-layers-cell-' + id);
+    
+    if (!el) {
+      return;
+    }
+    
+    cb = $T.cls('tegaki-layers-cell-v', el)[0];
+    
+    if (!cb) {
+      return;
+    }
+    
+    if (flag) {
+      cb.classList.add('tegaki-ui-cb-a');
+    }
+    else {
+      cb.classList.remove('tegaki-ui-cb-a');
+    }
+  },
+  
+  updateLayersGridSelectedClear: function() {
+    var layer, el;
+    
+    for (layer of Tegaki.layers) {
+      if (el = $T.id('tegaki-layers-cell-' + layer.id)) {
+        el.classList.remove('tegaki-layers-cell-s');
+      }
+    }
+  },
+  
+  updateLayersGridSelectedSet: function(id, flag) {
+    var el;
+    
+    if (el = $T.id('tegaki-layers-cell-' + id)) {
+      if (flag) {
+        el.classList.add('tegaki-layers-cell-s');
+      }
+      else {
+        el.classList.remove('tegaki-layers-cell-s');
+      }
+    }
+  },
   
   updateSize: function() {
     $T.id('tegaki-size-lbl').value = Tegaki.tool.size;

@@ -60,7 +60,14 @@ namespace :minify do
     
     min_file = "#{ROOT_DIR}/#{File.basename(JS_BUILD_FILE, '.js')}.min.js"
     
-    u = Uglifier.new(:harmony => true)
+    u = Uglifier.new({
+      :compress => {
+        :drop_console => true
+      },
+      
+      :harmony => true,
+    })
+    
     js = u.compile(File.read(file))
     
     File.binwrite(min_file, js)
