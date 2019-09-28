@@ -23,6 +23,7 @@ Tegaki = {
   layerIndex: null,
   
   activePointerId: 0,
+  activePointerIsPen: false,
   
   isPainting: false,
   isErasing: false,
@@ -1174,7 +1175,7 @@ Tegaki = {
       return;
     }
     
-    if (Tegaki.isPainting && e.getCoalescedEvents) {
+    if (Tegaki.activePointerIsPen && Tegaki.isPainting && e.getCoalescedEvents) {
       events = e.getCoalescedEvents();
       
       for (e of events) {
@@ -1202,6 +1203,8 @@ Tegaki = {
     }
     
     Tegaki.activePointerId = e.pointerId;
+    
+    Tegaki.activePointerIsPen = e.pointerType === 'pen';
     
     Tegaki.canvasCnt.setPointerCapture(e.pointerId);
     
@@ -1247,6 +1250,8 @@ Tegaki = {
   
   onPointerUp: function(e) {
     Tegaki.activePointerId = e.pointerId;
+    
+    Tegaki.activePointerIsPen = false;
     
     Tegaki.canvasCnt.releasePointerCapture(e.pointerId);
     
