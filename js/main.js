@@ -1170,7 +1170,7 @@ Tegaki = {
   onPointerMove: function(e) {
     var events;
     
-    if (Tegaki.activePointerId !== e.pointerId) {
+    if (Tegaki.activePointerId !== e.pointerId && e.mozInputSource === undefined) {
       Tegaki.activePointerId = e.pointerId;
       return;
     }
