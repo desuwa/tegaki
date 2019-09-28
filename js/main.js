@@ -1206,7 +1206,7 @@ Tegaki = {
     
     Tegaki.activePointerIsPen = e.pointerType === 'pen';
     
-    Tegaki.canvasCnt.setPointerCapture(e.pointerId);
+    //Tegaki.canvasCnt.setPointerCapture(e.pointerId);
     
     if (e.target.parentNode === Tegaki.layersCnt) {
       if (Tegaki.activeLayer === null) {
@@ -1253,7 +1253,7 @@ Tegaki = {
     
     Tegaki.activePointerIsPen = false;
     
-    Tegaki.canvasCnt.releasePointerCapture(e.pointerId);
+    //Tegaki.canvasCnt.releasePointerCapture(e.pointerId);
     
     if (Tegaki.isPainting) {
       Tegaki.tool.commit && Tegaki.tool.commit();
