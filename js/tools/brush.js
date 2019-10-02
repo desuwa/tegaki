@@ -89,7 +89,7 @@ TegakiBrush = {
   
   draw: function(posX, posY, pt) {
     var mx, my, fromX, fromY, offsetX, offsetY, dx, dy, err, derr, stepAcc,
-      distBase, distLeft, imgData, ctx, brush, center, brushSize;
+      distBase, imgData, ctx, brush, center, brushSize, t;
     
     ctx = this.useGhostLayer ? Tegaki.ghostCtx : Tegaki.activeCtx;
     
@@ -153,9 +153,14 @@ TegakiBrush = {
       
       if (stepAcc > this.stepSize) {
         if (this.sizePressureCtrl) {
-          distLeft = Math.sqrt((posX - fromX) * (posX - fromX) + (posY - fromY) * (posY - fromY));
+          if (distBase > 0) {
+            t = 1.0 - (Math.sqrt((posX - fromX) * (posX - fromX) + (posY - fromY) * (posY - fromY)) / distBase);
+          }
+          else {
+            t = 0.0;
+          }
           
-          if (this.updateDynamics(1.0 - (distLeft / distBase))) {
+          if (this.updateDynamics(t)) {
             this.brushFn(fromX - this.center - offsetX, fromY - this.center - offsetY, imgData, offsetX, offsetY);
           }
         }
