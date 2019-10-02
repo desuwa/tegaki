@@ -33,9 +33,9 @@ TegakiUI = {
     frag.appendChild(btn);
     
     btn = $T.el('span');
-    btn.className = 'tegaki-tb-btn tegaki-ui-ellipsis tegaki-hidden';
-    btn.textContent = TegakiStrings.saveAs;
-    $T.on(btn, 'click', Tegaki.onSaveAsClick);
+    btn.className = 'tegaki-tb-btn';
+    btn.textContent = TegakiStrings.export;
+    $T.on(btn, 'click', Tegaki.onExportClick);
     frag.appendChild(btn);
     
     btn = $T.el('span');

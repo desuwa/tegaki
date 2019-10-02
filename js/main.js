@@ -604,11 +604,11 @@ Tegaki = {
     }
   },
   
-  onSaveAsClick: function() {
+  onExportClick: function() {
     Tegaki.flatten().toBlob(function(b) {
       var el = $T.el('a');
       el.className = 'tegaki-hidden';
-      el.download = 'tegaki.png';
+      el.download = $T.generateFilename() + '.png';
       el.href = URL.createObjectURL(b);
       Tegaki.bg.appendChild(el);
       el.click();

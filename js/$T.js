@@ -91,6 +91,10 @@ $T = {
       + ('0' + rgba[2].toString(16)).slice(-2);
   },
   
+  generateFilename: function() {
+    return 'tegaki_' + (new Date()).toISOString().split('.')[0].replace(/[^0-9]/g, '_');
+  },
+  
   sortAscCb: function(a, b) {
     if (a > b) { return 1; }
     if (a < b) { return -1; }

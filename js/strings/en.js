@@ -38,6 +38,7 @@ TegakiStrings = {
   open: 'Open',
   save: 'Save',
   saveAs: 'Save As',
+  export: 'Export',
   undo: 'Undo',
   redo: 'Redo',
   close: 'Close',
