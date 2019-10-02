@@ -18,8 +18,9 @@ Tegaki = {
   
   cursorCtx: null,
   ghostCtx: null,
-  flatCtx: null,
   activeCtx: null,
+  flatCtx: null,
+  flatCtxCached: null,
   
   activeLayerId: null,
   layerCounter: 0,
@@ -312,6 +313,11 @@ Tegaki = {
     el.width = Tegaki.baseWidth;
     el.height = Tegaki.baseHeight;
     Tegaki.flatCtx = el.getContext('2d');
+    
+    el = $T.el('canvas');
+    el.width = Tegaki.baseWidth;
+    el.height = Tegaki.baseHeight;
+    Tegaki.flatCtxCached = el.getContext('2d');
   },
   
   disableSmoothing: function(ctx) {
@@ -411,6 +417,7 @@ Tegaki = {
     Tegaki.cursorCtx = null;
     Tegaki.cursorCanvas = null;
     Tegaki.flatCtx = null;
+    Tegaki.flatCtxCached = null;
   },
   
   flatten: function(ctx) {
@@ -465,6 +472,8 @@ Tegaki = {
   renderCursor: function(x0, y0) {
     var canvas, e, x, y, imageData, data, side,
       srcImageData, srcData, c, color, r, rr;
+    
+    Tegaki.updateFlatCtx(Tegaki.isPainting);
     
     side = 0 | Tegaki.tool.size;
     r = 0 | (side / 2);
@@ -833,10 +842,18 @@ Tegaki = {
     
     Tegaki.canvas.width = width;
     Tegaki.canvas.height = height;
+    
     Tegaki.ghostCanvas.width = width;
     Tegaki.ghostCanvas.height = height;
+    
     Tegaki.cursorCanvas.width = width;
     Tegaki.cursorCanvas.height = height;
+    
+    Tegaki.flatCtx.canvas.width = width;
+    Tegaki.flatCtx.canvas.height = height;
+    
+    Tegaki.flatCtxCached.canvas.width = width;
+    Tegaki.flatCtxCached.canvas.height = height;
     
     Tegaki.ctx.fillStyle = Tegaki.bgColor;
     Tegaki.ctx.fillRect(0, 0, width, height);
@@ -870,8 +887,13 @@ Tegaki = {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   },
   
-  updateFlatCtx: function() {
-    Tegaki.flatten(Tegaki.flatCtx);
+  updateFlatCtx: function(fromCache) {
+    if (!fromCache) {
+      Tegaki.flatten(Tegaki.flatCtxCached);
+    }
+    
+    Tegaki.flatCtx.drawImage(Tegaki.flatCtxCached.canvas, 0, 0);
+    Tegaki.flatCtx.drawImage(Tegaki.ghostCanvas, 0, 0);
   },
   
   copyContextState: function(src, dest) {
@@ -951,9 +973,10 @@ Tegaki = {
       else if (Tegaki.isColorPicking) {
         TegakiPipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
       }
-      else if (Tegaki.cursor) {
-        Tegaki.renderCursor(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
-      }
+    }
+    
+    if (Tegaki.cursor) {
+      Tegaki.renderCursor(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
     }
   },
   
@@ -1026,7 +1049,6 @@ Tegaki = {
       TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 1);
       TegakiHistory.push(TegakiHistory.pendingAction);
       Tegaki.isPainting = false;
-      Tegaki.updateFlatCtx();
     }
     else if (Tegaki.isColorPicking) {
       e.preventDefault();
