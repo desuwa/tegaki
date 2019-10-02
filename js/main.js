@@ -3,6 +3,8 @@ var Tegaki;
 Tegaki = {
   VERSION: '0.3.0',
   
+  startTimeStamp: 0,
+  
   bg: null,
   canvas: null,
   ctx: null,
@@ -25,6 +27,9 @@ Tegaki = {
   
   activePointerId: 0,
   activePointerIsPen: false,
+  
+  ptrEvtPenCount: 0,
+  ptrEvtMouseCount: 0,
   
   isPainting: false,
   isErasing: false,
@@ -77,6 +82,11 @@ Tegaki = {
       self.resume();
       return;
     }
+    
+    self.startTimeStamp = Date.now();
+    
+    self.ptrEvtPenCount = 0;
+    self.ptrEvtMouseCount = 0;
     
     if (opts.bgColor) {
       self.bgColor = opts.bgColor;
@@ -382,6 +392,10 @@ Tegaki = {
     Tegaki.bg.parentNode.removeChild(Tegaki.bg);
     
     document.body.classList.remove('tegaki-backdrop');
+    
+    Tegaki.startTimeStamp = 0;
+    Tegaki.ptrEvtPenCount = 0;
+    Tegaki.ptrEvtMouseCount = 0;
     
     Tegaki.bg = null;
     Tegaki.canvasCnt = null;
@@ -950,7 +964,12 @@ Tegaki = {
     
     Tegaki.activePointerId = e.pointerId;
     
-    Tegaki.activePointerIsPen = e.pointerType === 'pen';
+    if (Tegaki.activePointerIsPen = e.pointerType === 'pen') {
+      Tegaki.ptrEvtPenCount++;
+    }
+    else {
+      Tegaki.ptrEvtMouseCount++;
+    }
     
     //Tegaki.canvasCnt.setPointerCapture(e.pointerId);
     
