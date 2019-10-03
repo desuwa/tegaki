@@ -1,33 +1,25 @@
-var TegakiPencil;
-
-TegakiPencil = {
-  name: 'pencil',
-  
-  keybind: 'b',
-  
-  useGhostLayer: true,
-  sizePressureCtrl: false,
-  pressureCache: [],
-  
-  init: function() {
+class TegakiPencil extends TegakiBrush {
+  constructor() {
+    super();
+    
+    this.name = 'pencil';
+    
+    this.keybind = 'b';
+    
+    this.step = 0.10;
+    
     this.size = 1;
     this.alpha = 1.0;
-    this.step = 0.10;
-    this.stepAcc = 0;
     
-    this.draw = TegakiBrush.draw;
-    this.commit = TegakiBrush.commit;
-    this.setSize = TegakiBrush.setSize;
-    this.setAlpha = TegakiBrush.setAlpha;
-    this.setColor = TegakiBrush.setColor;
-    this.set = TegakiBrush.set;
-    this.setSizePressureCtrl = TegakiBrush.setSizePressureCtrl;
-    this.updateDynamics = TegakiBrush.updateDynamics;
-    this.generateBrushCache  = TegakiBrush.generateBrushCache;
-  },
+    this.useGhostLayer = true;
+    this.useActiveLayer = false;
+    
+    this.useSizeDynamics = true;
+    this.useAlphaDynamics = false;
+  }
   
-  brushFn: function(x, y, imgData) {
-    var i, data, a, kernel, w, xx, yy, px, brushSize;
+  brushFn(x, y, offsetX, offsetY) {
+    var i, data, kernel, width, xx, yy, px, brushSize, a;
     
     x = 0 | x;
     y = 0 | y;
@@ -36,15 +28,15 @@ TegakiPencil = {
     
     kernel = this.kernel;
     
-    data = imgData.data;
-    w = imgData.width;
+    data = this.ghostImgData.data;
+    width = this.ghostImgData.width;
     
     a = 0 | (this.alpha * 255);
     
     for (yy = 0; yy < brushSize; ++yy) {
       for (xx = 0; xx < brushSize; ++xx) {
         i = (yy * brushSize + xx) * 4;
-        px = ((y + yy) * w + (x + xx)) * 4;
+        px = ((y + yy) * width + (x + xx)) * 4;
         
         data[px] = this.rgb[0]; ++px;
         data[px] = this.rgb[1]; ++px;
@@ -55,13 +47,10 @@ TegakiPencil = {
         }
       }
     }
-  },
+  }
   
-  generateBrush: function() {
-    var brush, ctx, e, x, y, imageData, data,
-      c, color, size, r, rr;
-    
-    size = 0 | this.size;
+  generateShape(size) {
+    var brush, ctx, e, x, y, imageData, data, c, color, r, rr;
     
     r = 0 | ((size) / 2);
     
@@ -106,29 +95,14 @@ TegakiPencil = {
     }
     
     if (r > 0) {
-      TegakiBucket.fill(imageData, imageData, r, r, this.rgb, this.alpha);
+      Tegaki.tools.bucket.fill(imageData, imageData, r, r, this.rgb, this.alpha);
     }
     
-    this.center = r;
-    this.stepSize = 0 | Math.min(Math.floor(size * this.step), 8);
-    this.brushSize = size;
-    this.brush = brush;
-    this.kernel = imageData.data;
-  },
-  
-  draw: null,
-  
-  commit: null,
-  
-  setSize: null,
-  
-  setAlpha: null,
-  
-  setColor: null,
-  
-  set: null,
-  
-  setSizePressureCtrl: null,
-  
-  updateDynamics: null,
-};
+    return {
+      center: r,
+      stepSize: Math.floor(size * this.step),
+      brushSize: size,
+      kernel: imageData.data,
+    };
+  }
+}

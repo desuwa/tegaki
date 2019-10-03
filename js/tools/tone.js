@@ -1,25 +1,18 @@
-var TegakiTone;
-
-TegakiTone = {
-  name: 'tone',
-  
-  keybind: 't',
-  
-  useGhostLayer: true,
-  
-  matrix: null,
-  
-  data: null,
-  
-  dataAlpha: null,
-  dataWidth: null,
-  dataHeight: null,
-  
-  init: function() {
+class TegakiTone extends TegakiBrush {
+  constructor() {
+    super();
+    
+    this.name = 'tone';
+    
+    this.keybind = 't';
+    
+    this.step = 0.10;
+    
     this.size = 8;
     this.alpha = 0.5;
-    this.step = 0.25;
-    this.stepAcc = 0;
+    
+    this.useActiveLayer = false;
+    this.useGhostLayer = true;
     
     this.matrix = [
       [0, 8, 2, 10],
@@ -27,19 +20,11 @@ TegakiTone = {
       [3, 11, 1 ,9],
       [15, 7, 13, 5]
     ];
-    
-    this.draw = TegakiBrush.draw;
-    this.commit = TegakiBrush.commit;
-    this.generateBrush = TegakiPencil.generateBrush;
-    this.setSize = TegakiBrush.setSize;
-    this.setAlpha = TegakiBrush.setAlpha;
-    this.setColor = TegakiBrush.setColor;
-    this.set = TegakiBrush.set;
-  },
+  }
   
-  brushFn: function(x, y, imgData, offsetX, offsetY) {
+  brushFn(x, y, offsetX, offsetY) {
     var data, kernel, brushSize, map,
-      px, mapWidth, mapHeight, xx, yy, gx, gy, w;
+      px, mapWidth, mapHeight, xx, yy, gx, gy, width;
     
     x = 0 | x;
     y = 0 | y;
@@ -47,7 +32,9 @@ TegakiTone = {
     gx = 0 | (x + offsetX);
     gy = 0 | (y + offsetY);
     
-    data = imgData.data;
+    data = this.ghostImgData.data;
+    width = this.ghostImgData.width;
+    
     kernel = this.kernel;
     
     brushSize = this.brushSize;
@@ -55,9 +42,7 @@ TegakiTone = {
     mapWidth = Tegaki.baseWidth;
     mapHeight = Tegaki.baseHeight;
     
-    w = imgData.width;
-    
-    map = this.generate(mapWidth, mapHeight);
+    map = this.generateMap(mapWidth, mapHeight);
     
     for (yy = 0; yy < brushSize; ++yy) {
       for (xx = 0; xx < brushSize; ++xx) {
@@ -66,7 +51,7 @@ TegakiTone = {
         }
         
         if (map[(yy + gy) * mapWidth + xx + gx] === 0) {
-          px = ((yy + y) * w + xx + x) * 4;
+          px = ((yy + y) * width + xx + x) * 4;
           data[px] = this.rgb[0]; ++px;
           data[px] = this.rgb[1]; ++px;
           data[px] = this.rgb[2]; ++px;
@@ -74,9 +59,9 @@ TegakiTone = {
         }
       }
     }
-  },
+  }
   
-  generate: function(w, h) {
+  generateMap(w, h) {
     var data, x, y, a;
     
     if (this.alpha == this.dataAlpha
@@ -106,19 +91,7 @@ TegakiTone = {
     this.data = data;
     
     return data;
-  },
-  
-  draw: null,
-  
-  commit: null,
-  
-  generateBrush: null,
-  
-  setSize: null,
-  
-  setAlpha: null,
-  
-  setColor: null,
-  
-  set: null,
-};
+  }
+}
+
+TegakiTone.prototype.generateShape = TegakiPencil.prototype.generateShape;

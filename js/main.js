@@ -45,18 +45,20 @@ Tegaki = {
   
   TWOPI: 2 * Math.PI,
   
-  tools: {
-    pencil: TegakiPencil,
-    pen: TegakiPen,
-    airbrush: TegakiAirbrush,
-    bucket: TegakiBucket,
-    tone: TegakiTone,
-    pipette: TegakiPipette,
-    dodge: TegakiDodge,
-    burn: TegakiBurn,
-    blur: TegakiBlur,
-    eraser: TegakiEraser
-  },
+  toolList: [
+    TegakiPencil,
+    TegakiPen,
+    TegakiAirbrush,
+    TegakiBucket,
+    TegakiTone,
+    TegakiPipette,
+    TegakiDodge,
+    TegakiBurn,
+    TegakiBlur,
+    TegakiEraser
+  ],
+  
+  tools: {},
   
   defaultColorPalette: [
     '#ffffff', '#000000', '#888888', '#b47575', '#c096c0',
@@ -77,7 +79,7 @@ Tegaki = {
   onCancelCb: null,
   
   open: function(opts) {
-    var bg, cnt, cnt2, el, tool, lbl, ctrl, canvas, grp, self = Tegaki;
+    var bg, cnt, cnt2, el, ctrl, canvas, self = Tegaki;
     
     if (self.bg) {
       self.resume();
@@ -95,6 +97,8 @@ Tegaki = {
     
     self.onDoneCb = opts.onDone;
     self.onCancelCb = opts.onCancel;
+    
+    self.initTools();
     
     //
     // Grid container
@@ -122,29 +126,7 @@ Tegaki = {
     cnt = $T.el('div');
     cnt.id = 'tegaki-tools-cnt';
     
-    grp = $T.el('div');
-    grp.id = 'tegaki-tools-grid';
-    
-    for (tool in Tegaki.tools) {
-      el = $T.el('span');
-      el.setAttribute('data-tool', tool);
-      
-      lbl = TegakiStrings[tool];
-      
-      if (Tegaki.tools[tool].keybind) {
-        lbl += ' (' + Tegaki.tools[tool].keybind.toUpperCase() + ')';
-      }
-      
-      el.setAttribute('title', lbl);
-      el.id = 'tegaki-tool-btn-' + tool;
-      el.className = 'tegaki-tool-btn tegaki-icon tegaki-' + tool;
-      
-      $T.on(el, 'click', Tegaki.onToolClick);
-      
-      grp.appendChild(el);
-    }
-    
-    cnt.appendChild(grp);
+    cnt.appendChild(TegakiUI.buildToolsMenu());
     
     bg.appendChild(cnt);
     
@@ -233,8 +215,6 @@ Tegaki = {
     
     self.onHistoryChange(0, 0);
     
-    self.initTools();
-    
     self.setTool('pencil');
     
     TegakiUI.updateZoomLevel();
@@ -250,10 +230,11 @@ Tegaki = {
   },
   
   initTools: function() {
-    var tool;
+    var klass, tool;
     
-    for (tool in Tegaki.tools) {
-      (tool = Tegaki.tools[tool]) && tool.init && tool.init();
+    for (klass of Tegaki.toolList) {
+      tool = new klass();
+      Tegaki.tools[tool.name] = tool;
     }
   },
   
@@ -694,11 +675,21 @@ Tegaki = {
   },
   
   onSizePressureCtrlClick: function(e) {
-    if (!Tegaki.tool.setSizePressureCtrl) {
+    if (!Tegaki.tool.useSizeDynamics) {
       return;
     }
     
-    Tegaki.tool.setSizePressureCtrl(!Tegaki.tool.sizePressureCtrl);
+    Tegaki.tool.setSizeDynamics(!Tegaki.tool.sizeDynamicsEnabled);
+    
+    TegakiUI.updateDynamics();
+  },
+  
+  onAlphaPressureCtrlClick: function(e) {
+    if (!Tegaki.tool.useAlphaDynamics) {
+      return;
+    }
+    
+    Tegaki.tool.setAlphaDynamics(!Tegaki.tool.alphaDynamicsEnabled);
     
     TegakiUI.updateDynamics();
   },
@@ -952,9 +943,19 @@ Tegaki = {
   onPointerMove: function(e) {
     var events;
     
-    if (Tegaki.activePointerId !== e.pointerId && e.mozInputSource === undefined) {
-      Tegaki.activePointerId = e.pointerId;
-      return;
+    
+    if (e.mozInputSource !== undefined) {
+      // Firefox thing where mouse events fire for no reason when the pointer is a pen
+      if (Tegaki.activePointerIsPen && e.pointerType === 'mouse') {
+        return;
+      }
+    }
+    else {
+      // Webkit thing where a pointermove event is fired at pointerdown location after a pointerup
+      if (Tegaki.activePointerId !== e.pointerId) {
+        Tegaki.activePointerId = e.pointerId;
+        return;
+      }
     }
     
     if (Tegaki.activePointerIsPen && Tegaki.isPainting && e.getCoalescedEvents) {
@@ -971,7 +972,7 @@ Tegaki = {
         Tegaki.tool.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
       }
       else if (Tegaki.isColorPicking) {
-        TegakiPipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+        Tegaki.tools.pipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
       }
     }
     
@@ -994,8 +995,6 @@ Tegaki = {
       Tegaki.ptrEvtMouseCount++;
     }
     
-    //Tegaki.canvasCnt.setPointerCapture(e.pointerId);
-    
     if (Tegaki.activeCtx === null) {
       if (e.target.parentNode === Tegaki.layersCnt) {
         alert(TegakiStrings.noActiveLayer);
@@ -1016,7 +1015,7 @@ Tegaki = {
       
       Tegaki.isColorPicking = true;
       
-      TegakiPipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+      Tegaki.tools.pipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
     }
     else if (e.button === 0) {
       e.preventDefault();
@@ -1033,7 +1032,11 @@ Tegaki = {
       
       TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 0);
       
-      Tegaki.tool.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1), true);
+      Tegaki.tool.start(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+    }
+    
+    if (Tegaki.cursor) {
+      Tegaki.renderCursor(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
     }
   },
   
@@ -1042,10 +1045,8 @@ Tegaki = {
     
     Tegaki.activePointerIsPen = false;
     
-    //Tegaki.canvasCnt.releasePointerCapture(e.pointerId);
-    
     if (Tegaki.isPainting) {
-      Tegaki.tool.commit && Tegaki.tool.commit();
+      Tegaki.tool.commit();
       TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 1);
       TegakiHistory.push(TegakiHistory.pendingAction);
       Tegaki.isPainting = false;
@@ -1053,6 +1054,10 @@ Tegaki = {
     else if (Tegaki.isColorPicking) {
       e.preventDefault();
       Tegaki.isColorPicking = false;
+    }
+    
+    if (Tegaki.cursor) {
+      Tegaki.renderCursor(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
     }
   },
   

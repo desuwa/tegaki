@@ -1,59 +1,64 @@
-var TegakiBurn;
-
-TegakiBurn = {
-  name: 'burn',
-  
-  init: function() {
-    this.size = 24;
-    this.alpha = 0.25;
-    this.alphaDamp = 0.05;
+class TegakiBurn extends TegakiBrush {
+  constructor() {
+    super();
+    
+    this.name = 'burn';
+    
+    this.size = 32;
+    this.alpha = 0.5;
     this.step = 0.25;
-    this.stepAcc = 0;
     
-    this.draw = TegakiBrush.draw;
-    this.generateBrush = TegakiBrush.generateBrush;  
-    this.setSize = TegakiBrush.setSize;  
-    this.setAlpha = TegakiBrush.setAlpha;  
-    this.setColor = TegakiBrush.setColor;  
-    this.set = TegakiBrush.set;
-  },
+    this.useGhostLayer = false;
+    this.activeLayer = true;
     
-  brushFn: function(x, y, imgData) {
-    var data, a, kernel, w, xx, yy, px, brushSize;
+    this.useAlphaDynamics = true;
+  }
+  
+  commit() {
+    this.activeImgData = null;
+    this.tmpImgData = null;
+  }
+  
+  brushFn(x, y, offsetX, offsetY) {
+    var data, ka, kernel, w, xx, yy, r, g, b, h, s, v, px,
+      size, alpha, toHsv, toRgb;
     
     x = 0 | x;
     y = 0 | y;
     
-    brushSize = this.brushSize;
+    alpha = this.brushAlpha;
+    size = this.brushSize;
     
     kernel = this.kernel;
     
-    data = imgData.data;
-    w = imgData.width;
+    data = this.activeImgData.data;
+    w = this.activeImgData.width;
     
-    a = 0 | (this.alpha * 255);
+    toHsv = $T.RgbToHsv;
+    toRgb = $T.HsvToRgb;
     
-    for (yy = 0; yy < brushSize; ++yy) {
-      for (xx = 0; xx < brushSize; ++xx) {
+    for (yy = 0; yy < size; ++yy) {
+      for (xx = 0; xx < size; ++xx) {
         px = ((y + yy) * w + (x + xx)) * 4;
         
-        a = 1 - kernel[((yy * brushSize + xx) * 4) + 3] / 255;
-        data[px] = data[px] * a; ++px;
-        data[px] = data[px] * a; ++px;
-        data[px] = data[px] * a; ++px;
+        ka = (kernel[(yy * size + xx) * 4 + 3] / 255) * alpha * 0.1;
+        
+        r = data[px];
+        g = data[px + 1];
+        b = data[px + 2];
+        
+        [ h, s, v ] = toHsv(r, g, b);
+        
+        v = v - ka;
+        
+        [ r, g, b ] = toRgb(h, s, v);
+        
+        data[px] = r;
+        data[px + 1] = g;
+        data[px + 2] = b;
       }
     }
-  },
-  
-  draw: null,
-  
-  generateBrush: null,
-  
-  setSize: null,
-  
-  setAlpha: null,
-  
-  setColor: null,
-  
-  set: null,
-};
+  }
+}
+
+TegakiBurn.prototype.generateShape = TegakiAirbrush.prototype.generateShape;

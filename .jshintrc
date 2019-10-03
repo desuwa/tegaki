@@ -20,6 +20,7 @@
     
     "$T": true,
     "Tegaki": true,
+    "TegakiTool": true,
     "TegakiPencil": true,
     "TegakiPen": true,
     "TegakiAirbrush": true,
@@ -39,6 +40,28 @@
     "TegakiHistoryActions": true,
     "TegakiLayers": true
   },
+  
+  "exported": [
+    "TegakiTool",
+    "TegakiPencil",
+    "TegakiPen",
+    "TegakiAirbrush",
+    "TegakiBucket",
+    "TegakiTone",
+    "TegakiPipette",
+    "TegakiDodge",
+    "TegakiBurn",
+    "TegakiBlur",
+    "TegakiEraser",
+    "TegakiBrush",
+    "TegakiPressure",
+    "TegakiStrings",
+    "TegakiUI",
+    "TegakiKeybinds",
+    "TegakiHistory",
+    "TegakiHistoryActions",
+    "TegakiLayers"
+  ],
   
   "overrides": {
     "tegaki.js": {

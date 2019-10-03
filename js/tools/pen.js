@@ -1,76 +1,51 @@
-var TegakiPen;
-
-TegakiPen = {
-  name: 'pen',
-  
-  keybind: 'p',
-  
-  useGhostLayer: true,
-  sizePressureCtrl: false,
-  pressureCache: [],
-  
-  init: function() {
+class TegakiPen extends TegakiBrush {
+  constructor() {
+    super();
+    
+    this.name = 'pen';
+    
+    this.keybind = 'p';
+    
+    this.step = 0.10;
+    
     this.size = 8;
     this.alpha = 0.5;
-    this.step = 0.1;
-    this.stepAcc = 0;
     
-    this.draw = TegakiBrush.draw;
-    this.commit = TegakiBrush.commit;
-    this.brushFn = TegakiBrush.brushFn;
-    this.setSize = TegakiBrush.setSize;
-    this.setColor = TegakiBrush.setColor;
-    this.set = TegakiBrush.set;
-    this.setSizePressureCtrl = TegakiBrush.setSizePressureCtrl;
-    this.updateDynamics = TegakiBrush.updateDynamics;
-    this.generateBrushCache  = TegakiBrush.generateBrushCache;
-},
+    this.useSizeDynamics = true;
+    this.useAlphaDynamics = true;
+  }
   
-  generateBrush: function() {
-    var size, r, brush, ctx;
+  generateShape(size) {
+    var r, brush, ctx, brushSize, offset;
     
-    size = this.size;
+    if (size % 2) {
+      brushSize = size + 1;
+      offset = 1;
+    }
+    else {
+      brushSize = size;
+      offset = 0;
+    }
+    
     r = size / 2;
     
     brush = $T.el('canvas');
-    brush.width = brush.height = size;
+    brush.width = brushSize;
+    brush.height = brushSize;
+    
     ctx = brush.getContext('2d');
-    ctx.globalAlpha = this.alpha;
+    
     ctx.beginPath();
-    ctx.arc(r, r, r, 0, Tegaki.TWOPI, false);
+    ctx.arc(r + offset, r + offset, r, 0, Tegaki.TWOPI, false);
     ctx.fillStyle = '#000000';
     ctx.fill();
     ctx.closePath();
     
-    this.center = r;
-    this.stepSize = 0 | Math.min(Math.floor(size * this.step), 8);
-    this.brushSize = size;
-    this.brush = brush;
-    this.kernel = ctx.getImageData(0, 0, this.brushSize, this.brushSize).data;
-  },
-  
-  setAlpha: function(alpha, noBrush) {
-    this.alpha = alpha;
-    
-    if (!noBrush) {
-      if (this.sizePressureCtrl === true) {
-        this.generateBrushCache(true);
-      }
-      else {
-        this.generateBrush();
-      }
-    }
-  },
-  
-  draw: null,
-  
-  commit: null,
-  
-  brushFn: null,
-  
-  setSize: null,
-  
-  setColor: null,
-  
-  set: null,
-};
+    return {
+      center: r,
+      stepSize: Math.floor(size * this.step),
+      brushSize: brushSize,
+      kernel: ctx.getImageData(0, 0, brushSize, brushSize).data,
+    };
+  }
+}

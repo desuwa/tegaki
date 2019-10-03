@@ -1,42 +1,77 @@
-var TegakiAirbrush;
-
-TegakiAirbrush = {
-  name: 'airbrush',
-  
-  keybind: 'a',
-  
-  useGhostLayer: true,
-  
-  init: function() {
+class TegakiAirbrush extends TegakiBrush {
+  constructor() {
+    super();
+    
+    this.name = 'airbrush';
+    
+    this.keybind = 'a';
+    
+    this.step = 0.10;
+    
     this.size = 32;
     this.alpha = 0.5;
-    this.alphaDamp = 0.2;
-    this.step = 0.15;
-    this.stepAcc = 0;
-
-    this.draw = TegakiBrush.draw;  
-    this.commit = TegakiBrush.commit;  
-    this.brushFn = TegakiBrush.brushFn;  
-    this.generateBrush = TegakiBrush.generateBrush;  
-    this.setSize = TegakiBrush.setSize;  
-    this.setAlpha = TegakiBrush.setAlpha;  
-    this.setColor = TegakiBrush.setColor;  
-    this.set = TegakiBrush.set;
-},
+    
+    this.useSizeDynamics = true;
+    this.useAlphaDynamics = true;
+  }
   
-  draw: null,
-  
-  commit: null,
-  
-  brushFn: null,
-  
-  generateBrush: null,
-  
-  setSize: null,
-  
-  setAlpha: null,
-  
-  setColor: null,
-  
-  set: null,
-};
+  generateShape(size) {
+    var i, r, brush, ctx, dest, data, len, sqd, sqlen, hs, col, row,
+      ecol, erow, a;
+    
+    r = size;
+    size = size * 2;
+    
+    brush = $T.el('canvas');
+    brush.width = brush.height = size;
+    ctx = brush.getContext('2d');
+    dest = ctx.getImageData(0, 0, size, size);
+    data = dest.data;
+    len = size * size * 4;
+    sqlen = Math.sqrt(r * r);
+    hs = Math.round(r);
+    col = row = -hs;
+    
+    i = 0;
+    while (i < len) {
+      if (col >= hs) {
+        col = -hs;
+        ++row;
+        continue;
+      }
+      
+      ecol = col;
+      erow = row;
+      
+      if (ecol < 0) { ecol = -ecol; }
+      if (erow < 0) { erow = -erow; }
+      
+      sqd = Math.sqrt(ecol * ecol + erow * erow);
+      
+      if (sqd > sqlen) {
+        a = 0;
+      }
+      else if (sqd === 0) {
+        a = 255;
+      }
+      else {
+        a = sqd / sqlen;
+        a = (Math.exp(1 - 1 / a) / a);
+        a = 255 - a * 255;
+      }
+      
+      data[i + 3] = a;
+      
+      i += 4;
+      
+      ++col;
+    }
+    
+    return {
+      center: r,
+      stepSize: Math.floor(size * this.step),
+      brushSize: size,
+      kernel: data,
+    };
+  }
+}

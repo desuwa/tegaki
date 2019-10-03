@@ -1,27 +1,19 @@
-var TegakiBucket;
-
-TegakiBucket = {
-  name: 'bucket',
-  
-  keybind: 'g',
-  
-  noCursor: true,
-  
-  init: function() {
-    this.size = 1;
-    this.alpha = 1.0;
-    this.step = 100.0;
-    this.stepAcc = 0;
+class TegakiBucket extends TegakiTool {
+  constructor() {
+    super();
     
-    this.commit = TegakiBrush.commit;  
-    this.generateBrush = TegakiPen.generateBrush;  
-    this.setSize = TegakiBrush.setSize;  
-    this.setAlpha = TegakiBrush.setAlpha;  
-    this.setColor = TegakiBrush.setColor;  
-    this.set = TegakiBrush.set;
-  },
+    this.name = 'bucket';
+    
+    this.keybind = 'g';
+    
+    this.step = 100.0;
+    
+    this.size = 1;
+    
+    this.noCursor = true;
+  }
   
-  fill: function(srcId, destId, x, y, color, alpha) {
+  fill(srcId, destId, x, y, color, alpha) {
     var r, g, b, a, px, tr, tg, tb, ta, q, pxMap, yy, xx, yn, ys,
       yyy, yyn, yys, xd, srcData, destData, w, h;
     
@@ -132,9 +124,9 @@ TegakiBucket = {
         ++xd;
       }
     }
-  },
+  }
   
-  brushFn: function(x, y) {
+  brushFn(x, y) {
     var aCtx, gCtx, w, h, srcId, destId;
     
     x = 0 | x;
@@ -156,36 +148,35 @@ TegakiBucket = {
     this.fill(srcId, destId, x, y, this.rgb, this.alpha);
     
     gCtx.putImageData(destId, 0, 0);
-  },
+  }
   
-  setPixel: function(data, px, r, g, b, a) {
+  setPixel(data, px, r, g, b, a) {
     data[px] = r; ++px;
     data[px] = g; ++px;
     data[px] = b; ++px;
     data[px] = a;
-  },
+  }
   
-  testPixel: function(data, px, pxMap, tr, tg, tb, ta) {
+  testPixel(data, px, pxMap, tr, tg, tb, ta) {
     return !pxMap[px] && (data[px] == tr
       && data[++px] == tg
       && data[++px] == tb
       && data[++px] == ta)
     ;
-  },
+  }
   
-  draw: function(x, y, pt) {
+  start(x, y) {
     this.brushFn(x, y);
-  },
+  }
   
-  commit: null,
+  draw(x, y) {
+    this.brushFn(x, y);
+  }
   
-  generateBrush: null,
+  commit() {
+    Tegaki.activeCtx.drawImage(Tegaki.ghostCanvas, 0, 0);
+    Tegaki.clearCtx(Tegaki.ghostCtx);
+  }
   
-  setSize: null,
-  
-  setAlpha: null,
-  
-  setColor: null,
-  
-  set: null,
-};
+  setSize(size) {}
+}
