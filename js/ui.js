@@ -183,7 +183,7 @@ TegakiUI = {
     el.min = 1;
     el.max = Tegaki.maxSize;
     el.type = 'range';
-    $T.on(el, 'change', Tegaki.onSizeChange);
+    $T.on(el, 'input', Tegaki.onSizeChange);
     row.appendChild(el);
     
     el = $T.el('input');
@@ -212,7 +212,7 @@ TegakiUI = {
     el.max = 1;
     el.step = 0.01;
     el.type = 'range';
-    $T.on(el, 'change', Tegaki.onAlphaChange);
+    $T.on(el, 'input', Tegaki.onAlphaChange);
     row.appendChild(el);
     
     el = $T.el('input');
