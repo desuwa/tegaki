@@ -29,7 +29,21 @@ task :concat do
   
   src << File.binread(file)
   
-  Dir.glob("#{SRC_DIR}/tools/*.js").each do |file|
+  %w[
+    tool
+    brush
+    pencil
+    airbrush
+    pen
+    bucket
+    tone
+    pipette
+    dodge
+    burn
+    blur
+    eraser
+  ].each do |tool|
+    file = "#{SRC_DIR}/tools/#{tool}.js"
     puts "<-- #{file}"
     src << File.binread(file)
   end
