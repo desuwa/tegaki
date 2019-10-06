@@ -6,17 +6,13 @@ class TegakiBurn extends TegakiBrush {
     
     this.size = 32;
     this.alpha = 0.5;
-    this.step = 0.25;
+    this.step = 0.1;
     
     this.useGhostLayer = false;
     this.activeLayer = true;
     
+    this.useSizeDynamics = true;
     this.useAlphaDynamics = true;
-  }
-  
-  commit() {
-    this.activeImgData = null;
-    this.tmpImgData = null;
   }
   
   brushFn(x, y, offsetX, offsetY) {
@@ -41,7 +37,7 @@ class TegakiBurn extends TegakiBrush {
       for (xx = 0; xx < size; ++xx) {
         px = ((y + yy) * w + (x + xx)) * 4;
         
-        ka = (kernel[(yy * size + xx) * 4 + 3] / 255) * alpha * 0.1;
+        ka = (kernel[(yy * size + xx) * 4 + 3] / 255) * alpha * 0.05;
         
         r = data[px];
         g = data[px + 1];

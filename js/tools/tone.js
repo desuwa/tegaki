@@ -14,16 +14,23 @@ class TegakiTone extends TegakiBrush {
     this.useActiveLayer = false;
     this.useGhostLayer = true;
     
+    this.useSizeDynamics = true;
+    this.useAlphaDynamics = true;
+    
     this.matrix = [
       [0, 8, 2, 10],
       [12, 4, 14, 6],
       [3, 11, 1 ,9],
       [15, 7, 13, 5]
     ];
+    
+    this.mapCache = null;
+    this.mapWidth = 0;
+    this.mapHeight = 0;
   }
   
   brushFn(x, y, offsetX, offsetY) {
-    var data, kernel, brushSize, map,
+    var data, kernel, brushSize, map, idx,
       px, mapWidth, mapHeight, xx, yy, gx, gy, width;
     
     x = 0 | x;
@@ -42,7 +49,13 @@ class TegakiTone extends TegakiBrush {
     mapWidth = Tegaki.baseWidth;
     mapHeight = Tegaki.baseHeight;
     
-    map = this.generateMap(mapWidth, mapHeight);
+    idx = Math.round(this.brushAlpha * 16) - 1;
+    
+    if (idx < 0) {
+      return;
+    }
+    
+    map = this.mapCache[idx];
     
     for (yy = 0; yy < brushSize; ++yy) {
       for (xx = 0; xx < brushSize; ++xx) {
@@ -61,36 +74,48 @@ class TegakiTone extends TegakiBrush {
     }
   }
   
-  generateMap(w, h) {
-    var data, x, y, a;
+  generateMap(w, h, idx) {
+    var data, x, y;
     
-    if (this.alpha == this.dataAlpha
-      && w === this.dataWidth
-      && h === this.dataHeight) {
-      return this.data;
-    }
+    data = new Uint8Array(Tegaki.baseWidth * Tegaki.baseHeight);
     
-    data = new Uint8Array(w * h);
-    
-    if (this.alpha <= 1.0) {
-      a = this.alpha * 16 - 1;
-      
-      for (y = 0; y < h; ++y) {
-        for (x = 0; x < w; ++x) {
-          if (a < this.matrix[y % 4][x % 4]) {
-            data[w * y + x] = 1;
-          }
+    for (y = 0; y < h; ++y) {
+      for (x = 0; x < w; ++x) {
+        if (idx < this.matrix[y % 4][x % 4]) {
+          data[w * y + x] = 1;
         }
       }
     }
     
-    this.dataAlpha = this.alpha;
-    this.dataWidth = w;
-    this.dataHeight = h;
-    
-    this.data = data;
-    
     return data;
+  }
+  
+  generateMapCache(force) {
+    var i, cacheSize;
+    
+    cacheSize = this.matrix.length * this.matrix[0].length;
+    
+    if (!this.mapCache) {
+      this.mapCache = new Array(cacheSize);
+    }
+    
+    if (!force && this.mapCache[0]
+      && this.mapWidth === Tegaki.baseWidth
+      && this.mapHeight === Tegaki.baseHeight) {
+      return;
+    }
+    
+    this.mapWidth = Tegaki.baseWidth;
+    this.mapHeight = Tegaki.baseHeight;
+    
+    for (i = 0; i < cacheSize; ++i) {
+      this.mapCache[i] = this.generateMap(this.mapWidth, this.mapHeight, i);
+    }
+  }
+  
+  setAlpha(alpha) {
+    super.setAlpha(alpha);
+    this.generateMapCache();
   }
 }
 
