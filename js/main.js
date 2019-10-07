@@ -513,19 +513,19 @@ Tegaki = {
   },
   
   setToolSize: function(size) {
-    Tegaki.tool.setSize && Tegaki.tool.setSize(size);
+    Tegaki.tool.setSize(size);
     Tegaki.updateCursorStatus();
   },
   
   setToolAlpha: function(alpha) {
-    Tegaki.tool.setAlpha && Tegaki.tool.setAlpha(alpha);
+    Tegaki.tool.setAlpha(alpha);
   },
   
   setToolColor: function(color) {
     Tegaki.toolColor = color;
     $T.id('tegaki-color').style.backgroundColor = color;
     $T.id('tegaki-colorpicker').value = color;
-    Tegaki.tool.setColor && Tegaki.tool.setColor(color);
+    Tegaki.tool.setColor(color);
   },
   
   setTool: function(tool) {
@@ -662,6 +662,8 @@ Tegaki = {
   
   onAlphaChange: function() {
     var val = +this.value;
+    
+    val = val / 100;
     
     if (val < 0.0) {
       val = 0.0;

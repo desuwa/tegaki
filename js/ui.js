@@ -209,8 +209,8 @@ TegakiUI = {
     el.id = 'tegaki-alpha';
     el.className = 'tegaki-ctrl-range';
     el.min = 0;
-    el.max = 1;
-    el.step = 0.01;
+    el.max = 100;
+    el.step = 1;
     el.type = 'range';
     $T.on(el, 'input', Tegaki.onAlphaChange);
     row.appendChild(el);
@@ -655,8 +655,9 @@ TegakiUI = {
   },
   
   updateAlpha: function() {
-    $T.id('tegaki-alpha-lbl').value = Tegaki.tool.alpha;
-    $T.id('tegaki-alpha').value = Tegaki.tool.alpha;
+    var val = 0 | (Tegaki.tool.alpha * 100);
+    $T.id('tegaki-alpha-lbl').value = val;
+    $T.id('tegaki-alpha').value = val;
   },
   
   updateDynamics: function() {
