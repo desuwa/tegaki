@@ -6,13 +6,14 @@ class TegakiPen extends TegakiBrush {
     
     this.keybind = 'p';
     
-    this.step = 0.10;
+    this.step = 0.01;
     
     this.size = 8;
-    this.alpha = 0.5;
+    this.alpha = 1.0;
     
     this.useSizeDynamics = true;
     this.useAlphaDynamics = true;
+    this.usePreserveAlpha = true;
   }
   
   generateShape(size) {
@@ -42,7 +43,7 @@ class TegakiPen extends TegakiBrush {
     ctx.closePath();
     
     return {
-      center: r,
+      center: Math.ceil(r),
       stepSize: Math.floor(size * this.step),
       brushSize: brushSize,
       kernel: ctx.getImageData(0, 0, brushSize, brushSize).data,

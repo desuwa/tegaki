@@ -4,11 +4,9 @@ class TegakiTool {
     
     this.keybind = null;
     
-    this.useActiveLayer = false;
-    this.useGhostLayer = false;
-    
     this.useSizeDynamics = false;
     this.useAlphaDynamics = false;
+    this.usePreserveAlpha = false;
     
     this.step = 0.0;
     
@@ -27,13 +25,14 @@ class TegakiTool {
     
     this.sizeDynamicsEnabled = false;
     this.alphaDynamicsEnabled = false;
+    this.preserveAlphaEnabled = false;
+    
+    this.tip = null;
+    this.tipList = null;
     
     this.shapeCache = null;
     
     this.kernel = null;
-    
-    this.ghostImgData = null;
-    this.activeImgData = null;
   }
   
   brushFn(x, y, offsetX, offsetY) {}
@@ -57,9 +56,17 @@ class TegakiTool {
     this.rgb = $T.hexToRgb(hex);
   }
   
-  setSizeDynamics(flag) {}
+  setSizeDynamics(flag) {
+    this.sizeDynamicsEnabled = flag;
+  }
   
-  setAlphaDynamics(flag) {}
+  setAlphaDynamics(flag) {
+    this.alphaDynamicsEnabled = flag;
+  }
+  
+  setPreserveAlpha(flag) {
+    this.preserveAlphaEnabled = flag;
+  }
   
   set() {
     this.setAlpha(this.alpha);

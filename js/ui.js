@@ -18,29 +18,30 @@ TegakiUI = {
   buildMenuBar: function() {
     var frag, btn;
     
-    frag = $T.frag();
+    frag = $T.el('div');
+    frag.id = 'tegaki-menu-bar';
     
     btn = $T.el('span');
-    btn.className = 'tegaki-tb-btn';
+    btn.className = 'tegaki-mb-btn';
     btn.textContent = TegakiStrings.newCanvas;
     $T.on(btn, 'click', Tegaki.onNewClick);
     frag.appendChild(btn);
     
     btn = $T.el('span');
-    btn.className = 'tegaki-tb-btn';
+    btn.className = 'tegaki-mb-btn';
     btn.textContent = TegakiStrings.open;
     $T.on(btn, 'click', Tegaki.onOpenClick);
     frag.appendChild(btn);
     
     btn = $T.el('span');
-    btn.className = 'tegaki-tb-btn';
+    btn.className = 'tegaki-mb-btn';
     btn.textContent = TegakiStrings.export;
     $T.on(btn, 'click', Tegaki.onExportClick);
     frag.appendChild(btn);
     
     btn = $T.el('span');
     btn.id = 'tegaki-undo-btn';
-    btn.className = 'tegaki-tb-btn';
+    btn.className = 'tegaki-mb-btn';
     btn.textContent = TegakiStrings.undo;
     btn.title = 'Ctrl+Z';
     $T.on(btn, 'click', Tegaki.onUndoClick);
@@ -48,26 +49,104 @@ TegakiUI = {
     
     btn = $T.el('span');
     btn.id = 'tegaki-redo-btn';
-    btn.className = 'tegaki-tb-btn';
+    btn.className = 'tegaki-mb-btn';
     btn.textContent = TegakiStrings.redo;
     btn.title = 'Ctrl+Y';
     $T.on(btn, 'click', Tegaki.onRedoClick);
     frag.appendChild(btn);
     
     btn = $T.el('span');
-    btn.className = 'tegaki-tb-btn';
+    btn.className = 'tegaki-mb-btn';
     btn.textContent = TegakiStrings.close;
     $T.on(btn, 'click', Tegaki.onCancelClick);
     frag.appendChild(btn);
     
     btn = $T.el('span');
     btn.id = 'tegaki-finish-btn';
-    btn.className = 'tegaki-tb-btn';
+    btn.className = 'tegaki-mb-btn';
     btn.textContent = TegakiStrings.finish;
     $T.on(btn, 'click', Tegaki.onDoneClick);
     frag.appendChild(btn);
     
     return frag;
+  },
+  
+  buildToolModeBar: function() {
+    var cnt, grp, el, btn;
+    
+    cnt = $T.el('div');
+    cnt.id = 'tegaki-toolmode-bar';
+    
+    // Dynamics
+    grp = $T.el('span');
+    grp.id = 'tegaki-tool-mode-dynamics';
+    grp.className = 'tegaki-toolmode-grp';
+    
+    el = $T.el('span');
+    el.className = 'tegaki-toolmode-lbl';
+    el.textContent = TegakiStrings.pressure;
+    grp.appendChild(el);
+    
+    el = $T.el('span');
+    el.id = 'tegaki-tool-mode-dynamics-ctrl';
+    el.className = 'tegaki-toolmode-ctrl';
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-tool-mode-dynamics-size';
+    btn.className = 'tegaki-sw-btn';
+    btn.textContent = TegakiStrings.size;
+    $T.on(btn, 'mousedown', Tegaki.onToolPressureSizeClick);
+    el.appendChild(btn);
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-tool-mode-dynamics-alpha';
+    btn.className = 'tegaki-sw-btn';
+    btn.textContent = TegakiStrings.alpha;
+    $T.on(btn, 'mousedown', Tegaki.onToolPressureAlphaClick);
+    el.appendChild(btn);
+    
+    grp.appendChild(el);
+    
+    cnt.appendChild(grp);
+    
+    // Preserve Alpha
+    grp = $T.el('span');
+    grp.id = 'tegaki-tool-mode-mask';
+    grp.className = 'tegaki-toolmode-grp';
+    
+    el = $T.el('span');
+    el.id = 'tegaki-toolmode-ctrl-tip';
+    el.className = 'tegaki-toolmode-ctrl';
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-tool-mode-mask-alpha';
+    btn.className = 'tegaki-sw-btn';
+    btn.textContent = TegakiStrings.preserveAlpha;
+    $T.on(btn, 'mousedown', Tegaki.onToolPreserveAlphaClick);
+    el.appendChild(btn);
+    
+    grp.appendChild(el);
+    
+    cnt.appendChild(grp);
+    
+    // Tip
+    grp = $T.el('span');
+    grp.id = 'tegaki-tool-mode-tip';
+    grp.className = 'tegaki-toolmode-grp';
+    
+    el = $T.el('span');
+    el.className = 'tegaki-toolmode-lbl';
+    el.textContent = TegakiStrings.tip;
+    grp.appendChild(el);
+    
+    el = $T.el('span');
+    el.id = 'tegaki-tool-mode-tip-ctrl';
+    el.className = 'tegaki-toolmode-ctrl';
+    grp.appendChild(el);
+    
+    cnt.appendChild(grp);
+    
+    return cnt;
   },
   
   buildToolsMenu: function() {
@@ -183,13 +262,13 @@ TegakiUI = {
     el.min = 1;
     el.max = Tegaki.maxSize;
     el.type = 'range';
-    $T.on(el, 'input', Tegaki.onSizeChange);
+    $T.on(el, 'input', Tegaki.onToolSizeChange);
     row.appendChild(el);
     
     el = $T.el('input');
     el.id = 'tegaki-size-lbl';
     el.className = 'tegaki-stealth-input';
-    $T.on(el, 'change', Tegaki.onSizeChange);
+    $T.on(el, 'change', Tegaki.onToolSizeChange);
     row.appendChild(el);
     
     ctrl.appendChild(row);
@@ -212,51 +291,13 @@ TegakiUI = {
     el.max = 100;
     el.step = 1;
     el.type = 'range';
-    $T.on(el, 'input', Tegaki.onAlphaChange);
+    $T.on(el, 'input', Tegaki.onToolAlphaChange);
     row.appendChild(el);
     
     el = $T.el('input');
     el.id = 'tegaki-alpha-lbl';
     el.className = 'tegaki-stealth-input';
-    $T.on(el, 'change', Tegaki.onAlphaChange);
-    row.appendChild(el);
-    
-    ctrl.appendChild(row);
-    
-    return ctrl;
-  },
-  
-  buildDynamicsCtrlGroup: function() {
-    var el, ctrl, row;
-    
-    ctrl = this.buildCtrlGroup('dynamics', TegakiStrings.dynamics);
-    
-    row = $T.el('div');
-    row.className = 'tegaki-ctrlrow';
-    
-    el = $T.el('span');
-    el.id = 'tegaki-size-p-cb';
-    el.className = 'tegaki-ui-cb';
-    $T.on(el, 'mousedown', Tegaki.onSizePressureCtrlClick);
-    row.appendChild(el);
-    
-    el = $T.el('span');
-    el.textContent = TegakiStrings.pressureSizeCtrl;
-    row.appendChild(el);
-    
-    ctrl.appendChild(row);
-    
-    row = $T.el('div');
-    row.className = 'tegaki-ctrlrow';
-    
-    el = $T.el('span');
-    el.id = 'tegaki-alpha-p-cb';
-    el.className = 'tegaki-ui-cb';
-    $T.on(el, 'mousedown', Tegaki.onAlphaPressureCtrlClick);
-    row.appendChild(el);
-    
-    el = $T.el('span');
-    el.textContent = TegakiStrings.pressureAlphaCtrl;
+    $T.on(el, 'change', Tegaki.onToolAlphaChange);
     row.appendChild(el);
     
     ctrl.appendChild(row);
@@ -532,6 +573,14 @@ TegakiUI = {
   
   // ---
   
+  onToolChanged: function() {
+    TegakiUI.updateToolSize();
+    TegakiUI.updateToolAlpha();
+    TegakiUI.updateToolModes();
+  },
+  
+  // ---
+  
   updateLayersGridClear: function() {
     $T.id('tegaki-layers-grid').innerHTML = '';
   },
@@ -649,59 +698,147 @@ TegakiUI = {
     }
   },
   
-  updateSize: function() {
+  updateToolSize: function() {
     $T.id('tegaki-size-lbl').value = Tegaki.tool.size;
     $T.id('tegaki-size').value = Tegaki.tool.size;
   },
   
-  updateAlpha: function() {
+  updateToolAlpha: function() {
     var val = 0 | (Tegaki.tool.alpha * 100);
     $T.id('tegaki-alpha-lbl').value = val;
     $T.id('tegaki-alpha').value = val;
   },
   
-  updateDynamics: function() {
+  updateToolDynamics: function() {
     var ctrl, cb;
     
-    ctrl = $T.id('tegaki-ctrlgrp-dynamics');
+    ctrl = $T.id('tegaki-tool-mode-dynamics');
     
     if (!Tegaki.tool.useSizeDynamics && !Tegaki.tool.useAlphaDynamics) {
       ctrl.classList.add('tegaki-hidden');
     }
     else {
-      cb = $T.id('tegaki-size-p-cb');
+      cb = $T.id('tegaki-tool-mode-dynamics-size');
       
       if (Tegaki.tool.useSizeDynamics) {
         if (Tegaki.tool.sizeDynamicsEnabled) {
-          cb.classList.add('tegaki-ui-cb-a');
+          cb.classList.add('tegaki-sw-btn-a');
         }
         else {
-          cb.classList.remove('tegaki-ui-cb-a');
+          cb.classList.remove('tegaki-sw-btn-a');
         }
         
-        cb.parentNode.classList.remove('tegaki-hidden');
+        cb.classList.remove('tegaki-hidden');
       }
       else {
-        cb.parentNode.classList.add('tegaki-hidden');
+        cb.classList.add('tegaki-hidden');
       }
       
-      cb = $T.id('tegaki-alpha-p-cb');
+      cb = $T.id('tegaki-tool-mode-dynamics-alpha');
       
       if (Tegaki.tool.useAlphaDynamics) {
         if (Tegaki.tool.alphaDynamicsEnabled) {
-          cb.classList.add('tegaki-ui-cb-a');
+          cb.classList.add('tegaki-sw-btn-a');
         }
         else {
-          cb.classList.remove('tegaki-ui-cb-a');
+          cb.classList.remove('tegaki-sw-btn-a');
         }
         
-        cb.parentNode.classList.remove('tegaki-hidden');
+        cb.classList.remove('tegaki-hidden');
       }
       else {
-        cb.parentNode.classList.add('tegaki-hidden');
+        cb.classList.add('tegaki-hidden');
       }
       
       ctrl.classList.remove('tegaki-hidden');
+    }
+  },
+  
+  updateToolShape: function() {
+    var tip, ctrl, cnt, btn, tipList;
+    
+    ctrl = $T.id('tegaki-tool-mode-tip');
+    
+    if (!Tegaki.tool.tipList) {
+      ctrl.classList.add('tegaki-hidden');
+    }
+    else {
+      tipList = Tegaki.tool.tipList;
+      
+      cnt = $T.id('tegaki-tool-mode-tip-ctrl');
+      
+      for (btn of cnt.children) {
+        tip = btn.getAttribute('data-id');
+        
+        if (tipList.indexOf(tip) !== -1) {
+          btn.classList.remove('tegaki-sw-btn-a');
+          btn.classList.remove('tegaki-hidden');
+        }
+        else {
+          btn.classList.add('tegaki-hidden');
+        }
+      }
+      
+      for (tip of tipList) {
+        if (!(btn = $T.id('tegaki-tool-mode-tip-' + tip))) {
+          btn = $T.el('span');
+          btn.id = 'tegaki-tool-mode-tip-' + tip;
+          btn.className = 'tegaki-sw-btn';
+          btn.setAttribute('data-id', tip);
+          btn.textContent = TegakiStrings[tip];
+          
+          $T.on(btn, 'mousedown', Tegaki.onToolTipClick);
+          cnt.appendChild(btn);
+        }
+        
+        if (Tegaki.tool.tip === tip) {
+          btn.classList.add('tegaki-sw-btn-a');
+        }
+      }
+      
+      ctrl.classList.remove('tegaki-hidden');
+    }
+  },
+  
+  updateToolPreserveAlpha: function() {
+    var cb, ctrl;
+    
+    ctrl = $T.id('tegaki-tool-mode-mask');
+    
+    if (!Tegaki.tool.usePreserveAlpha) {
+      ctrl.classList.add('tegaki-hidden');
+    }
+    else {
+      cb = $T.id('tegaki-tool-mode-mask-alpha');
+      
+      if (Tegaki.tool.preserveAlphaEnabled) {
+        cb.classList.add('tegaki-sw-btn-a');
+      }
+      else {
+        cb.classList.remove('tegaki-sw-btn-a');
+      }
+      
+      ctrl.classList.remove('tegaki-hidden');
+    }
+  },
+  
+  updateToolModes: function() {
+    var el, flag;
+    
+    TegakiUI.updateToolShape();
+    TegakiUI.updateToolDynamics();
+    TegakiUI.updateToolPreserveAlpha();
+    
+    flag = false;
+    
+    for (el of $T.id('tegaki-toolmode-bar').children) {
+      if (!flag && !el.classList.contains('tegaki-hidden')) {
+        el.classList.add('tegaki-ui-borderless');
+        flag = true;
+      }
+      else {
+        el.classList.remove('tegaki-ui-borderless');
+      }
     }
   },
   

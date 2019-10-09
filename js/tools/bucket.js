@@ -127,13 +127,12 @@ class TegakiBucket extends TegakiTool {
   }
   
   brushFn(x, y) {
-    var aCtx, gCtx, w, h, srcId, destId;
+    var aCtx, gCtx, w, h, srcId, destId, el;
     
     x = 0 | x;
     y = 0 | y;
     
     aCtx = Tegaki.activeCtx;
-    gCtx = Tegaki.ghostCtx;
     
     w = aCtx.canvas.width;
     h = aCtx.canvas.height;
@@ -142,12 +141,20 @@ class TegakiBucket extends TegakiTool {
       return;
     }
     
+    el = $T.el('canvas');
+    el.width = w;
+    el.height = h;
+    
+    gCtx = el.getContext('2d');
+    
     srcId = aCtx.getImageData(0, 0, w, h);
     destId = gCtx.getImageData(0, 0, w, h);
     
     this.fill(srcId, destId, x, y, this.rgb, this.alpha);
     
     gCtx.putImageData(destId, 0, 0);
+    
+    Tegaki.activeCtx.drawImage(el, 0, 0);
   }
   
   setPixel(data, px, r, g, b, a) {
@@ -171,11 +178,6 @@ class TegakiBucket extends TegakiTool {
   
   draw(x, y) {
     this.brushFn(x, y);
-  }
-  
-  commit() {
-    Tegaki.activeCtx.drawImage(Tegaki.ghostCanvas, 0, 0);
-    Tegaki.clearCtx(Tegaki.ghostCtx);
   }
   
   setSize(size) {}

@@ -332,8 +332,6 @@ TegakiLayers = {
       Tegaki.layersCnt.insertBefore(layer[1].canvas, tgtCanvas);
     }
     
-    Tegaki.updateGhostLayerPos();
-    
     TegakiUI.updayeLayersGridOrder();
     
     return new TegakiHistoryActions.MoveLayers(
@@ -381,8 +379,6 @@ TegakiLayers = {
     
     Tegaki.activeCtx = ctx;
     Tegaki.activeLayerId = id;
-    
-    Tegaki.updateGhostLayerPos();
     
     TegakiLayers.selectedLayersClear();
     TegakiLayers.selectedLayersAdd(id);

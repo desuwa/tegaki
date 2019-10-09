@@ -6,13 +6,14 @@ class TegakiAirbrush extends TegakiBrush {
     
     this.keybind = 'a';
     
-    this.step = 0.10;
+    this.step = 0.01;
     
     this.size = 32;
-    this.alpha = 0.5;
+    this.alpha = 1.0;
     
     this.useSizeDynamics = true;
     this.useAlphaDynamics = true;
+    this.usePreserveAlpha = true;
   }
   
   generateShape(size) {
@@ -55,9 +56,13 @@ class TegakiAirbrush extends TegakiBrush {
         a = 255;
       }
       else {
-        a = sqd / sqlen;
-        a = (Math.exp(1 - 1 / a) / a);
-        a = 255 - a * 255;
+        a = (sqd / sqlen) + 0.1;
+        
+        if (a > 1.0) {
+          a = 1.0;
+        }
+        
+        a = (1 - (Math.exp(1 - 1 / a) / a)) * 255;
       }
       
       data[i + 3] = a;

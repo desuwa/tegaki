@@ -15,24 +15,17 @@ TegakiStrings = {
   confirmCancel: 'Are you sure? Your work will be lost.',
   confirmChangeCanvas: 'Are you sure? Changing the canvas will clear all layers and history.',
   
-  // UI
+  // Controls
   color: 'Color',
   size: 'Size',
   alpha: 'Opacity',
   zoom: 'Zoom',
-  dynamics: 'Dynamics',
-  pressureSizeCtrl: 'Size / Pressure',
-  pressureAlphaCtrl: 'Opacity / Pressure',
   layers: 'Layers',
   addLayer: 'Add layer',
   delLayers: 'Delete layers',
   mergeLayers: 'Merge layers',
-  showHideLayer: 'Toggle visibility',
   moveLayerUp: 'Move up',
   moveLayerDown: 'Move down',
-  tool: 'Tool',
-  changeCanvas: 'Change canvas',
-  blank: 'Blank',
   
   // Menu bar
   newCanvas: 'New',
@@ -45,13 +38,16 @@ TegakiStrings = {
   close: 'Close',
   finish: 'Finish',
   
+  // Tool modes
+  tip: 'Tip',
+  pressure: 'Pressure',
+  preserveAlpha: 'Preserve Alpha',
+  
   // Tools
   pen: 'Pen',
   pencil: 'Pencil',
   airbrush: 'Airbrush',
   pipette: 'Pipette',
-  dodge: 'Lighten',
-  burn: 'Darken',
   blur: 'Blur',
   eraser: 'Eraser',
   bucket: 'Bucket',

@@ -1,7 +1,7 @@
 var Tegaki;
 
 Tegaki = {
-  VERSION: '0.5.0',
+  VERSION: '0.6.0',
   
   startTimeStamp: 0,
   
@@ -14,10 +14,13 @@ Tegaki = {
   canvasCnt: null,
   
   cursorCanvas: null,
-  ghostCanvas: null,
+  
+  ghostBuffer: null,
+  blendBuffer: null,
+  ghostBuffer32: null,
+  blendBuffer32: null,
   
   cursorCtx: null,
-  ghostCtx: null,
   activeCtx: null,
   flatCtx: null,
   flatCtxCached: null,
@@ -52,8 +55,6 @@ Tegaki = {
     TegakiBucket,
     TegakiTone,
     TegakiPipette,
-    TegakiDodge,
-    TegakiBurn,
     TegakiBlur,
     TegakiEraser
   ],
@@ -77,6 +78,9 @@ Tegaki = {
   
   onDoneCb: null,
   onCancelCb: null,
+  
+  MASK_NORMAL: 0,
+  MASK_OVER: 1,
   
   open: function(opts) {
     var bg, cnt, cnt2, el, ctrl, canvas, self = Tegaki;
@@ -115,6 +119,7 @@ Tegaki = {
     el.id = 'tegaki-menu-cnt';
     
     el.appendChild(TegakiUI.buildMenuBar());
+    el.appendChild(TegakiUI.buildToolModeBar());
     
     bg.appendChild(el);
     
@@ -180,9 +185,6 @@ Tegaki = {
     // Layers control
     ctrl.appendChild(TegakiUI.buildLayersCtrlGroup());
     
-    // Pressure control
-    ctrl.appendChild(TegakiUI.buildDynamicsCtrlGroup());
-    
     // ---
     
     bg.appendChild(ctrl);
@@ -218,10 +220,7 @@ Tegaki = {
     self.setTool('pencil');
     
     TegakiUI.updateZoomLevel();
-    TegakiUI.updateSize();
-    TegakiUI.updateAlpha();
     
-    self.updateCursorStatus();
     self.updatePosOffset();
     
     self.updateFlatCtx();
@@ -275,12 +274,7 @@ Tegaki = {
   initGhostLayers: function() {
     var el;
     
-    el = $T.el('canvas');
-    el.id = 'tegaki-ghost-layer';
-    el.width = Tegaki.baseWidth;
-    el.height = Tegaki.baseHeight;
-    Tegaki.ghostCanvas = el;
-    Tegaki.ghostCtx = el.getContext('2d');
+    Tegaki.createBuffers();
     
     el = $T.el('canvas');
     el.id = 'tegaki-cursor-layer';
@@ -299,6 +293,25 @@ Tegaki = {
     el.width = Tegaki.baseWidth;
     el.height = Tegaki.baseHeight;
     Tegaki.flatCtxCached = el.getContext('2d');
+  },
+  
+  createBuffers() {
+    Tegaki.ghostBuffer = new Uint8ClampedArray(Tegaki.baseWidth * Tegaki.baseHeight * 4);
+    Tegaki.blendBuffer = new Uint8ClampedArray(Tegaki.baseWidth * Tegaki.baseHeight * 4);
+    Tegaki.ghostBuffer32 = new Uint32Array(Tegaki.ghostBuffer.buffer);
+    Tegaki.blendBuffer32 = new Uint32Array(Tegaki.blendBuffer.buffer);
+  },
+  
+  clearBuffers() {
+    Tegaki.ghostBuffer32.fill(0);
+    Tegaki.blendBuffer32.fill(0);
+  },
+  
+  destroyBuffers() {
+    Tegaki.ghostBuffer = null;
+    Tegaki.blendBuffer = null;
+    Tegaki.ghostBuffer32 = null;
+    Tegaki.blendBuffer32 = null;
   },
   
   disableSmoothing: function(ctx) {
@@ -393,12 +406,12 @@ Tegaki = {
     Tegaki.layerCounter = 0;
     Tegaki.zoomLevel = 1;
     Tegaki.activeCtx = null;
-    Tegaki.ghostCtx = null;
-    Tegaki.ghostCanvas = null;
     Tegaki.cursorCtx = null;
     Tegaki.cursorCanvas = null;
     Tegaki.flatCtx = null;
     Tegaki.flatCtxCached = null;
+    
+    Tegaki.destroyBuffers();
   },
   
   flatten: function(ctx) {
@@ -646,7 +659,7 @@ Tegaki = {
     Tegaki.onCancelCb();
   },
   
-  onSizeChange: function() {
+  onToolSizeChange: function() {
     var val = +this.value;
     
     if (val < 1) {
@@ -657,10 +670,10 @@ Tegaki = {
     }
     
     Tegaki.setToolSize(val);
-    TegakiUI.updateSize();
+    TegakiUI.updateToolSize();
   },
   
-  onAlphaChange: function() {
+  onToolAlphaChange: function(e) {
     var val = +this.value;
     
     val = val / 100;
@@ -673,27 +686,46 @@ Tegaki = {
     }
     
     Tegaki.setToolAlpha(val);
-    TegakiUI.updateAlpha();
+    TegakiUI.updateToolAlpha();
   },
   
-  onSizePressureCtrlClick: function(e) {
+  onToolPressureSizeClick: function(e) {
     if (!Tegaki.tool.useSizeDynamics) {
       return;
     }
     
     Tegaki.tool.setSizeDynamics(!Tegaki.tool.sizeDynamicsEnabled);
     
-    TegakiUI.updateDynamics();
+    TegakiUI.updateToolDynamics();
   },
   
-  onAlphaPressureCtrlClick: function(e) {
+  onToolPressureAlphaClick: function(e) {
     if (!Tegaki.tool.useAlphaDynamics) {
       return;
     }
     
     Tegaki.tool.setAlphaDynamics(!Tegaki.tool.alphaDynamicsEnabled);
     
-    TegakiUI.updateDynamics();
+    TegakiUI.updateToolDynamics();
+  },
+  
+  onToolPreserveAlphaClick: function(e) {
+    if (!Tegaki.tool.usePreserveAlpha) {
+      return;
+    }
+    
+    Tegaki.tool.setPreserveAlpha(!Tegaki.tool.preserveAlphaEnabled);
+    
+    TegakiUI.updateToolPreserveAlpha();
+  },
+  
+  onToolTipClick: function(e) {
+    var tip = e.target.getAttribute('data-id');
+    
+    if (tip !== Tegaki.tool.tip) {
+      Tegaki.tool.setTip(tip);
+      TegakiUI.updateToolShape();
+    }
   },
   
   onLayerSelectorClick: function(e) {
@@ -792,9 +824,7 @@ Tegaki = {
     
     $T.id('tegaki-tool-btn-' + tool.name).classList.add('tegaki-tool-active');
     
-    TegakiUI.updateSize();
-    TegakiUI.updateAlpha();
-    TegakiUI.updateDynamics();
+    TegakiUI.onToolChanged();
     Tegaki.updateCursorStatus();
   },
   
@@ -833,11 +863,10 @@ Tegaki = {
     Tegaki.baseWidth = width;
     Tegaki.baseHeight = height;
     
+    Tegaki.createBuffers();
+    
     Tegaki.canvas.width = width;
     Tegaki.canvas.height = height;
-    
-    Tegaki.ghostCanvas.width = width;
-    Tegaki.ghostCanvas.height = height;
     
     Tegaki.cursorCanvas.width = width;
     Tegaki.cursorCanvas.height = height;
@@ -869,13 +898,6 @@ Tegaki = {
     Tegaki.updateFlatCtx();
   },
   
-  updateGhostLayerPos: function() {
-    Tegaki.layersCnt.insertBefore(
-      Tegaki.ghostCanvas,
-      Tegaki.activeCtx.canvas.nextElementSibling
-    );
-  },
-  
   clearCtx: function(ctx) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   },
@@ -886,7 +908,6 @@ Tegaki = {
     }
     
     Tegaki.flatCtx.drawImage(Tegaki.flatCtxCached.canvas, 0, 0);
-    Tegaki.flatCtx.drawImage(Tegaki.ghostCanvas, 0, 0);
   },
   
   copyContextState: function(src, dest) {

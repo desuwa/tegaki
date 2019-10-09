@@ -1,4 +1,4 @@
-class TegakiTone extends TegakiBrush {
+class TegakiTone extends TegakiPencil {
   constructor() {
     super();
     
@@ -6,16 +6,14 @@ class TegakiTone extends TegakiBrush {
     
     this.keybind = 't';
     
-    this.step = 0.10;
+    this.step = 0.01;
     
     this.size = 8;
     this.alpha = 0.5;
     
-    this.useActiveLayer = false;
-    this.useGhostLayer = true;
-    
     this.useSizeDynamics = true;
     this.useAlphaDynamics = true;
+    this.usePreserveAlpha = true;
     
     this.matrix = [
       [0, 8, 2, 10],
@@ -29,9 +27,17 @@ class TegakiTone extends TegakiBrush {
     this.mapHeight = 0;
   }
   
+  start(x, y) {
+    if (this.mapWidth !== Tegaki.baseWidth || this.mapHeight !== Tegaki.baseHeight) {
+      this.generateMapCache(true);
+    }
+    
+    super.start(x, y);
+  }
+  
   brushFn(x, y, offsetX, offsetY) {
-    var data, kernel, brushSize, map, idx,
-      px, mapWidth, mapHeight, xx, yy, gx, gy, width;
+    var data, kernel, brushSize, map, idx, preserveAlpha,
+      px, mapWidth, xx, yy, gx, gy, width;
     
     x = 0 | x;
     y = 0 | y;
@@ -39,15 +45,16 @@ class TegakiTone extends TegakiBrush {
     gx = 0 | (x + offsetX);
     gy = 0 | (y + offsetY);
     
-    data = this.ghostImgData.data;
-    width = this.ghostImgData.width;
+    data = this.activeImgData.data;
+    width = this.activeImgData.width;
     
     kernel = this.kernel;
     
     brushSize = this.brushSize;
     
-    mapWidth = Tegaki.baseWidth;
-    mapHeight = Tegaki.baseHeight;
+    mapWidth = this.mapWidth;
+    
+    preserveAlpha = this.preserveAlphaEnabled;
     
     idx = Math.round(this.brushAlpha * 16) - 1;
     
@@ -65,10 +72,14 @@ class TegakiTone extends TegakiBrush {
         
         if (map[(yy + gy) * mapWidth + xx + gx] === 0) {
           px = ((yy + y) * width + xx + x) * 4;
+          
           data[px] = this.rgb[0]; ++px;
           data[px] = this.rgb[1]; ++px;
           data[px] = this.rgb[2]; ++px;
-          data[px] = 255;
+          
+          if (!preserveAlpha) {
+            data[px] = 255;
+          }
         }
       }
     }
@@ -77,7 +88,7 @@ class TegakiTone extends TegakiBrush {
   generateMap(w, h, idx) {
     var data, x, y;
     
-    data = new Uint8Array(Tegaki.baseWidth * Tegaki.baseHeight);
+    data = new Uint8Array(w * h);
     
     for (y = 0; y < h; ++y) {
       for (x = 0; x < w; ++x) {
@@ -118,5 +129,3 @@ class TegakiTone extends TegakiBrush {
     this.generateMapCache();
   }
 }
-
-TegakiTone.prototype.generateShape = TegakiPencil.prototype.generateShape;

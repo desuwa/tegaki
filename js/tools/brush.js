@@ -2,58 +2,92 @@ class TegakiBrush extends TegakiTool {
   constructor() {
     super();
     
-    this.useActiveLayer = true;
-    this.useGhostLayer = false;
+    this.activeImgData = null;
   }
   
   generateShape(size) {}
   
   brushFn(x, y, offsetX, offsetY) {
-    var i, data, kernel, width, xx, yy, px, brushSize,
-      pr, pg, pb,
+    var i, aData, gData, bData, aWidth, canvasWidth, kernel, xx, yy,
+      pa, ka, a, sa,
       kr, kg, kb,
       r, g, b,
-      pa, ka, a;
+      pr, pg, pb,
+      ax, cx, ba,
+      brushSize, brushAlpha, preserveAlpha;
     
     x = 0 | x;
     y = 0 | y;
     
-    brushSize = this.brushSize;
+    offsetX = 0 | offsetX;
+    offsetY = 0 | offsetY;
+    
+    preserveAlpha = this.preserveAlphaEnabled;
     
     kernel = this.kernel;
     
-    data = this.activeImgData.data;
-    width = this.activeImgData.width;
+    brushAlpha = this.brushAlpha;
+    brushSize = this.brushSize;
+    
+    aData = this.activeImgData.data;
+    gData = Tegaki.ghostBuffer;
+    bData = Tegaki.blendBuffer;
+    
+    aWidth = this.activeImgData.width;
+    canvasWidth = Tegaki.baseWidth;
+    
+    kr = this.rgb[0];
+    kg = this.rgb[1];
+    kb = this.rgb[2];
     
     for (yy = 0; yy < brushSize; ++yy) {
       for (xx = 0; xx < brushSize; ++xx) {
         i = (yy * brushSize + xx) * 4;
-        px = ((y + yy) * width + (x + xx)) * 4;
         
-        ka = (kernel[i + 3] / 255) * this.brushAlpha;
-        pa = data[px + 3] / 255;
-        a = (ka + pa - (ka * pa));
+        ka = kernel[i + 3] / 255;
         
-        kr = this.rgb[0];
-        kg = this.rgb[1];
-        kb = this.rgb[2];
+        if (ka <= 0.0) {
+          continue;
+        }
         
-        pr = data[px] * pa;
-        pg = data[px + 1] * pa;
-        pb = data[px + 2] * pa;
+        ax = ((y + yy) * aWidth + (x + xx)) * 4;
+        cx = ((y + yy + offsetY) * canvasWidth + (x + xx + offsetX)) * 4;
         
-        r = ((kr * ka) + pr - pr * ka) / a;
-        g = ((kg * ka) + pg - pg * ka) / a;
-        b = ((kb * ka) + pb - pb * ka) / a;
+        sa = bData[cx + 3] / 255;
+        sa = sa + ka * brushAlpha - sa * ka;
         
-        r = (kr > pr) ? Math.ceil(r) : Math.floor(r);
-        g = (kg > pg) ? Math.ceil(g) : Math.floor(g);
-        b = (kb > pb) ? Math.ceil(b) : Math.floor(b);
+        ba = Math.ceil(sa * 255);
         
-        data[px] = r;
-        data[px + 1] = g;
-        data[px + 2] = b;
-        data[px + 3] = Math.ceil(a * 255);
+        if (ba > bData[cx + 3]) {
+          if (bData[cx] === 0) {
+            gData[cx] = aData[ax];
+            gData[cx + 1] = aData[ax + 1];
+            gData[cx + 2] = aData[ax + 2];
+            gData[cx + 3] = aData[ax + 3];
+          }
+          
+          bData[cx] = 1;
+          bData[cx + 3] = ba;
+          
+          pr = gData[cx];
+          pg = gData[cx + 1];
+          pb = gData[cx + 2];
+          pa = gData[cx + 3] / 255;
+          
+          a = pa + sa - pa * sa;
+          
+          r = ((kr * sa) + (pr * pa) * (1 - sa)) / a;
+          g = ((kg * sa) + (pg * pa) * (1 - sa)) / a;
+          b = ((kb * sa) + (pb * pa) * (1 - sa)) / a;
+          
+          aData[ax] = (kr > pr) ? Math.ceil(r) : Math.floor(r);
+          aData[ax + 1] = (kg > pg) ? Math.ceil(g) : Math.floor(g);
+          aData[ax + 2] = (kb > pb) ? Math.ceil(b) : Math.floor(b);
+          
+          if (!preserveAlpha) {
+            aData[ax + 3] = Math.ceil(a * 255);
+          }
+        }
       }
     }
   }
@@ -130,16 +164,8 @@ class TegakiBrush extends TegakiTool {
   }
   
   commit() {
-    if (this.useGhostLayer) {
-      Tegaki.activeCtx.drawImage(Tegaki.ghostCanvas, 0, 0);
-      Tegaki.clearCtx(Tegaki.ghostCtx);
-      
-      this.ghostImgData = null;
-    }
-    
-    if (this.useActiveLayer) {
-      this.activeImgData = null;
-    }
+    this.activeImgData = null;
+    Tegaki.clearBuffers();
   }
   
   draw(posX, posY) {
@@ -157,11 +183,14 @@ class TegakiBrush extends TegakiTool {
     if (fromY < posY) { dy = posY - fromY; sampleY = fromY; my = 1; }
     else { dy = fromY - posY; sampleY = posY; my = -1; }
     
+    if (this.sizeDynamicsEnabled || this.alphaDynamicsEnabled) {
+      distBase = Math.sqrt((posX - fromX) * (posX - fromX) + (posY - fromY) * (posY - fromY));
+    }
+    
     if (this.sizeDynamicsEnabled) {
       shape = this.shapeCache[this.size - 1];
       center = shape.center;
       brushSize = shape.brushSize;
-      distBase = Math.sqrt((posX - fromX) * (posX - fromX) + (posY - fromY) * (posY - fromY));
     }
     else {
       center = this.center;
@@ -223,27 +252,11 @@ class TegakiBrush extends TegakiTool {
   }
   
   writeImageData(x, y) {
-    if (this.useGhostLayer) {
-      Tegaki.ghostCtx.putImageData(this.ghostImgData, x, y);
-    }
-    
-    if (this.useActiveLayer) {
-      Tegaki.activeCtx.putImageData(this.activeImgData, x, y);
-    }
+    Tegaki.activeCtx.putImageData(this.activeImgData, x, y);
   }
   
   readImageData(x, y, w, h) {
-    if (this.useGhostLayer) {
-      this.ghostImgData = Tegaki.ghostCtx.getImageData(
-        x, y, w, h
-      );
-    }
-    
-    if (this.useActiveLayer) {
-      this.activeImgData = Tegaki.activeCtx.getImageData(
-        x, y, w, h
-      );
-    }
+    this.activeImgData = Tegaki.activeCtx.getImageData(x, y, w, h);
   }
   
   setShape(shape) {
@@ -293,5 +306,16 @@ class TegakiBrush extends TegakiTool {
     }
     
     this.alphaDynamicsEnabled = flag;
+  }
+  
+  setTip(tip) {
+    this.tip = tip;
+    
+    if (this.sizeDynamicsEnabled) {
+      this.generateShapeCache(true);
+    }
+    else {
+      this.setShape(this.generateShape(this.size));
+    }
   }
 }

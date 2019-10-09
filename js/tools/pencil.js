@@ -6,47 +6,14 @@ class TegakiPencil extends TegakiBrush {
     
     this.keybind = 'b';
     
-    this.step = 0.10;
+    this.step = 0.01;
     
     this.size = 1;
     this.alpha = 1.0;
     
-    this.useGhostLayer = true;
-    this.useActiveLayer = false;
-    
     this.useSizeDynamics = true;
-    this.useAlphaDynamics = false;
-  }
-  
-  brushFn(x, y, offsetX, offsetY) {
-    var i, data, kernel, width, xx, yy, px, brushSize, a;
-    
-    x = 0 | x;
-    y = 0 | y;
-    
-    brushSize = this.brushSize;
-    
-    kernel = this.kernel;
-    
-    data = this.ghostImgData.data;
-    width = this.ghostImgData.width;
-    
-    a = 0 | (this.alpha * 255);
-    
-    for (yy = 0; yy < brushSize; ++yy) {
-      for (xx = 0; xx < brushSize; ++xx) {
-        i = (yy * brushSize + xx) * 4;
-        px = ((y + yy) * width + (x + xx)) * 4;
-        
-        data[px] = this.rgb[0]; ++px;
-        data[px] = this.rgb[1]; ++px;
-        data[px] = this.rgb[2]; ++px;
-        
-        if (kernel[i + 3] > 0) {
-          data[px] = a;
-        }
-      }
-    }
+    this.useAlphaDynamics = true;
+    this.usePreserveAlpha = true;
   }
   
   generateShape(size) {
@@ -95,7 +62,7 @@ class TegakiPencil extends TegakiBrush {
     }
     
     if (r > 0) {
-      Tegaki.tools.bucket.fill(imageData, imageData, r, r, this.rgb, this.alpha);
+      Tegaki.tools.bucket.fill(imageData, imageData, r, r, this.rgb, 1.0);
     }
     
     return {

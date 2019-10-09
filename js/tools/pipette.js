@@ -1,4 +1,4 @@
-class TegakiPipette extends TegakiBrush {
+class TegakiPipette extends TegakiTool {
   constructor() {
     super();
     

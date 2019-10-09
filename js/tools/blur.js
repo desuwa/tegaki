@@ -8,11 +8,10 @@ class TegakiBlur extends TegakiBrush {
     this.alpha = 0.5;
     this.step = 0.25;
     
-    this.useGhostLayer = false;
-    this.activeLayer = true;
-    
     this.useAlphaDynamics = true;
+    this.usePreserveAlpha = false;
     
+    this.activeImgData = null;
     this.tmpImgData = null;
   }
   
@@ -21,9 +20,7 @@ class TegakiBlur extends TegakiBrush {
   }
   
   readImageData(x, y, w, h) {
-    this.activeImgData = Tegaki.activeCtx.getImageData(
-      x, y, w, h
-    );
+    this.activeImgData = Tegaki.activeCtx.getImageData(x, y, w, h);
     
     this.tmpImgData = new ImageData(
       new Uint8ClampedArray(this.activeImgData.data), 

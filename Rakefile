@@ -38,8 +38,6 @@ task :concat do
     bucket
     tone
     pipette
-    dodge
-    burn
     blur
     eraser
   ].each do |tool|
