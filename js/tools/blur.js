@@ -75,11 +75,6 @@ class TegakiBlur extends TegakiBrush {
           continue;
         }
         
-        if ((sx + offsetX) <= 0 || (sy + offsetY) <= 0
-          || (sx + x + offsetX) >= canvasLimX || (sy + y + offsetY) >= canvasLimY) {
-          continue;
-        }
-        
         r = g = b = a = acc = 0;
         
         for (kx = -1; kx < 2; ++kx) {
