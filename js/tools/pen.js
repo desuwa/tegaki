@@ -17,7 +17,7 @@ class TegakiPen extends TegakiBrush {
   }
   
   generateShape(size) {
-    var r, brush, ctx, brushSize, offset;
+    var r, brush, ctx, brushSize, offset, data, center;
     
     if (size % 2) {
       brushSize = size + 1;
@@ -28,25 +28,35 @@ class TegakiPen extends TegakiBrush {
       offset = 0;
     }
     
-    r = size / 2;
-    
     brush = $T.el('canvas');
     brush.width = brushSize;
     brush.height = brushSize;
     
     ctx = brush.getContext('2d');
     
-    ctx.beginPath();
-    ctx.arc(r + offset, r + offset, r, 0, Tegaki.TWOPI, false);
-    ctx.fillStyle = '#000000';
-    ctx.fill();
-    ctx.closePath();
+    if (size > 1) {
+      r = size / 2;
+      
+      ctx.beginPath();
+      ctx.arc(r + offset, r + offset, r, 0, Tegaki.TWOPI, false);
+      ctx.fillStyle = '#000000';
+      ctx.fill();
+      ctx.closePath();
+      
+      center = Math.ceil(r);
+      data = ctx.getImageData(0, 0, brushSize, brushSize).data;
+    }
+    else {
+      center = 0;
+      data = ctx.createImageData(1, 1);
+      data[3] = 255;
+    }
     
     return {
-      center: Math.ceil(r),
+      center: center,
       stepSize: Math.floor(size * this.step),
       brushSize: brushSize,
-      kernel: ctx.getImageData(0, 0, brushSize, brushSize).data,
+      kernel: data,
     };
   }
 }
