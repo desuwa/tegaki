@@ -8,7 +8,8 @@ class TegakiBrush extends TegakiTool {
   generateShape(size) {}
   
   brushFn(x, y, offsetX, offsetY) {
-    var i, aData, gData, bData, aWidth, canvasWidth, kernel, xx, yy,
+    var i, aData, gData, bData, aWidth, canvasWidth, canvasHeight,
+      kernel, xx, yy, ix, iy,
       pa, ka, a, sa,
       kr, kg, kb,
       r, g, b,
@@ -34,14 +35,28 @@ class TegakiBrush extends TegakiTool {
     bData = Tegaki.blendBuffer;
     
     aWidth = this.activeImgData.width;
+    
     canvasWidth = Tegaki.baseWidth;
+    canvasHeight = Tegaki.baseHeight;
     
     kr = this.rgb[0];
     kg = this.rgb[1];
     kb = this.rgb[2];
     
     for (yy = 0; yy < brushSize; ++yy) {
+      iy = y + yy + offsetY;
+      
+      if (iy < 0 || iy >= canvasHeight) {
+        continue;
+      }
+      
       for (xx = 0; xx < brushSize; ++xx) {
+        ix = x + xx + offsetX;
+        
+        if (ix < 0 || ix >= canvasWidth) {
+          continue;
+        }
+        
         i = (yy * brushSize + xx) * 4;
         
         ka = kernel[i + 3] / 255;
@@ -51,7 +66,7 @@ class TegakiBrush extends TegakiTool {
         }
         
         ax = ((y + yy) * aWidth + (x + xx)) * 4;
-        cx = ((y + yy + offsetY) * canvasWidth + (x + xx + offsetX)) * 4;
+        cx = (iy * canvasWidth + ix) * 4;
         
         sa = bData[cx + 3] / 255;
         sa = sa + ka * brushAlpha - sa * ka;
