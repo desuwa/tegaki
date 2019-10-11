@@ -79,9 +79,6 @@ Tegaki = {
   onDoneCb: null,
   onCancelCb: null,
   
-  MASK_NORMAL: 0,
-  MASK_OVER: 1,
-  
   open: function(opts) {
     var bg, cnt, cnt2, el, ctrl, canvas, self = Tegaki;
     
