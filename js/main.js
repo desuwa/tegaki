@@ -1,7 +1,7 @@
 var Tegaki;
 
 Tegaki = {
-  VERSION: '0.6.0',
+  VERSION: '0.6.1',
   
   startTimeStamp: 0,
   
