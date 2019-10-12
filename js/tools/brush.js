@@ -217,8 +217,11 @@ class TegakiBrush extends TegakiTool {
     
     this.readImageData(sampleX, sampleY, dx + brushSize, dy + brushSize);
     
-    err = (dx > dy ? dx : -dy) / 2;
-    dx = -dx;
+    err = (dx > dy ? dx : (dy !== 0 ? -dy : 0)) / 2;
+    
+    if (dx !== 0) {
+      dx = -dx;
+    }
     
     tainted = false;
     
