@@ -140,7 +140,7 @@ TegakiHistoryActions.Draw.prototype.exec = function(type) {
   var layer;
   
   layer = TegakiLayers.getLayerById(this.layerId);
-  layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+  $T.clearCtx(layer.ctx);
   layer.ctx.drawImage(type ? this.canvasAfter: this.canvasBefore, 0, 0);
   TegakiLayers.setActiveLayer(this.layerId);
 };
@@ -190,7 +190,7 @@ TegakiHistoryActions.DeleteLayers.prototype.undo = function() {
   if (this.tgtLayerId) {
     if (this.canvasBefore) {
       layer = TegakiLayers.getLayerById(this.tgtLayerId);
-      layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+      $T.clearCtx(layer.ctx);
       layer.ctx.drawImage(this.canvasBefore, 0, 0);
     }
   }

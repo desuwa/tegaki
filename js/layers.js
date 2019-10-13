@@ -177,6 +177,8 @@ TegakiLayers = {
     
     Tegaki.layersCnt.insertBefore(canvas, afterNode.nextElementSibling);
     
+    Tegaki.onLayerStackChanged();
+    
     return new TegakiHistoryActions.AddLayer(layer, aLayerIdBefore, id);
   },
   
@@ -214,6 +216,8 @@ TegakiLayers = {
     if (extraParams) {
       Object.assign(params, extraParams);
     }
+    
+    Tegaki.onLayerStackChanged();
     
     return new TegakiHistoryActions.DeleteLayers(layers, params);
   },
@@ -263,7 +267,7 @@ TegakiLayers = {
       }
     }
     
-    Tegaki.clearCtx(targetLayer.ctx);
+    $T.clearCtx(targetLayer.ctx);
     targetLayer.ctx.drawImage(bgLayer.canvas, 0, 0);
     
     canvasAfter = $T.copyCanvas(targetLayer.canvas);
@@ -275,6 +279,8 @@ TegakiLayers = {
       canvasAfter: canvasAfter,
       mergeDown: layers.length === 1
     });
+    
+    Tegaki.onLayerStackChanged();
     
     return action;
   },
@@ -334,6 +340,8 @@ TegakiLayers = {
     
     TegakiUI.updayeLayersGridOrder();
     
+    Tegaki.onLayerStackChanged();
+    
     return new TegakiHistoryActions.MoveLayers(
       historyLayers, belowPos, Tegaki.activeLayerId
     );
@@ -348,6 +356,8 @@ TegakiLayers = {
     else {
       layer.canvas.classList.add('tegaki-hidden');
     }
+    
+    Tegaki.onLayerStackChanged();
     
     TegakiUI.updateLayersGridVisibility(layer.id, flag);
   },
@@ -384,6 +394,8 @@ TegakiLayers = {
     TegakiLayers.selectedLayersAdd(id);
     
     TegakiUI.updateLayersGridActive(id);
+    
+    Tegaki.onLayerStackChanged();
   },
   
   selectedLayersHas: function(id) {

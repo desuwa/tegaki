@@ -13,17 +13,12 @@ Tegaki = {
   layersCnt: null,
   canvasCnt: null,
   
-  cursorCanvas: null,
-  
   ghostBuffer: null,
   blendBuffer: null,
   ghostBuffer32: null,
   blendBuffer32: null,
   
-  cursorCtx: null,
   activeCtx: null,
-  flatCtx: null,
-  flatCtxCached: null,
   
   activeLayerId: null,
   layerCounter: 0,
@@ -204,7 +199,9 @@ Tegaki = {
     self.ctx.fillStyle = self.bgColor;
     self.ctx.fillRect(0, 0, opts.width, opts.height);
     
-    self.initGhostLayers();
+    self.createBuffers();
+    
+    TegakiCursor.init(opts.width, opts.height);
     
     TegakiLayers.addLayer();
     
@@ -219,8 +216,6 @@ Tegaki = {
     TegakiUI.updateZoomLevel();
     
     self.updatePosOffset();
-    
-    self.updateFlatCtx();
     
     self.bindGlobalEvents();
   },
@@ -266,30 +261,6 @@ Tegaki = {
     $T.off(document, 'keydown', TegakiKeybinds.resolve);
     
     $T.off(window, 'beforeunload', Tegaki.onTabClose);
-  },
-  
-  initGhostLayers: function() {
-    var el;
-    
-    Tegaki.createBuffers();
-    
-    el = $T.el('canvas');
-    el.id = 'tegaki-cursor-layer';
-    el.width = Tegaki.baseWidth;
-    el.height = Tegaki.baseHeight;
-    Tegaki.layersCnt.appendChild(el);
-    Tegaki.cursorCanvas = el;
-    Tegaki.cursorCtx = el.getContext('2d');
-    
-    el = $T.el('canvas');
-    el.width = Tegaki.baseWidth;
-    el.height = Tegaki.baseHeight;
-    Tegaki.flatCtx = el.getContext('2d');
-    
-    el = $T.el('canvas');
-    el.width = Tegaki.baseWidth;
-    el.height = Tegaki.baseHeight;
-    Tegaki.flatCtxCached = el.getContext('2d');
   },
   
   createBuffers() {
@@ -403,10 +374,8 @@ Tegaki = {
     Tegaki.layerCounter = 0;
     Tegaki.zoomLevel = 1;
     Tegaki.activeCtx = null;
-    Tegaki.cursorCtx = null;
-    Tegaki.cursorCanvas = null;
-    Tegaki.flatCtx = null;
-    Tegaki.flatCtxCached = null;
+    
+    TegakiCursor.destroy();
     
     Tegaki.destroyBuffers();
   },
@@ -460,68 +429,6 @@ Tegaki = {
     this.blur();
   },
   
-  renderCursor: function(x0, y0) {
-    var canvas, e, x, y, imageData, data, side,
-      srcImageData, srcData, c, color, r, rr;
-    
-    Tegaki.updateFlatCtx(Tegaki.isPainting);
-    
-    side = 0 | Tegaki.tool.size;
-    r = 0 | (side / 2);
-    rr = 0 | ((side + 1) % 2);
-    
-    Tegaki.clearCtx(Tegaki.cursorCtx);
-    
-    srcImageData = Tegaki.flatCtx.getImageData(x0 - r, y0 - r, side, side);
-    srcData = new Uint32Array(srcImageData.data.buffer);
-    
-    imageData = Tegaki.cursorCtx.getImageData(x0 - r, y0 - r, side, side);
-    data = new Uint32Array(imageData.data.buffer);
-    
-    color = 0x00FFFF7F;
-    
-    x = r;
-    y = 0;
-    e = 1 - r;
-    c = r;
-    
-    while (x >= y) {
-      data[(c + x - rr + (c + y - rr) * side)] =
-        srcData[(c + x - rr + (c + y - rr) * side)] ^ color;
-      data[(c + y - rr + (c + x - rr) * side)] =
-        srcData[(c + y - rr + (c + x - rr) * side)] ^ color;
-      
-      data[(c - y + (c + x - rr) * side)] =
-        srcData[(c - y + (c + x - rr) * side)] ^ color;
-      data[(c - x + (c + y - rr) * side)] =
-        srcData[(c - x + (c + y - rr) * side)] ^ color;
-      
-      data[(c - x + (c - y) * side)] =
-        srcData[(c - x + (c - y) * side)] ^ color;
-      data[(c - y + (c - x) * side)] =
-        srcData[(c - y + (c - x) * side)] ^ color;
-      
-      data[(c + y - rr + (c - x) * side)] =
-        srcData[(c + y - rr + (c - x) * side)] ^ color;
-      data[(c + x - rr + (c - y) * side)] =
-        srcData[(c + x - rr + (c - y) * side)] ^ color;
-        
-      ++y;
-      
-      if (e <= 0) {
-        e += 2 * y + 1;
-      }
-      else {
-        --x;
-        e += 2 * (y - x) + 1;
-      }
-    }
-    
-    Tegaki.cursorCtx.putImageData(imageData, x0 - r, y0 - r);
-    
-    return canvas;
-  },
-  
   setToolSize: function(size) {
     Tegaki.tool.setSize(size);
     Tegaki.updateCursorStatus();
@@ -563,7 +470,6 @@ Tegaki = {
     Tegaki.layersCnt.style.height = Tegaki.baseHeight * Tegaki.zoomLevel + 'px';
     
     Tegaki.updatePosOffset();
-    Tegaki.updateFlatCtx();
   },
   
   updateCanvasZoomSize: function(el) {
@@ -825,6 +731,10 @@ Tegaki = {
     Tegaki.updateCursorStatus();
   },
   
+  onLayerStackChanged: function() {
+    TegakiCursor.invalidateCache();
+  },
+  
   onOpenFileSelected: function() {
     var img;
     
@@ -865,14 +775,7 @@ Tegaki = {
     Tegaki.canvas.width = width;
     Tegaki.canvas.height = height;
     
-    Tegaki.cursorCanvas.width = width;
-    Tegaki.cursorCanvas.height = height;
-    
-    Tegaki.flatCtx.canvas.width = width;
-    Tegaki.flatCtx.canvas.height = height;
-    
-    Tegaki.flatCtxCached.canvas.width = width;
-    Tegaki.flatCtxCached.canvas.height = height;
+    TegakiCursor.updateCanvasSize(width, height);
     
     Tegaki.ctx.fillStyle = Tegaki.bgColor;
     Tegaki.ctx.fillRect(0, 0, width, height);
@@ -891,20 +794,6 @@ Tegaki = {
     
     TegakiLayers.addLayer();
     TegakiLayers.setActiveLayer(0);
-    
-    Tegaki.updateFlatCtx();
-  },
-  
-  clearCtx: function(ctx) {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  },
-  
-  updateFlatCtx: function(fromCache) {
-    if (!fromCache) {
-      Tegaki.flatten(Tegaki.flatCtxCached);
-    }
-    
-    Tegaki.flatCtx.drawImage(Tegaki.flatCtxCached.canvas, 0, 0);
   },
   
   copyContextState: function(src, dest) {
@@ -919,13 +808,14 @@ Tegaki = {
   },
   
   updateCursorStatus: function() {
-    if (Tegaki.tool.noCursor || Tegaki.tool.size < 2) {
-      Tegaki.cursor = false;
-      Tegaki.clearCtx(Tegaki.cursorCtx);
-      return;
+    if (!Tegaki.tool.noCursor && Tegaki.tool.size > 1) {
+      Tegaki.cursor = true;
+      TegakiCursor.generate(Tegaki.tool.size);
     }
-    
-    Tegaki.cursor = true;
+    else {
+      Tegaki.cursor = false;
+      $T.clearCtx(TegakiCursor.cursorCtx);
+    }
   },
   
   updatePosOffset: function() {
@@ -997,7 +887,7 @@ Tegaki = {
     }
     
     if (Tegaki.cursor) {
-      Tegaki.renderCursor(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+      TegakiCursor.render(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
     }
   },
   
@@ -1044,8 +934,6 @@ Tegaki = {
       
       Tegaki.isPainting = true;
       
-      Tegaki.clearCtx(Tegaki.cursorCtx);
-      
       TegakiHistory.pendingAction = new TegakiHistoryActions.Draw(
         Tegaki.activeLayerId
       );
@@ -1056,7 +944,7 @@ Tegaki = {
     }
     
     if (Tegaki.cursor) {
-      Tegaki.renderCursor(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+      TegakiCursor.render(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
     }
   },
   
@@ -1077,7 +965,7 @@ Tegaki = {
     }
     
     if (Tegaki.cursor) {
-      Tegaki.renderCursor(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+      TegakiCursor.render(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
     }
   },
   
