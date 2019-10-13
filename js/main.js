@@ -302,7 +302,7 @@ Tegaki = {
   },
   
   initKeybinds: function() {
-    var cls;
+    var cls, tool;
     
     TegakiKeybinds.map = {
       'ctrl-z': [ TegakiHistory, 'undo' ],
@@ -310,7 +310,7 @@ Tegaki = {
       'ctrl-s': null,
     };
     
-    for (var tool in Tegaki.tools) {
+    for (tool in Tegaki.tools) {
       cls = Tegaki.tools[tool];
       
       if (cls.keybind) {
@@ -381,7 +381,7 @@ Tegaki = {
   },
   
   flatten: function(ctx) {
-    var i, layer, canvas;
+    var i, layer, canvas, len;
     
     if (!ctx) {
       canvas = $T.el('canvas');
@@ -396,10 +396,13 @@ Tegaki = {
     
     ctx.drawImage(Tegaki.canvas, 0, 0);
     
-    for (i = 0; layer = Tegaki.layers[i]; ++i) {
+    for (i = 0, len = Tegaki.layers.length; i < len; ++i) {
+      layer = Tegaki.layers[i];
+      
       if (layer.canvas.classList.contains('tegaki-hidden')) {
         continue;
       }
+      
       ctx.drawImage(layer.canvas, 0, 0);
     }
     
@@ -450,7 +453,7 @@ Tegaki = {
   },
   
   setZoom: function(level) {
-    var el, nodes, i;
+    var el;
     
     if (level > Tegaki.zoomMax || level < Tegaki.zoomMin) {
       return;
@@ -460,9 +463,7 @@ Tegaki = {
     
     TegakiUI.updateZoomLevel();
     
-    nodes = Tegaki.layersCnt.children;
-    
-    for (i = 0; el = nodes[i]; ++i) {
+    for (el of Tegaki.layersCnt.children) {
       Tegaki.updateCanvasZoomSize(el);
     }
     
@@ -765,7 +766,7 @@ Tegaki = {
   },
   
   resizeCanvas: function(width, height) {
-    var i, layer;
+    var i, len;
     
     Tegaki.baseWidth = width;
     Tegaki.baseHeight = height;
@@ -780,8 +781,8 @@ Tegaki = {
     Tegaki.ctx.fillStyle = Tegaki.bgColor;
     Tegaki.ctx.fillRect(0, 0, width, height);
     
-    for (i = 0; layer = Tegaki.layers[i]; ++i) {
-      Tegaki.layersCnt.removeChild(layer.canvas);
+    for (i = 0, len = Tegaki.layers.length; i < len; ++i) {
+      Tegaki.layersCnt.removeChild(Tegaki.layers[i].canvas);
     }
     
     TegakiUI.updateLayersGridClear();

@@ -19,7 +19,7 @@ class TegakiTool {
     this.rgb = [0, 0, 0];
     
     this.brushSize = 0;
-    this.brushAlpha = 0;
+    this.brushAlpha = 0.0;
     this.stepSize = 0.0;
     this.center = 0.0;
     

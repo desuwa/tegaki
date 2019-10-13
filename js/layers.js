@@ -19,10 +19,10 @@ TegakiLayers = {
   },
   
   getLayerPosById: function(id) {
-    var i, layer, layers = Tegaki.layers;
+    var i, layers = Tegaki.layers;
     
-    for (i = 0; layer = layers[i]; ++i) {
-      if (layer.id === id) {
+    for (i = 0; i < layers.length; ++i) {
+      if (layers[i].id === id) {
         return i;
       }
     }
@@ -31,21 +31,21 @@ TegakiLayers = {
   },
   
   getTopFencedLayerId: function() {
-    var i, id, layer;
+    var i, id, layer, layers = Tegaki.layers;
     
-    for (i = Tegaki.layers.length - 1; layer = Tegaki.layers[i]; i--) {
-      if (TegakiLayers.selectedLayersHas(layer.id)) {
+    for (i = layers.length - 1; i >= 0; i--) {
+      if (TegakiLayers.selectedLayersHas(layers[i].id)) {
         break;
       }
     }
     
-    for (i = i - 1; layer = Tegaki.layers[i]; i--) {
-      if (!TegakiLayers.selectedLayersHas(layer.id)) {
+    for (i = i - 1; i >= 0; i--) {
+      if (!TegakiLayers.selectedLayersHas(layers[i].id)) {
         break;
       }
     }
     
-    if (layer = Tegaki.layers[i]) {
+    if (layer = layers[i]) {
       id = layer.id;
     }
     else {
@@ -56,23 +56,23 @@ TegakiLayers = {
   },
   
   getSelectedEdgeLayerPos: function(top) {
-    var i, layer;
+    var i, layers = Tegaki.layers;
     
     if (top) {
-      for (i = Tegaki.layers.length - 1; layer = Tegaki.layers[i]; i--) {
-        if (TegakiLayers.selectedLayersHas(layer.id)) {
+      for (i = Tegaki.layers.length - 1; i >= 0; i--) {
+        if (TegakiLayers.selectedLayersHas(layers[i].id)) {
           break;
         }
       }
     }
     else {
-      for (i = 0; layer = Tegaki.layers[i]; ++i) {
-        if (TegakiLayers.selectedLayersHas(layer.id)) {
+      for (i = 0; i < layers.length; ++i) {
+        if (TegakiLayers.selectedLayersHas(layers[i].id)) {
           break;
         }
       }
       
-      if (i >= Tegaki.layers.length) {
+      if (i >= layers.length) {
         i = -1;
       }
     }

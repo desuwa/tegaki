@@ -219,7 +219,7 @@ TegakiHistoryActions.DeleteLayers.prototype.redo = function() {
 };
 
 TegakiHistoryActions.MoveLayers.prototype.undo = function() {
-  var i, layer, stack, ref, posMap;
+  var i, layer, stack, ref, posMap, len;
   
   stack = new Array(Tegaki.layers.length);
   
@@ -229,7 +229,9 @@ TegakiHistoryActions.MoveLayers.prototype.undo = function() {
     posMap[layer[1].id] = layer[0];
   }
   
-  for (i = 0; layer = Tegaki.layers[i]; ++i) {
+  for (i = 0, len = Tegaki.layers.length; i < len; ++i) {
+    layer = Tegaki.layers[i];
+    
     if (posMap[layer.id] !== undefined) {
       Tegaki.layers.splice(i, 1);
       Tegaki.layers.splice(posMap[layer.id], 0, layer);
@@ -240,7 +242,8 @@ TegakiHistoryActions.MoveLayers.prototype.undo = function() {
   
   ref = Tegaki.layersCnt.children[0];
   
-  for (i = Tegaki.layers.length - 1; layer = Tegaki.layers[i]; i--) {
+  for (i = Tegaki.layers.length - 1; i >= 0; i--) {
+    layer = Tegaki.layers[i];
     Tegaki.layersCnt.insertBefore(layer.canvas, ref.nextElementSibling);
   }
   
