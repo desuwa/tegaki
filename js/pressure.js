@@ -1,6 +1,4 @@
-var TegakiPressure;
-
-TegakiPressure = {
+var TegakiPressure = {
   pressureNow: 0.0,
   pressureThen: 0.0,
   

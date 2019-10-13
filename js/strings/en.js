@@ -1,6 +1,4 @@
-var TegakiStrings;
-
-TegakiStrings = {
+var TegakiStrings = {
   // Messages
   badDimensions: 'Invalid dimensions.',
   promptWidth: 'Canvas width in pixels',

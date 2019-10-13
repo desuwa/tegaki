@@ -1,6 +1,4 @@
-var TegakiLayers;
-
-TegakiLayers = {
+var TegakiLayers = {
   cloneLayer: function(layer) {
     var newLayer = Object.assign({}, layer);
     

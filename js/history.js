@@ -1,6 +1,4 @@
-var TegakiHistory;
-
-TegakiHistory = {
+var TegakiHistory = {
   maxSize: 50,
   
   undoStack: [],

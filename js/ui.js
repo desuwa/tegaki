@@ -1,6 +1,4 @@
-var TegakiUI;
-
-TegakiUI = {
+var TegakiUI = {
   draggedNode: null,
   
   buildDummyFilePicker: function() {

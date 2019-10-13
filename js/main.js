@@ -1,6 +1,4 @@
-var Tegaki;
-
-Tegaki = {
+var Tegaki = {
   VERSION: '0.6.1',
   
   startTimeStamp: 0,

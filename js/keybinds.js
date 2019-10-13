@@ -1,6 +1,4 @@
-var TegakiKeybinds;
-
-TegakiKeybinds = {
+var TegakiKeybinds = {
   map: null,
   
   resolve: function(e) {

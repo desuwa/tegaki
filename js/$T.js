@@ -1,6 +1,4 @@
-var $T;
-
-$T = {
+var $T = {
   docEl: document.documentElement,
   
   id: function(id) {
@@ -25,30 +23,6 @@ $T = {
   
   frag: function() {
     return document.createDocumentFragment();
-  },
-  
-  extend: function(destination, source) {
-    for (var key in source) {
-      destination[key] = source[key];
-    }
-  },
-  
-  selectedOptions: function(el) {
-    var i, opt, sel;
-    
-    if (el.selectedOptions) {
-      return el.selectedOptions;
-    }
-    
-    sel = [];
-    
-    for (i = 0; opt = el.options[i]; ++i) {
-      if (opt.selected) {
-        sel.push(opt);
-      }
-    }
-    
-    return sel;
   },
   
   copyCanvas: function(source, clone) {
