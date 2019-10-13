@@ -37,4 +37,8 @@ Pre-built releases are [here](https://github.com/desuwa/tegaki/releases).
 
 To build from source yourself:  
 `rake concat` will concatenate JS source files to produce *tegaki.js*  
-`rake minify:js` will compress *tegaki.js*
+`rake minify:js` will compress *tegaki.js* to produce *tegaki.min.js*
+
+
+The `TEGAKI_LANG` environment variable controls which translation file will be used during concatenation:  
+`rake concat TEGAKI_LANG=xx` would use strings from `js/strings/xx.js`
