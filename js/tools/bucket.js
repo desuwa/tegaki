@@ -2,6 +2,8 @@ class TegakiBucket extends TegakiTool {
   constructor() {
     super();
     
+    this.id = 4;
+    
     this.name = 'bucket';
     
     this.keybind = 'g';

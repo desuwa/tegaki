@@ -1,5 +1,7 @@
 class TegakiTool {
   constructor() {
+    this.id = 0;
+    
     this.name = null;
     
     this.keybind = null;
@@ -27,7 +29,7 @@ class TegakiTool {
     this.alphaDynamicsEnabled = false;
     this.preserveAlphaEnabled = false;
     
-    this.tip = null;
+    this.tip = -1;
     this.tipList = null;
     
     this.shapeCache = null;

@@ -4,7 +4,6 @@ var TegakiStrings = {
   promptWidth: 'Canvas width in pixels',
   promptHeight: 'Canvas height in pixels',
   confirmDelLayers: 'Delete selected layers?',
-  errorMergeOneLayer: 'Nothing to merge.',
   confirmMergeLayers: 'Merge selected layers?',
   tooManyLayers: 'Layer limit reached.',
   errorLoadImage: 'Could not load the image.',
@@ -49,5 +48,16 @@ var TegakiStrings = {
   blur: 'Blur',
   eraser: 'Eraser',
   bucket: 'Bucket',
-  tone: 'Tone'
+  tone: 'Tone',
+  
+  // Replay
+  gapless: 'Gapless',
+  play: 'Play',
+  pause: 'Pause',
+  rewind: 'Rewind',
+  slower: 'Slower',
+  faster: 'Faster',
+  recordingEnabled: 'Recording replay',
+  errorLoadReplay: 'Could not load the replay: ',
+  loadingReplay: 'Loading replay…',
 };

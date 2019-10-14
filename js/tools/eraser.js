@@ -2,6 +2,8 @@ class TegakiEraser extends TegakiBrush {
   constructor() {
     super();
     
+    this.id = 8;
+    
     this.name = 'eraser';
     
     this.keybind = 'e';
@@ -15,7 +17,7 @@ class TegakiEraser extends TegakiBrush {
     this.useAlphaDynamics = true;
     this.usePreserveAlpha = false;
     
-    this.tip = 'pencil';
+    this.tipId = 0;
     this.tipList = [ 'pencil', 'pen', 'airbrush' ];
   }
   
@@ -63,10 +65,10 @@ class TegakiEraser extends TegakiBrush {
   }
   
   generateShape(size) {
-    if (this.tip === 'pencil') {
+    if (this.tipId === 0) {
       return this.generateShapePencil(size);
     }
-    else if (this.tip === 'pen') {
+    else if (this.tipId === 1) {
       return this.generateShapePen(size);
     }
     else {

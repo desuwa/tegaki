@@ -18,19 +18,14 @@ var Tegaki = {
   
   activeCtx: null,
   
-  activeLayerId: null,
+  activeLayerId: -1,
   layerCounter: 0,
   selectedLayers: new Set(),
   
   activePointerId: 0,
   activePointerIsPen: false,
   
-  ptrEvtPenCount: 0,
-  ptrEvtMouseCount: 0,
-  
   isPainting: false,
-  isErasing: false,
-  isColorPicking: false,
   
   offsetX: 0,
   offsetY: 0,
@@ -39,7 +34,15 @@ var Tegaki = {
   zoomMax: 5,
   zoomMin: 1,
   
+  hasCustomCanvas: false,
+  
   TWOPI: 2 * Math.PI,
+  
+  defaultColorPalette: [
+    '#ffffff', '#000000', '#888888', '#b47575', '#c096c0',
+    '#fa9696', '#8080ff', '#ffb6ff', '#e7e58d', '#25c7c9',
+    '#99cb7b', '#e7962d', '#f9ddcf', '#fcece2'
+  ],
   
   toolList: [
     TegakiPencil,
@@ -54,171 +57,184 @@ var Tegaki = {
   
   tools: {},
   
-  defaultColorPalette: [
-    '#ffffff', '#000000', '#888888', '#b47575', '#c096c0',
-    '#fa9696', '#8080ff', '#ffb6ff', '#e7e58d', '#25c7c9',
-    '#99cb7b', '#e7962d', '#f9ddcf', '#fcece2'
-  ],
-  
   tool: null,
+  
   toolColor: '#000000',
+  defaultTool: 'pencil',
   
   bgColor: '#ffffff',
   maxSize: 64,
   maxLayers: 25,
-  baseWidth: null,
-  baseHeight: null,
+  baseWidth: 0,
+  baseHeight: 0,
+  
+  replayRecorder: null,
+  replayViewer: null,
   
   onDoneCb: null,
   onCancelCb: null,
   
-  open: function(opts) {
-    var bg, cnt, cnt2, el, ctrl, canvas, self = Tegaki;
+  replayMode: false,
+  
+  saveReplay: false,
+  
+  open: function(opts = {}) {
+    var self = Tegaki;
     
     if (self.bg) {
-      self.resume();
-      return;
+      if (self.replayMode !== (opts.replayMode ? true : false)) {
+        self.destroy();
+      }
+      else {
+        self.resume();
+        return;
+      }
     }
     
     self.startTimeStamp = Date.now();
-    
-    self.ptrEvtPenCount = 0;
-    self.ptrEvtMouseCount = 0;
     
     if (opts.bgColor) {
       self.bgColor = opts.bgColor;
     }
     
+    self.hasCustomCanvas = false;
+    
+    self.saveReplay = !!opts.saveReplay;
+    self.replayMode = !!opts.replayMode;
+    
     self.onDoneCb = opts.onDone;
     self.onCancelCb = opts.onCancel;
     
-    self.initTools();
+    self.baseWidth = opts.width || 0;
+    self.baseHeight = opts.height || 0;
     
-    //
-    // Grid container
-    //
-    bg = $T.el('div');
-    bg.id = 'tegaki';
+    self.createTools();
     
-    self.bg = bg;
+    [self.bg, self.canvasCnt, self.layersCnt] = TegakiUI.buildUI();
     
-    //
-    // Menu area
-    //
-    el = $T.el('div');
-    el.id = 'tegaki-menu-cnt';
+    document.body.appendChild(self.bg);
+    document.body.classList.add('tegaki-backdrop');
     
-    el.appendChild(TegakiUI.buildMenuBar());
-    el.appendChild(TegakiUI.buildToolModeBar());
+    if (!self.replayMode) {
+      self.init();
+      
+      self.setTool(self.defaultTool);
+      
+      if (self.saveReplay) {
+        self.replayRecorder = new TegakiReplayRecorder();
+        self.replayRecorder.start();
+      }
+    }
+    else {
+      TegakiUI.setReplayMode(true);
+      
+      self.replayViewer = new TegakiReplayViewer();
+      
+      if (opts.replayURL) {
+        self.loadReplayFromURL(opts.replayURL);
+      }
+    }
+  },
+  
+  init: function() {
+    var self = Tegaki;
     
-    bg.appendChild(el);
+    self.createCanvas();
     
-    bg.appendChild(TegakiUI.buildDummyFilePicker());
+    self.centerLayersCnt();
     
-    //
-    // Tools area
-    //
-    cnt = $T.el('div');
-    cnt.id = 'tegaki-tools-cnt';
+    self.createBuffers();
     
-    cnt.appendChild(TegakiUI.buildToolsMenu());
+    self.updatePosOffset();
     
-    bg.appendChild(cnt);
+    self.resetLayers();
     
-    //
-    // Canvas area
-    //
-    cnt = $T.el('div');
-    cnt.id = 'tegaki-canvas-cnt';
+    self.initKeybinds();
     
-    cnt2 =  $T.el('div');
-    cnt2.id = 'tegaki-layers-wrap';
+    self.bindGlobalEvents();
+    
+    TegakiCursor.init(self.baseWidth, self.baseHeight);
+    
+    TegakiUI.updateUndoRedo(0, 0);
+    TegakiUI.updateZoomLevel();
+  },
+  
+  initFromReplay: function() {
+    var self, r;
+    
+    self = Tegaki;
+    r = self.replayViewer;
+    
+    self.initToolsFromReplay();
+    
+    self.baseWidth = r.canvasWidth;
+    self.baseHeight = r.canvasHeight;
+    self.bgColor = $T.RgbToHex(...r.bgColor);
+    
+    self.toolColor = $T.RgbToHex(...r.toolColor);
+  },
+  
+  initToolsFromReplay: function() {
+    var self, r, name, tool, rTool;
+    
+    self = Tegaki;
+    r = self.replayViewer;
+    
+    for (name in self.tools) {
+      tool = self.tools[name];
+      
+      if (tool.id === r.toolId) {
+        self.defaultTool = name;
+      }
+      
+      rTool = r.toolMap[tool.id];
+      
+      tool.size = rTool.size;
+      tool.alpha = rTool.alpha;
+      tool.step = rTool.step;
+      tool.sizeDynamicsEnabled = !!rTool.sizeDynamicsEnabled;
+      tool.alphaDynamicsEnabled = !!rTool.alphaDynamicsEnabled;
+      tool.usePreserveAlpha = !!rTool.usePreserveAlpha;
+      tool.tipId = rTool.tipId;
+    }
+  },
+  
+  resetLayers: function() {
+    var i, len;
+    
+    if (Tegaki.layers.length) {
+      for (i = 0, len = Tegaki.layers.length; i < len; ++i) {
+        Tegaki.layersCnt.removeChild(Tegaki.layers[i].canvas);
+      }
+      
+      Tegaki.layers = [];
+      Tegaki.layerCounter = 0;
+      
+      TegakiUI.updateLayersGridClear();
+    }
+    
+    TegakiLayers.addLayer();
+    TegakiLayers.setActiveLayer(0);
+  },
+  
+  createCanvas: function() {
+    var canvas, self = Tegaki;
     
     canvas = $T.el('canvas');
     canvas.id = 'tegaki-canvas';
-    canvas.width = self.baseWidth = opts.width;
-    canvas.height = self.baseHeight = opts.height;
-    
-    el = $T.el('div');
-    el.id = 'tegaki-layers';
-    el.appendChild(canvas);
-    self.layersCnt = el;
-    
-    cnt2.appendChild(el);
-    
-    cnt.appendChild(cnt2);
-    
-    bg.appendChild(cnt);
-    
-    self.canvasCnt = cnt;
-    
-    //
-    // Controls area
-    //
-    ctrl = $T.el('div');
-    ctrl.id = 'tegaki-ctrl-cnt';
-    
-    // Zoom control
-    ctrl.appendChild(TegakiUI.buildZoomCtrlGroup(self.zoomLevel));
-    
-    // Colorpicker
-    ctrl.appendChild(
-      TegakiUI.buildColorCtrlGroup(self.toolColor, self.defaultColorPalette)
-    );
-
-    // Size control
-    ctrl.appendChild(TegakiUI.buildSizeCtrlGroup());
-    
-    // Alpha control
-    ctrl.appendChild(TegakiUI.buildAlphaCtrlGroup());
-    
-    // Layers control
-    ctrl.appendChild(TegakiUI.buildLayersCtrlGroup());
-    
-    // ---
-    
-    bg.appendChild(ctrl);
-    
-    //
-    // Status area
-    //
-    bg.appendChild(TegakiUI.buildStatusCnt());
-
-    // ---
-    
-    document.body.appendChild(bg);
-    document.body.classList.add('tegaki-backdrop');
-    
-    self.centerLayersCnt();
+    canvas.width = self.baseWidth;
+    canvas.height = self.baseHeight;
     
     self.canvas = canvas;
     
     self.ctx = canvas.getContext('2d');
     self.ctx.fillStyle = self.bgColor;
-    self.ctx.fillRect(0, 0, opts.width, opts.height);
+    self.ctx.fillRect(0, 0, self.baseWidth, self.baseHeight);
     
-    self.createBuffers();
-    
-    TegakiCursor.init(opts.width, opts.height);
-    
-    TegakiLayers.addLayer();
-    
-    TegakiLayers.setActiveLayer(0);
-    
-    self.initKeybinds();
-    
-    self.onHistoryChange(0, 0);
-    
-    self.setTool('pencil');
-    
-    TegakiUI.updateZoomLevel();
-    
-    self.updatePosOffset();
-    
-    self.bindGlobalEvents();
+    self.layersCnt.appendChild(canvas);
   },
   
-  initTools: function() {
+  createTools: function() {
     var klass, tool;
     
     for (klass of Tegaki.toolList) {
@@ -230,35 +246,45 @@ var Tegaki = {
   bindGlobalEvents: function() {
     var self = Tegaki;
     
-    $T.on(self.canvasCnt, 'pointermove', self.onPointerMove);
-    $T.on(self.canvasCnt, 'pointerdown', self.onPointerDown);
-    $T.on(self.bg, 'contextmenu', self.onDummy);
+    if (!self.replayMode) {
+      $T.on(self.canvasCnt, 'pointermove', self.onPointerMove);
+      $T.on(self.canvasCnt, 'pointerdown', self.onPointerDown);
+      $T.on(document, 'pointerup', self.onPointerUp);
+      $T.on(document, 'pointercancel', self.onPointerUp);
+      
+      $T.on(document, 'keydown', TegakiKeybinds.resolve);
+      
+      $T.on(window, 'beforeunload', Tegaki.onTabClose);
+    }
+    else {
+      $T.on(document, 'visibilitychange', Tegaki.onVisibilityChange);
+    }
     
-    $T.on(document, 'pointerup', self.onPointerUp);
-    $T.on(document, 'pointercancel', self.onPointerUp);
+    $T.on(self.bg, 'contextmenu', self.onDummy);
     $T.on(window, 'resize', self.updatePosOffset);
     $T.on(window, 'scroll', self.updatePosOffset);
-    
-    $T.on(document, 'keydown', TegakiKeybinds.resolve);
-    
-    $T.on(window, 'beforeunload', Tegaki.onTabClose);
   },
   
   unBindGlobalEvents: function() {
     var self = Tegaki;
     
-    $T.off(self.canvasCnt, 'pointermove', self.onPointerMove);
-    $T.off(self.canvasCnt, 'pointerdown', self.onPointerDown);
-    $T.off(self.bg, 'contextmenu', self.onDummy);
+    if (!self.replayMode) {
+      $T.off(self.canvasCnt, 'pointermove', self.onPointerMove);
+      $T.off(self.canvasCnt, 'pointerdown', self.onPointerDown);
+      $T.off(document, 'pointerup', self.onPointerUp);
+      $T.off(document, 'pointercancel', self.onPointerUp);
+      
+      $T.off(document, 'keydown', TegakiKeybinds.resolve);
+      
+      $T.off(window, 'beforeunload', Tegaki.onTabClose);
+    }
+    else {
+      $T.off(document, 'visibilitychange', Tegaki.onVisibilityChange);
+    }
     
-    $T.off(document, 'pointerup', self.onPointerUp);
-    $T.off(document, 'pointercancel', self.onPointerUp);
+    $T.off(self.bg, 'contextmenu', self.onDummy);
     $T.off(window, 'resize', self.updatePosOffset);
     $T.off(window, 'scroll', self.updatePosOffset);
-    
-    $T.off(document, 'keydown', TegakiKeybinds.resolve);
-    
-    $T.off(window, 'beforeunload', Tegaki.onTabClose);
   },
   
   createBuffers() {
@@ -299,13 +325,33 @@ var Tegaki = {
     e.returnValue = '';
   },
   
+  onVisibilityChange: function(e) {
+    if (!Tegaki.replayMode) {
+      return;
+    }
+    
+    if (document.visibilityState === 'visible') {
+      if (Tegaki.replayViewer.autoPaused) {
+        Tegaki.replayViewer.play();
+      }
+    }
+    else {
+      if (Tegaki.replayViewer.playing) {
+        Tegaki.replayViewer.autoPause();
+      }
+    }
+  },
+  
   initKeybinds: function() {
     var cls, tool;
     
+    if (Tegaki.replayMode) {
+      return;
+    }
+    
     TegakiKeybinds.map = {
       'ctrl-z': [ TegakiHistory, 'undo' ],
-      'ctrl-y': [ TegakiHistory, 'redo' ],
-      'ctrl-s': null,
+      'ctrl-y': [ TegakiHistory, 'redo' ]
     };
     
     for (tool in Tegaki.tools) {
@@ -337,6 +383,10 @@ var Tegaki = {
   },
   
   resume: function() {
+    if (Tegaki.saveReplay) {
+      Tegaki.replayRecorder.start();
+    }
+    
     Tegaki.bg.classList.remove('tegaki-hidden');
     document.body.classList.add('tegaki-backdrop');
     Tegaki.centerLayersCnt();
@@ -345,6 +395,10 @@ var Tegaki = {
   },
   
   hide: function() {
+    if (Tegaki.saveReplay) {
+      Tegaki.replayRecorder.stop();
+    }
+    
     Tegaki.bg.classList.add('tegaki-hidden');
     document.body.classList.remove('tegaki-backdrop');
     Tegaki.unBindGlobalEvents();
@@ -360,8 +414,6 @@ var Tegaki = {
     document.body.classList.remove('tegaki-backdrop');
     
     Tegaki.startTimeStamp = 0;
-    Tegaki.ptrEvtPenCount = 0;
-    Tegaki.ptrEvtMouseCount = 0;
     
     Tegaki.bg = null;
     Tegaki.canvasCnt = null;
@@ -373,7 +425,12 @@ var Tegaki = {
     Tegaki.zoomLevel = 1;
     Tegaki.activeCtx = null;
     
+    Tegaki.tool = null;
+    
     TegakiCursor.destroy();
+    
+    Tegaki.replayRecorder = null;
+    Tegaki.replayViewer = null;
     
     Tegaki.destroyBuffers();
   },
@@ -407,6 +464,56 @@ var Tegaki = {
     return canvas;
   },
   
+  onReplayLoaded: function() {
+    TegakiUI.clearMsg();
+    Tegaki.initFromReplay();
+    Tegaki.init();
+    Tegaki.setTool(Tegaki.defaultTool);
+    TegakiUI.updateReplayControls();
+    TegakiUI.updateReplayTime(true);
+    TegakiUI.enableReplayControls(true);
+    Tegaki.replayViewer.play();
+  },
+  
+  onReplayGaplessClick: function() {
+    Tegaki.replayViewer.toggleGapless();
+    TegakiUI.updateReplayGapless();
+  },
+  
+  onReplayPlayPauseClick: function() {
+    Tegaki.replayViewer.togglePlayPause();
+  },
+  
+  onReplayRewindClick: function() {
+    Tegaki.replayViewer.rewind();
+  },
+  
+  onReplaySlowDownClick: function() {
+    Tegaki.replayViewer.slowDown();
+    TegakiUI.updateReplaySpeed();
+  },
+  
+  onReplaySpeedUpClick: function() {
+    Tegaki.replayViewer.speedUp();
+    TegakiUI.updateReplaySpeed();
+  },
+  
+  onReplayTimeChanged: function() {
+    TegakiUI.updateReplayTime();
+  },
+  
+  onReplayPlayPauseChanged: function() {
+    TegakiUI.updateReplayPlayPause();
+  },
+  
+  onReplayReset: function() {
+    Tegaki.initFromReplay();
+    Tegaki.setTool(Tegaki.defaultTool);
+    Tegaki.resizeCanvas(Tegaki.baseWidth, Tegaki.baseHeight);
+    TegakiUI.updateReplayControls();
+    TegakiUI.updateReplayTime();
+  },
+  
   onMainColorClick: function(e) {
     var el;
     e.preventDefault();
@@ -427,16 +534,24 @@ var Tegaki = {
   onColorPicked: function(e) {
     $T.id('tegaki-color').style.backgroundColor = this.value;
     Tegaki.setToolColor(this.value);
-    this.blur();
   },
   
   setToolSize: function(size) {
-    Tegaki.tool.setSize(size);
-    Tegaki.updateCursorStatus();
+    if (size >= 0 && size <= Tegaki.maxSize) {
+      Tegaki.tool.setSize(size);
+      Tegaki.updateCursorStatus();
+      Tegaki.recordEvent(TegakiEventSetToolSize, performance.now(), size);
+      TegakiUI.updateToolSize();
+    }
   },
   
   setToolAlpha: function(alpha) {
-    Tegaki.tool.setAlpha(alpha);
+    if (alpha >= 0.0 && alpha <= 1.0) {
+      alpha = Math.fround(alpha);
+      Tegaki.tool.setAlpha(alpha);
+      Tegaki.recordEvent(TegakiEventSetToolAlpha, performance.now(), alpha);
+      TegakiUI.updateToolAlpha();
+    }
   },
   
   setToolColor: function(color) {
@@ -444,16 +559,32 @@ var Tegaki = {
     $T.id('tegaki-color').style.backgroundColor = color;
     $T.id('tegaki-colorpicker').value = color;
     Tegaki.tool.setColor(color);
+    Tegaki.recordEvent(TegakiEventSetColor, performance.now(), Tegaki.tool.rgb);
+  },
+  
+  setToolColorRGB: function(r, g, b) {
+    Tegaki.setToolColor($T.RgbToHex(r, g, b));
   },
   
   setTool: function(tool) {
     Tegaki.tools[tool].set();
   },
   
+  setToolById: function(id) {
+    var tool;
+    
+    for (tool in Tegaki.tools) {
+      if (Tegaki.tools[tool].id === id) {
+        Tegaki.setTool(tool);
+        return;
+      }
+    }
+  },
+  
   setZoom: function(level) {
     var el;
     
-    if (level > Tegaki.zoomMax || level < Tegaki.zoomMin) {
+    if (level > Tegaki.zoomMax || level < Tegaki.zoomMin || !Tegaki.canvas) {
       return;
     }
     
@@ -488,17 +619,23 @@ var Tegaki = {
   onNewClick: function() {
     var width, height, tmp;
     
+    if (Tegaki.saveReplay) {
+      return;
+    }
+    
     width = prompt(TegakiStrings.promptWidth, Tegaki.canvas.width);
+    
     if (!width) { return; }
     
     height = prompt(TegakiStrings.promptHeight, Tegaki.canvas.height);
+    
     if (!height) { return; }
     
     width = +width;
     height = +height;
     
     if (width < 1 || height < 1) {
-      alert(TegakiStrings.badDimensions);
+      TegakiUI.printMsg(TegakiStrings.badDimensions);
       return;
     }
     
@@ -507,13 +644,16 @@ var Tegaki = {
     Tegaki.resizeCanvas(width, height);
     Tegaki.copyContextState(tmp, Tegaki.activeCtx);
     
+    Tegaki.setZoom(1);
     TegakiHistory.clear();
-    Tegaki.centerLayersCnt();
-    Tegaki.updatePosOffset();
   },
   
   onOpenClick: function() {
     var el, tainted;
+    
+    if (Tegaki.saveReplay) {
+      return;
+    }
     
     tainted = TegakiHistory.undoStack[0] || TegakiHistory.redoStack[0];
     
@@ -521,6 +661,15 @@ var Tegaki = {
       el = $T.id('tegaki-filepicker');
       el.click();
     }
+  },
+  
+  loadReplayFromFile: function() {
+    Tegaki.replayViewer.debugLoadLocal();
+  },
+  
+  loadReplayFromURL: function(url) {
+    TegakiUI.printMsg(TegakiStrings.loadingReplay, 0);
+    Tegaki.replayViewer.loadFromURL(url);
   },
   
   onExportClick: function() {
@@ -543,8 +692,15 @@ var Tegaki = {
     TegakiHistory.redo();
   },
   
-  onHistoryChange: function(undoSize, redoSize) {
+  onHistoryChange: function(undoSize, redoSize, type = 0) {
     TegakiUI.updateUndoRedo(undoSize, redoSize);
+    
+    if (type === -1) {
+      Tegaki.recordEvent(TegakiEventUndo, performance.now());
+    }
+    else if (type === 1) {
+      Tegaki.recordEvent(TegakiEventRedo, performance.now());
+    }
   },
   
   onDoneClick: function() {
@@ -561,6 +717,11 @@ var Tegaki = {
     Tegaki.onCancelCb();
   },
   
+  onCloseViewerClick: function() {
+    Tegaki.replayViewer.destroy();
+    Tegaki.destroy();
+  },
+  
   onToolSizeChange: function() {
     var val = +this.value;
     
@@ -572,7 +733,6 @@ var Tegaki = {
     }
     
     Tegaki.setToolSize(val);
-    TegakiUI.updateToolSize();
   },
   
   onToolAlphaChange: function(e) {
@@ -588,7 +748,6 @@ var Tegaki = {
     }
     
     Tegaki.setToolAlpha(val);
-    TegakiUI.updateToolAlpha();
   },
   
   onToolPressureSizeClick: function(e) {
@@ -596,9 +755,13 @@ var Tegaki = {
       return;
     }
     
-    Tegaki.tool.setSizeDynamics(!Tegaki.tool.sizeDynamicsEnabled);
-    
+    Tegaki.setToolSizeDynamics(!Tegaki.tool.sizeDynamicsEnabled);
+  },
+  
+  setToolSizeDynamics: function(flag) {
+    Tegaki.tool.setSizeDynamics(flag);
     TegakiUI.updateToolDynamics();
+    Tegaki.recordEvent(TegakiEventSetToolSizeDynamics, performance.now(), +flag);
   },
   
   onToolPressureAlphaClick: function(e) {
@@ -606,9 +769,13 @@ var Tegaki = {
       return;
     }
     
-    Tegaki.tool.setAlphaDynamics(!Tegaki.tool.alphaDynamicsEnabled);
-    
+    Tegaki.setToolAlphaDynamics(!Tegaki.tool.alphaDynamicsEnabled);
+  },
+  
+  setToolAlphaDynamics: function(flag) {
+    Tegaki.tool.setAlphaDynamics(flag);
     TegakiUI.updateToolDynamics();
+    Tegaki.recordEvent(TegakiEventSetToolAlphaDynamics, performance.now(), +flag);
   },
   
   onToolPreserveAlphaClick: function(e) {
@@ -616,72 +783,112 @@ var Tegaki = {
       return;
     }
     
-    Tegaki.tool.setPreserveAlpha(!Tegaki.tool.preserveAlphaEnabled);
-    
+    Tegaki.setToolPreserveAlpha(!Tegaki.tool.preserveAlphaEnabled);
+  },
+  
+  setToolPreserveAlpha: function(flag) {
+    Tegaki.tool.setPreserveAlpha(flag);
     TegakiUI.updateToolPreserveAlpha();
+    Tegaki.recordEvent(TegakiEventPreserveAlpha, performance.now(), +flag);
   },
   
   onToolTipClick: function(e) {
-    var tip = e.target.getAttribute('data-id');
+    var tipId = +e.target.getAttribute('data-id');
     
-    if (tip !== Tegaki.tool.tip) {
-      Tegaki.tool.setTip(tip);
-      TegakiUI.updateToolShape();
+    if (tipId !== Tegaki.tool.tipId) {
+      Tegaki.setToolTip(tipId);
     }
+  },
+  
+  setToolTip: function(id) {
+    Tegaki.tool.setTip(id);
+    TegakiUI.updateToolShape();
+    Tegaki.recordEvent(TegakiEventSetToolTip, performance.now(), id);
   },
   
   onLayerSelectorClick: function(e) {
     var id = +this.getAttribute('data-id');
     
     if (e.ctrlKey) {
-      TegakiLayers.selectedLayersToggle(id);
+      Tegaki.toggleSelectedLayer(id);
     }
     else {
-      TegakiLayers.setActiveLayer(id);
+      Tegaki.setActiveLayer(id);
     }
   },
   
+  toggleSelectedLayer: function(id) {
+    TegakiLayers.selectedLayersToggle(id);
+    Tegaki.recordEvent(TegakiEventToggleLayerSelection, performance.now(), id);
+  },
+  
+  setActiveLayer: function(id) {
+    TegakiLayers.setActiveLayer(id);
+    Tegaki.recordEvent(TegakiEventSetActiveLayer, performance.now(), id);
+  },
+  
   onLayerAddClick: function() {
+    Tegaki.addLayer();
+  },
+  
+  addLayer: function() {
     var action;
     
     if (Tegaki.layers.length >= Tegaki.maxLayers) {
-      alert(TegakiStrings.tooManyLayers);
+      TegakiUI.printMsg(TegakiStrings.tooManyLayers);
       return;
     }
     
     TegakiHistory.push(action = TegakiLayers.addLayer());
-    
     TegakiLayers.setActiveLayer(action.aLayerIdAfter);
+    Tegaki.recordEvent(TegakiEventAddLayer, performance.now());
   },
   
   onLayerDeleteClick: function() {
-    var action;
+    Tegaki.deleteSelectedLayers();
+  },
+  
+  deleteSelectedLayers: function() {
+    var action, layerSet;
     
-    if (Tegaki.selectedLayers.size === Tegaki.layers.length) {
+    layerSet = Tegaki.selectedLayers;
+    
+    if (layerSet.size === Tegaki.layers.length) {
       return;
     }
     
-    if (!Tegaki.selectedLayers.size || Tegaki.layers.length < 2) {
+    if (!layerSet.size || Tegaki.layers.length < 2) {
       return;
     }
     
-    TegakiHistory.push(action = TegakiLayers.deleteLayers(Tegaki.selectedLayers));
+    TegakiHistory.push(action = TegakiLayers.deleteLayers(layerSet));
     TegakiLayers.selectedLayersClear();
     TegakiLayers.setActiveLayer(action.aLayerIdAfter);
+    Tegaki.recordEvent(TegakiEventDeleteLayers, performance.now());
   },
   
   onLayerToggleVisibilityClick: function() {
-    var layer = TegakiLayers.getLayerById(+this.getAttribute('data-id'));
+    Tegaki.toggleLayerVisibility(+this.getAttribute('data-id'));
+  },
+  
+  toggleLayerVisibility: function(id) {
+    var layer = TegakiLayers.getLayerById(id);
     TegakiLayers.setLayerVisibility(layer, !layer.visible);
+    Tegaki.recordEvent(TegakiEventToggleLayerVisibility, performance.now(), id);
   },
   
   onMergeLayersClick: function() {
+    Tegaki.mergeSelectedLayers();
+  },
+  
+  mergeSelectedLayers: function() {
     var action;
     
     if (Tegaki.selectedLayers.size) {
       if (action = TegakiLayers.mergeLayers(Tegaki.selectedLayers)) {
         TegakiHistory.push(action);
         TegakiLayers.setActiveLayer(action.aLayerIdAfter);
+        Tegaki.recordEvent(TegakiEventMergeLayers, performance.now());
       }
     }
   },
@@ -708,7 +915,12 @@ var Tegaki = {
       belowPos--;
     }
     
+    Tegaki.moveSelectedLayers(belowPos);
+  },
+  
+  moveSelectedLayers: function(belowPos) {
     TegakiHistory.push(TegakiLayers.moveLayers(Tegaki.selectedLayers, belowPos));
+    Tegaki.recordEvent(TegakiEventMoveLayers, performance.now(), belowPos);
   },
   
   onToolClick: function() {
@@ -725,6 +937,8 @@ var Tegaki = {
     }
     
     $T.id('tegaki-tool-btn-' + tool.name).classList.add('tegaki-tool-active');
+    
+    Tegaki.recordEvent(TegakiEventSetTool, performance.now(), Tegaki.tool.id);
     
     TegakiUI.onToolChanged();
     Tegaki.updateCursorStatus();
@@ -749,23 +963,21 @@ var Tegaki = {
   onOpenImageLoaded: function() {
     var tmp = {};
     
+    Tegaki.hasCustomCanvas = true;
+    
     Tegaki.copyContextState(Tegaki.activeCtx, tmp);
     Tegaki.resizeCanvas(this.naturalWidth, this.naturalHeight);
     Tegaki.activeCtx.drawImage(this, 0, 0);
     Tegaki.copyContextState(tmp, Tegaki.activeCtx);
     
     TegakiHistory.clear();
-    Tegaki.centerLayersCnt();
-    Tegaki.updatePosOffset();
   },
   
   onOpenImageError: function() {
-    alert(TegakiStrings.errorLoadImage);
+    TegakiUI.printMsg(TegakiStrings.errorLoadImage);
   },
   
   resizeCanvas: function(width, height) {
-    var i, len;
-    
     Tegaki.baseWidth = width;
     Tegaki.baseHeight = height;
     
@@ -779,20 +991,12 @@ var Tegaki = {
     Tegaki.ctx.fillStyle = Tegaki.bgColor;
     Tegaki.ctx.fillRect(0, 0, width, height);
     
-    for (i = 0, len = Tegaki.layers.length; i < len; ++i) {
-      Tegaki.layersCnt.removeChild(Tegaki.layers[i].canvas);
-    }
-    
-    TegakiUI.updateLayersGridClear();
-    
     Tegaki.activeCtx = null;
-    Tegaki.layers = [];
-    Tegaki.layerCounter = 0;
     
-    Tegaki.setZoom(1);
+    Tegaki.resetLayers();
     
-    TegakiLayers.addLayer();
-    TegakiLayers.setActiveLayer(0);
+    Tegaki.centerLayersCnt();
+    Tegaki.updatePosOffset();
   },
   
   copyContextState: function(src, dest) {
@@ -850,8 +1054,7 @@ var Tegaki = {
   },
   
   onPointerMove: function(e) {
-    var events;
-    
+    var events, x, y, tool, noPressure, ts, p;
     
     if (e.mozInputSource !== undefined) {
       // Firefox thing where mouse events fire for no reason when the pointer is a pen
@@ -867,69 +1070,101 @@ var Tegaki = {
       }
     }
     
-    if (Tegaki.activePointerIsPen && Tegaki.isPainting && e.getCoalescedEvents) {
-      events = e.getCoalescedEvents();
+    if (Tegaki.isPainting) {
+      tool = Tegaki.tool;
       
-      for (e of events) {
-        TegakiPressure.push(e.pressure);
-        Tegaki.tool.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+      noPressure = !tool.sizeDynamicsEnabled && !tool.alphaDynamicsEnabled;
+      
+      if (Tegaki.activePointerIsPen && e.getCoalescedEvents) {
+        events = e.getCoalescedEvents();
+        
+        ts = e.timeStamp;
+        
+        for (e of events) {
+          x = Tegaki.getCursorPos(e, 0);
+          y = Tegaki.getCursorPos(e, 1);
+          
+          if (noPressure) {
+            Tegaki.recordEvent(TegakiEventDrawNoP, ts, x, y);
+          }
+          else {
+            p = TegakiPressure.toShort(e.pressure);
+            TegakiPressure.push(p);
+            Tegaki.recordEvent(TegakiEventDraw, ts, x, y, p);
+          }
+          
+          tool.draw(x, y);
+        }
+      }
+      else {
+        x = Tegaki.getCursorPos(e, 0);
+        y = Tegaki.getCursorPos(e, 1);
+        p = TegakiPressure.toShort(e.pressure);
+        Tegaki.recordEvent(TegakiEventDraw, e.timeStamp, x, y, p);
+        TegakiPressure.push(p);
+        tool.draw(x, y);
       }
     }
     else {
-      if (Tegaki.isPainting) {
-        TegakiPressure.push(e.pressure);
-        Tegaki.tool.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
-      }
-      else if (Tegaki.isColorPicking) {
-        Tegaki.tools.pipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
-      }
+      x = Tegaki.getCursorPos(e, 0);
+      y = Tegaki.getCursorPos(e, 1);
     }
     
     if (Tegaki.cursor) {
-      TegakiCursor.render(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+      TegakiCursor.render(x, y);
     }
   },
   
   onPointerDown: function(e) {
+    var x, y, tool, p;
+    
     if (Tegaki.isScrollbarClick(e)) {
       return;
     }
     
     Tegaki.activePointerId = e.pointerId;
     
-    if (Tegaki.activePointerIsPen = e.pointerType === 'pen') {
-      Tegaki.ptrEvtPenCount++;
-    }
-    else {
-      Tegaki.ptrEvtMouseCount++;
-    }
+    Tegaki.activePointerIsPen = e.pointerType === 'pen';
     
     if (Tegaki.activeCtx === null) {
       if (e.target.parentNode === Tegaki.layersCnt) {
-        alert(TegakiStrings.noActiveLayer);
+        TegakiUI.printMsg(TegakiStrings.noActiveLayer);
       }
       
       return;
     }
+    
     if (!TegakiLayers.getActiveLayer().visible) {
       if (e.target.parentNode === Tegaki.layersCnt) {
-        alert(TegakiStrings.hiddenActiveLayer);
+        TegakiUI.printMsg(TegakiStrings.hiddenActiveLayer);
       }
       
       return;
     }
+    
+    x = Tegaki.getCursorPos(e, 0);
+    y = Tegaki.getCursorPos(e, 1);
     
     if (e.button === 2 || e.altKey) {
       e.preventDefault();
       
-      Tegaki.isColorPicking = true;
+      Tegaki.isPainting = false;
       
-      Tegaki.tools.pipette.draw(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+      Tegaki.tools.pipette.draw(x, y);
     }
     else if (e.button === 0) {
       e.preventDefault();
       
-      TegakiPressure.set(e.pressure);
+      tool = Tegaki.tool;
+
+      if (!tool.sizeDynamicsEnabled && !tool.alphaDynamicsEnabled) {
+        Tegaki.recordEvent(TegakiEventDrawStartNoP, e.timeStamp, x, y);
+      }
+      else {
+        p = TegakiPressure.toShort(e.pressure);
+        TegakiPressure.push(p);
+        Tegaki.recordEvent(TegakiEventDrawStart, e.timeStamp, x, y, p);
+      }
       
       Tegaki.isPainting = true;
       
@@ -939,11 +1174,11 @@ var Tegaki = {
       
       TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 0);
       
-      Tegaki.tool.start(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+      tool.start(x, y);
     }
     
     if (Tegaki.cursor) {
-      TegakiCursor.render(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
+      TegakiCursor.render(x, y);
     }
   },
   
@@ -953,23 +1188,22 @@ var Tegaki = {
     Tegaki.activePointerIsPen = false;
     
     if (Tegaki.isPainting) {
+      Tegaki.recordEvent(TegakiEventDrawCommit, e.timeStamp);
       Tegaki.tool.commit();
       TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 1);
       TegakiHistory.push(TegakiHistory.pendingAction);
       Tegaki.isPainting = false;
-    }
-    else if (Tegaki.isColorPicking) {
-      e.preventDefault();
-      Tegaki.isColorPicking = false;
-    }
-    
-    if (Tegaki.cursor) {
-      TegakiCursor.render(Tegaki.getCursorPos(e, 0), Tegaki.getCursorPos(e, 1));
     }
   },
   
   onDummy: function(e) {
     e.preventDefault();
     e.stopPropagation();
+  },
+  
+  recordEvent(klass, ...args) {
+    if (Tegaki.replayRecorder) {
+      Tegaki.replayRecorder.push(new klass(...args));
+    }
   }
 };

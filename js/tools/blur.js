@@ -2,6 +2,8 @@ class TegakiBlur extends TegakiBrush {
   constructor() {
     super();
     
+    this.id = 7;
+    
     this.name = 'blur';
     
     this.size = 32;

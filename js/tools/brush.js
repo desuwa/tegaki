@@ -326,8 +326,8 @@ class TegakiBrush extends TegakiTool {
     this.alphaDynamicsEnabled = flag;
   }
   
-  setTip(tip) {
-    this.tip = tip;
+  setTip(tipId) {
+    this.tipId = tipId;
     
     if (this.sizeDynamicsEnabled) {
       this.generateShapeCache(true);

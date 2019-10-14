@@ -11,7 +11,7 @@ var TegakiHistory = {
     this.redoStack = [];
     this.pendingAction = null;
     
-    this.onChange();
+    this.onChange(0);
   },
   
   push: function(action) {
@@ -29,7 +29,7 @@ var TegakiHistory = {
       this.redoStack = [];
     }
     
-    this.onChange();
+    this.onChange(0);
   },
   
   undo: function() {
@@ -40,12 +40,12 @@ var TegakiHistory = {
     }
     
     action = this.undoStack.pop();
-    //if (!TegakiDebug.validateLayerState(action)) return;
+    
     action.undo();
     
     this.redoStack.push(action);
     
-    this.onChange();
+    this.onChange(-1);
   },
   
   redo: function() {
@@ -56,16 +56,16 @@ var TegakiHistory = {
     }
     
     action = this.redoStack.pop();
-    //if (!TegakiDebug.validateLayerState(action)) return;
+    
     action.redo();
     
     this.undoStack.push(action);
     
-    this.onChange();
+    this.onChange(1);
   },
   
-  onChange: function() {
-    Tegaki.onHistoryChange(this.undoStack.length, this.redoStack.length);
+  onChange: function(type) {
+    Tegaki.onHistoryChange(this.undoStack.length, this.redoStack.length, type);
   },
   
   sortPosLayerCallback: function(a, b) {

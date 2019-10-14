@@ -2,6 +2,8 @@ class TegakiPencil extends TegakiBrush {
   constructor() {
     super();
     
+    this.id = 1;
+    
     this.name = 'pencil';
     
     this.keybind = 'b';

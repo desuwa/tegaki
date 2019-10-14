@@ -2,6 +2,8 @@ class TegakiTone extends TegakiPencil {
   constructor() {
     super();
     
+    this.id = 5;
+    
     this.name = 'tone';
     
     this.keybind = 't';

@@ -1,6 +1,108 @@
 var TegakiUI = {
   draggedNode: null,
   
+  statusTimeout: 0,
+  
+  printMsg: function(str, timeout = 5000) {
+    TegakiUI.clearMsg();
+    
+    $T.id('tegaki-status-output').textContent = str;
+    
+    if (timeout > 0) {
+      TegakiUI.statusTimeout = setTimeout(TegakiUI.clearMsg, 5000);
+    }
+  },
+  
+  clearMsg: function() {
+    if (TegakiUI.statusTimeout) {
+      clearTimeout(TegakiUI.statusTimeout);
+      TegakiUI.statusTimeout = 0;
+    }
+    
+    $T.id('tegaki-status-output').textContent = '';
+  },
+  
+  buildUI: function() {
+    var bg, cnt, el, ctrl, layersCnt, canvasCnt;
+    
+    //
+    // Grid container
+    //
+    bg = $T.el('div');
+    bg.id = 'tegaki';
+    
+    //
+    // Menu area
+    //
+    el = $T.el('div');
+    el.id = 'tegaki-menu-cnt';
+    
+    if (!Tegaki.replayMode) {
+      el.appendChild(TegakiUI.buildMenuBar());
+    }
+    else {
+      el.appendChild(TegakiUI.buildViewerMenuBar());
+      el.appendChild(TegakiUI.buildReplayControls());
+    }
+    
+    el.appendChild(TegakiUI.buildToolModeBar());
+    
+    bg.appendChild(el);
+    
+    bg.appendChild(TegakiUI.buildDummyFilePicker());
+    
+    //
+    // Tools area
+    //
+    cnt = $T.el('div');
+    cnt.id = 'tegaki-tools-cnt';
+    
+    cnt.appendChild(TegakiUI.buildToolsMenu());
+    
+    bg.appendChild(cnt);
+    
+    //
+    // Canvas area
+    //
+    [canvasCnt, layersCnt] = TegakiUI.buildCanvasCnt();
+    
+    bg.appendChild(canvasCnt);
+    
+    //
+    // Controls area
+    //
+    ctrl = $T.el('div');
+    ctrl.id = 'tegaki-ctrl-cnt';
+    
+    // Zoom control
+    ctrl.appendChild(TegakiUI.buildZoomCtrlGroup(Tegaki.zoomLevel));
+    
+    // Colorpicker
+    ctrl.appendChild(
+      TegakiUI.buildColorCtrlGroup(Tegaki.toolColor, Tegaki.defaultColorPalette)
+    );
+
+    // Size control
+    ctrl.appendChild(TegakiUI.buildSizeCtrlGroup());
+    
+    // Alpha control
+    ctrl.appendChild(TegakiUI.buildAlphaCtrlGroup());
+    
+    // Layers control
+    ctrl.appendChild(TegakiUI.buildLayersCtrlGroup());
+    
+    // ---
+    
+    bg.appendChild(ctrl);
+    
+    //
+    // Status area
+    //
+    bg.appendChild(TegakiUI.buildStatusCnt());
+    
+    return [bg, canvasCnt, layersCnt];
+  },
+  
   buildDummyFilePicker: function() {
     var el = $T.el('input');
     
@@ -14,19 +116,21 @@ var TegakiUI = {
   },
   
   buildMenuBar: function() {
-    var frag, btn;
+    var frag, btn, replayCls;
+    
+    replayCls = Tegaki.saveReplay ? ' tegaki-disabled' : '';
     
     frag = $T.el('div');
     frag.id = 'tegaki-menu-bar';
     
     btn = $T.el('span');
-    btn.className = 'tegaki-mb-btn';
+    btn.className = 'tegaki-mb-btn' + replayCls;
     btn.textContent = TegakiStrings.newCanvas;
     $T.on(btn, 'click', Tegaki.onNewClick);
     frag.appendChild(btn);
     
     btn = $T.el('span');
-    btn.className = 'tegaki-mb-btn';
+    btn.className = 'tegaki-mb-btn' + replayCls;
     btn.textContent = TegakiStrings.open;
     $T.on(btn, 'click', Tegaki.onOpenClick);
     frag.appendChild(btn);
@@ -69,11 +173,31 @@ var TegakiUI = {
     return frag;
   },
   
+  buildViewerMenuBar: function() {
+    var frag, btn;
+    
+    frag = $T.el('div');
+    frag.id = 'tegaki-menu-bar';
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-finish-btn';
+    btn.className = 'tegaki-mb-btn';
+    btn.textContent = TegakiStrings.close;
+    $T.on(btn, 'click', Tegaki.onCloseViewerClick);
+    frag.appendChild(btn);
+    
+    return frag;
+  },
+  
   buildToolModeBar: function() {
     var cnt, grp, el, btn;
     
     cnt = $T.el('div');
     cnt.id = 'tegaki-toolmode-bar';
+    
+    if (!Tegaki.tool) {
+      cnt.classList.add('tegaki-hidden');
+    }
     
     // Dynamics
     grp = $T.el('span');
@@ -173,6 +297,25 @@ var TegakiUI = {
     }
     
     return grp;
+  },
+  
+  buildCanvasCnt: function() {
+    var canvasCnt, wrap, layersCnt;
+    
+    canvasCnt = $T.el('div');
+    canvasCnt.id = 'tegaki-canvas-cnt';
+    
+    wrap =  $T.el('div');
+    wrap.id = 'tegaki-layers-wrap';
+    
+    layersCnt = $T.el('div');
+    layersCnt.id = 'tegaki-layers';
+    
+    wrap.appendChild(layersCnt);
+    
+    canvasCnt.appendChild(wrap);
+    
+    return [canvasCnt, layersCnt];
   },
   
   buildCtrlGroup: function(id, title) {
@@ -376,10 +519,93 @@ var TegakiUI = {
     cnt = $T.el('div');
     cnt.id = 'tegaki-status-cnt';
     
-    el = $T.el('span');
-    el.id = 'tegaki-version';
-    el.textContent = 'tegaki.js v' + Tegaki.VERSION;
+    if (Tegaki.saveReplay) {
+      el = $T.el('div');
+      el.id = 'tegaki-status-replay';
+      el.textContent = '⬤';
+      el.setAttribute('title', TegakiStrings.recordingEnabled);
+      cnt.appendChild(el);
+    }
     
+    el = $T.el('div');
+    el.id = 'tegaki-status-output';
+    cnt.appendChild(el);
+    
+    el = $T.el('div');
+    el.id = 'tegaki-status-version';
+    el.textContent = 'tegaki.js v' + Tegaki.VERSION;
+    cnt.appendChild(el);
+    
+    return cnt;
+  },
+  
+  buildReplayControls: function() {
+    var cnt, btn, el;
+    
+    cnt = $T.el('div');
+    cnt.id = 'tegaki-replay-controls';
+    cnt.className = 'tegaki-hidden';
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-replay-gapless-btn';
+    btn.className = 'tegaki-ui-cb-w';
+    $T.on(btn, 'click', Tegaki.onReplayGaplessClick);
+    
+    el = $T.el('span');
+    el.id = 'tegaki-replay-gapless-cb';
+    el.className = 'tegaki-ui-cb';
+    btn.appendChild(el);
+    
+    el = $T.el('span');
+    el.className = 'tegaki-menu-lbl';
+    el.textContent = TegakiStrings.gapless;
+    btn.appendChild(el);
+    
+    cnt.appendChild(btn);
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-replay-play-btn';
+    btn.className = 'tegaki-ui-btn tegaki-icon tegaki-play';
+    btn.setAttribute('title', TegakiStrings.play);
+    $T.on(btn, 'click', Tegaki.onReplayPlayPauseClick);
+    cnt.appendChild(btn);
+    
+    btn = $T.el('span');
+    btn.className = 'tegaki-ui-btn tegaki-icon tegaki-to-start';
+    btn.setAttribute('title', TegakiStrings.rewind);
+    $T.on(btn, 'click', Tegaki.onReplayRewindClick);
+    cnt.appendChild(btn);
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-replay-slower-btn';
+    btn.className = 'tegaki-ui-btn tegaki-icon tegaki-fast-bw';
+    btn.setAttribute('title', TegakiStrings.slower);
+    $T.on(btn, 'click', Tegaki.onReplaySlowDownClick);
+    cnt.appendChild(btn);
+    
+    el = $T.el('span');
+    el.id = 'tegaki-replay-speed-lbl';
+    el.className = 'tegaki-menu-lbl';
+    el.textContent = '1.0';
+    cnt.appendChild(el);
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-replay-faster-btn';
+    btn.className = 'tegaki-ui-btn tegaki-icon tegaki-fast-fw';
+    btn.setAttribute('title', TegakiStrings.faster);
+    $T.on(btn, 'click', Tegaki.onReplaySpeedUpClick);
+    cnt.appendChild(btn);
+    
+    el = $T.el('span');
+    el.id = 'tegaki-replay-now-lbl';
+    el.className = 'tegaki-menu-lbl';
+    el.textContent = '00:00';
+    cnt.appendChild(el);
+    
+    el = $T.el('span');
+    el.id = 'tegaki-replay-end-lbl';
+    el.className = 'tegaki-menu-lbl';
+    el.textContent = '00:00';
     cnt.appendChild(el);
     
     return cnt;
@@ -423,8 +649,10 @@ var TegakiUI = {
     return cnt;
   },
   
+  // ---
+  
   onLayerDragStart: function(e) {
-    var el;
+    var el, id;
     
     TegakiUI.draggedNode = null;
     
@@ -433,10 +661,16 @@ var TegakiUI = {
       return;
     }
     
+    id = e.target.getAttribute('data-id');
+    
+    if (!TegakiLayers.selectedLayersHas(id)) {
+      return;
+    }
+    
     el = $T.el('div');
     el.className = 'tegaki-invis';
     e.dataTransfer.setDragImage(el, 0, 0);
-    e.dataTransfer.setData('text/plain', e.target.getAttribute('data-id'));
+    e.dataTransfer.setData('text/plain', id);
     e.dataTransfer.effectAllowed = 'move';
     
     TegakiUI.draggedNode = e.target;
@@ -466,7 +700,7 @@ var TegakiUI = {
   },
   
   onLayerDragDrop: function(e) {
-    var tgtId, srcId, belowPos, layers;
+    var tgtId, srcId, belowPos;
     
     e.preventDefault();
     
@@ -489,14 +723,7 @@ var TegakiUI = {
       belowPos = TegakiLayers.getLayerPosById(tgtId);
     }
     
-    if (!TegakiLayers.selectedLayersHas(srcId)) {
-      layers = new Set([srcId]);
-    }
-    else {
-      layers = Tegaki.selectedLayers;
-    }
-    
-    TegakiHistory.push(TegakiLayers.moveLayers(layers, belowPos));
+    Tegaki.moveSelectedLayers(belowPos);
   },
   
   updateLayersGridDragExt: function(flag) {
@@ -571,7 +798,14 @@ var TegakiUI = {
   
   // ---
   
+  setReplayMode: function(flag) {
+    Tegaki.bg.classList[flag ? 'add' : 'remove']('tegaki-replay-mode');
+  },
+  
+  // ---
+  
   onToolChanged: function() {
+    $T.id('tegaki-toolmode-bar').classList.remove('tegaki-hidden');
     TegakiUI.updateToolSize();
     TegakiUI.updateToolAlpha();
     TegakiUI.updateToolModes();
@@ -753,7 +987,7 @@ var TegakiUI = {
   },
   
   updateToolShape: function() {
-    var tip, ctrl, cnt, btn, tipList;
+    var tipId, ctrl, cnt, btn, tipList;
     
     ctrl = $T.id('tegaki-tool-mode-tip');
     
@@ -765,31 +999,20 @@ var TegakiUI = {
       
       cnt = $T.id('tegaki-tool-mode-tip-ctrl');
       
-      for (btn of cnt.children) {
-        tip = btn.getAttribute('data-id');
-        
-        if (tipList.indexOf(tip) !== -1) {
-          btn.classList.remove('tegaki-sw-btn-a');
-          btn.classList.remove('tegaki-hidden');
-        }
-        else {
-          btn.classList.add('tegaki-hidden');
-        }
-      }
+      cnt.innerHTML = '';
       
-      for (tip of tipList) {
-        if (!(btn = $T.id('tegaki-tool-mode-tip-' + tip))) {
-          btn = $T.el('span');
-          btn.id = 'tegaki-tool-mode-tip-' + tip;
-          btn.className = 'tegaki-sw-btn';
-          btn.setAttribute('data-id', tip);
-          btn.textContent = TegakiStrings[tip];
-          
-          $T.on(btn, 'mousedown', Tegaki.onToolTipClick);
-          cnt.appendChild(btn);
-        }
+      for (tipId = 0; tipId < tipList.length; ++tipId) {
+        btn = $T.el('span');
+        btn.id = 'tegaki-tool-mode-tip-' + tipId;
+        btn.className = 'tegaki-sw-btn';
+        btn.setAttribute('data-id', tipId);
+        btn.textContent = TegakiStrings[tipList[tipId]];
         
-        if (Tegaki.tool.tip === tip) {
+        $T.on(btn, 'mousedown', Tegaki.onToolTipClick);
+        
+        cnt.appendChild(btn);
+        
+        if (Tegaki.tool.tipId === tipId) {
           btn.classList.add('tegaki-sw-btn-a');
         }
       }
@@ -843,6 +1066,10 @@ var TegakiUI = {
   updateUndoRedo: function(undoSize, redoSize) {
     var u, r;
     
+    if (Tegaki.replayMode) {
+      return;
+    }
+    
     u = $T.id('tegaki-undo-btn').classList;
     r = $T.id('tegaki-redo-btn').classList;
     
@@ -884,6 +1111,111 @@ var TegakiUI = {
     }
     else {
       $T.id('tegaki-zoomout-btn').classList.remove('tegaki-disabled');
+    }
+  },
+  
+  updateReplayTime: function(full) {
+    var now, end, r = Tegaki.replayViewer;
+    
+    now = r.getCurrentPos();
+    
+    end = r.getDuration();
+    
+    if (now > end) {
+      now = end;
+    }
+    
+    $T.id('tegaki-replay-now-lbl').textContent = $T.msToHms(now);
+    
+    if (full) {
+      $T.id('tegaki-replay-end-lbl').textContent = $T.msToHms(end);
+    }
+  },
+  
+  updateReplayControls: function() {
+    TegakiUI.updateReplayGapless();
+    TegakiUI.updateReplayPlayPause();
+    TegakiUI.updateReplaySpeed();
+  },
+  
+  updateReplayGapless: function() {
+    var el, r = Tegaki.replayViewer;
+    
+    el = $T.id('tegaki-replay-gapless-cb');
+    
+    if (r.gapless) {
+      el.classList.add('tegaki-ui-cb-a');
+    }
+    else {
+      el.classList.remove('tegaki-ui-cb-a');
+    }
+  },
+  
+  updateReplayPlayPause: function() {
+    var el, r = Tegaki.replayViewer;
+    
+    el = $T.id('tegaki-replay-play-btn');
+    
+    if (r.playing) {
+      el.classList.remove('tegaki-play');
+      el.classList.add('tegaki-pause');
+      el.setAttribute('title', TegakiStrings.pause);
+    }
+    else {
+      el.classList.add('tegaki-play');
+      el.classList.remove('tegaki-pause');
+      el.setAttribute('title', TegakiStrings.play);
+      
+      if (r.getCurrentPos() < r.getDuration()) {
+        el.classList.remove('tegaki-disabled');
+      }
+      else {
+        el.classList.add('tegaki-disabled');
+      }
+    }
+  },
+  
+  updateReplaySpeed: function() {
+    var el, r = Tegaki.replayViewer;
+    
+    $T.id('tegaki-replay-speed-lbl').textContent = r.speed.toFixed(1);
+    
+    el = $T.id('tegaki-replay-slower-btn');
+    
+    if (r.speedIndex === 0) {
+      el.classList.add('tegaki-disabled');
+    }
+    else {
+      el.classList.remove('tegaki-disabled');
+    }
+    
+    el = $T.id('tegaki-replay-faster-btn');
+    
+    if (r.speedIndex === r.speedList.length - 1) {
+      el.classList.add('tegaki-disabled');
+    }
+    else {
+      el.classList.remove('tegaki-disabled');
+    }
+  },
+  
+  enableReplayControls: function(flag) {
+    if (flag) {
+      $T.id('tegaki-replay-controls').classList.remove('tegaki-hidden');
+    }
+    else {
+      $T.id('tegaki-replay-controls').classList.add('tegaki-hidden');
+    }
+  },
+  
+  setRecordingStatus: function(flag) {
+    var el = $T.id('tegaki-status-replay');
+    
+    if (flag) {
+      el.classList.remove('tegaki-hidden');
+    }
+    else {
+      el.classList.add('tegaki-hidden');
     }
   }
 };

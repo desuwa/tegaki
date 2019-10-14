@@ -14,6 +14,8 @@
   "esversion": 6,
   
   "globals": {
+    "UZIP": true,
+    
     "ImageData": true,
     
     "TegakiDebug": true,
@@ -37,7 +39,41 @@
     "TegakiHistory": true,
     "TegakiHistoryActions": true,
     "TegakiLayers": true,
-    "TegakiCursor": true
+    "TegakiCursor": true,
+    "TegakiReplayRecorder": true,
+    "TegakiReplayViewer": true,
+    "TegakiEvents": true,
+    "TegakiBinReader": true,
+    "TegakiBinWriter": true,
+    
+    "TegakiEventPrelude": true,
+    
+    "TegakiEventDrawStartNoP": true,
+    "TegakiEventDrawStart": true,
+    "TegakiEventDrawNoP": true,
+    "TegakiEventDraw": true,
+    "TegakiEventDrawCommit": true,
+    "TegakiEventUndo": true,
+    "TegakiEventRedo": true,
+    "TegakiEventSetColor": true,
+
+    "TegakiEventSetTool": true,
+    "TegakiEventSetToolSize": true,
+    "TegakiEventSetToolAlpha": true,
+    "TegakiEventSetToolSizeDynamics": true,
+    "TegakiEventSetToolAlphaDynamics": true,
+    "TegakiEventSetToolTip": true,
+    "TegakiEventPreserveAlpha": true,
+
+    "TegakiEventAddLayer": true,
+    "TegakiEventDeleteLayers": true,
+    "TegakiEventMoveLayers": true,
+    "TegakiEventMergeLayers": true,
+    "TegakiEventToggleLayerVisibility": true,
+    "TegakiEventSetActiveLayer": true,
+    "TegakiEventToggleLayerSelection": true,
+    
+    "TegakiEventConclusion": true
   },
   
   "exported": [
@@ -58,7 +94,11 @@
     "TegakiHistory",
     "TegakiHistoryActions",
     "TegakiLayers",
-    "TegakiCursor"
+    "TegakiCursor",
+    "TegakiReplayRecorder",
+    "TegakiReplayViewer",
+    "TegakiBinReader",
+    "TegakiBinWriter"
   ],
   
   "overrides": {

@@ -5,6 +5,7 @@ Encoding.default_external = 'UTF-8'
 ROOT_DIR = File.dirname(__FILE__)
 
 SRC_DIR = "#{ROOT_DIR}/js"
+LIB_DIR = "#{ROOT_DIR}/lib"
 
 JS_BUILD_FILE = 'tegaki.js'
 CSS_BUILD_FILE = 'tegaki.css'
@@ -14,6 +15,8 @@ TEGAKI_LANG = if ENV['TEGAKI_LANG'] && ENV['TEGAKI_LANG'] =~ /\A[a-z]+\z/
 else
   'en'
 end
+
+NO_REPLAY = ENV['TEGAKI_NO_REPLAY'] == '1'
 
 desc 'Concatenate JavaScript'
 task :concat do
@@ -46,7 +49,16 @@ task :concat do
     src << File.binread(file)
   end
   
+  replay_src = [ 'replayevents.js', 'replayrecorder.js', 'replayviewer.js' ]
+  
   Dir.glob("#{SRC_DIR}/*.js").each do |file|
+    next if (NO_REPLAY && replay_src.include?(File.basename(file)))
+    puts "<-- #{file}"
+    src << File.binread(file)
+  end
+  
+  if !NO_REPLAY
+    file = "#{LIB_DIR}/UZIP/UZIP.js"
     puts "<-- #{file}"
     src << File.binread(file)
   end
@@ -116,17 +128,6 @@ task :jshint do
     else
       puts output
     end
-  end
-end
-
-task :jshint_build do
-  output, outerr, status = Open3.capture3('jshint', "#{ROOT_DIR}/#{JS_BUILD_FILE}")
-  
-  if outerr != ''
-    puts outerr
-    abort
-  else
-    puts output
   end
 end
 

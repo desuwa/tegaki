@@ -367,7 +367,7 @@ var TegakiLayers = {
       id = TegakiLayers.getTopLayerId();
       
       if (!id) {
-        Tegaki.activeLayerId = null;
+        Tegaki.activeLayerId = -1;
         Tegaki.activeCtx = null;
         return;
       }

@@ -60,6 +60,10 @@ var $T = {
     return null;
   },
   
+  RgbToHex: function(r, g, b) {
+    return '#' + ((1 << 24) + (r << 16) +  (g << 8) + b).toString(16).slice(1);
+  },
+  
   getColorAt: function(ctx, posX, posY) {
     var rgba = ctx.getImageData(posX, posY, 1, 1).data;
     
@@ -83,5 +87,36 @@ var $T = {
     if (a > b) { return -1; }
     if (a < b) { return 1; }
     return 0;
+  },
+  
+  msToHms: function(ms) {
+    var h, m, s, ary;
+    
+    s = 0 | (ms / 1000);
+    h = 0 | (s / 3600);
+    m = 0 | ((s - h * 3600) / 60);
+    s = s - h * 3600 - m * 60;
+    
+    ary = [];
+    
+    if (h) {
+      ary.push(h < 10 ? ('0' + h) : h);
+    }
+    
+    if (m) {
+      ary.push(m < 10 ? ('0' + m) : m);
+    }
+    else {
+      ary.push('00');
+    }
+    
+    if (s) {
+      ary.push(s < 10 ? ('0' + s) : s);
+    }
+    else {
+      ary.push('00');
+    }
+    
+    return ary.join(':');
   }
 };

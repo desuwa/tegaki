@@ -2,6 +2,8 @@ class TegakiPipette extends TegakiTool {
   constructor() {
     super();
     
+    this.id = 6;
+    
     this.name = 'pipette';
     
     this.keybind = 'i';

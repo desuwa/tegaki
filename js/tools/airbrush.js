@@ -2,6 +2,8 @@ class TegakiAirbrush extends TegakiBrush {
   constructor() {
     super();
     
+    this.id = 3;
+    
     this.name = 'airbrush';
     
     this.keybind = 'a';
