@@ -42,3 +42,6 @@ To build from source yourself:
 
 The `TEGAKI_LANG` environment variable controls which translation file will be used during concatenation:  
 `rake concat TEGAKI_LANG=xx` would use strings from `js/strings/xx.js`
+
+To build without replay support:  
+`rake concat TEGAKI_NO_REPLAY=1`
