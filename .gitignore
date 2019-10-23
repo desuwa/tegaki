@@ -1,4 +1,2 @@
-tegaki.js
-*.min.js
-*.min.css
+build/*
 *.html

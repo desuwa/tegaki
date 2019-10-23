@@ -1,11 +1,14 @@
 require 'open3'
+require 'fileutils'
 
 Encoding.default_external = 'UTF-8'
 
 ROOT_DIR = File.dirname(__FILE__)
 
-SRC_DIR = "#{ROOT_DIR}/js"
+JS_DIR = "#{ROOT_DIR}/js"
+CSS_DIR = "#{ROOT_DIR}/css"
 LIB_DIR = "#{ROOT_DIR}/lib"
+BUILD_DIR = "#{ROOT_DIR}/build"
 
 JS_BUILD_FILE = 'tegaki.js'
 CSS_BUILD_FILE = 'tegaki.css'
@@ -20,13 +23,17 @@ NO_REPLAY = ENV['TEGAKI_NO_REPLAY'] == '1'
 
 desc 'Concatenate JavaScript'
 task :concat do
-  out_file = "#{ROOT_DIR}/#{JS_BUILD_FILE}"
+  if !File.directory?(BUILD_DIR)
+    FileUtils.mkdir(BUILD_DIR)
+  end
+  
+  out_file = "#{BUILD_DIR}/#{JS_BUILD_FILE}"
   
   src = String.new
   
   src << "'use strict';"
   
-  file = "#{SRC_DIR}/strings/#{TEGAKI_LANG}.js"
+  file = "#{JS_DIR}/strings/#{TEGAKI_LANG}.js"
   
   puts "<-- #{file}"
   
@@ -44,14 +51,14 @@ task :concat do
     blur
     eraser
   ].each do |tool|
-    file = "#{SRC_DIR}/tools/#{tool}.js"
+    file = "#{JS_DIR}/tools/#{tool}.js"
     puts "<-- #{file}"
     src << File.binread(file)
   end
   
   replay_src = [ 'replayevents.js', 'replayrecorder.js', 'replayviewer.js' ]
   
-  Dir.glob("#{SRC_DIR}/*.js").each do |file|
+  Dir.glob("#{JS_DIR}/*.js").each do |file|
     next if (NO_REPLAY && replay_src.include?(File.basename(file)))
     puts "<-- #{file}"
     src << File.binread(file)
@@ -76,13 +83,13 @@ namespace :minify do
   task :js do
     require 'uglifier'
     
-    file = "#{ROOT_DIR}/#{JS_BUILD_FILE}"
+    file = "#{BUILD_DIR}/#{JS_BUILD_FILE}"
     
     if !File.exist?(file)
-      abort("#{JS_BUILD_FILE} not found. Run 'rake concat' first")
+      abort("#{file} not found. Run 'rake concat' first")
     end
     
-    min_file = "#{ROOT_DIR}/#{File.basename(JS_BUILD_FILE, '.js')}.min.js"
+    min_file = "#{BUILD_DIR}/#{File.basename(JS_BUILD_FILE, '.js')}.min.js"
     
     u = Uglifier.new({
       :compress => {
@@ -101,9 +108,9 @@ namespace :minify do
 
   desc 'Minify CSS'
   task :css do
-    file = "#{ROOT_DIR}/#{CSS_BUILD_FILE}"
+    file = "#{CSS_DIR}/#{CSS_BUILD_FILE}"
     
-    min_file = "#{ROOT_DIR}/#{File.basename(JS_BUILD_FILE, '.js')}.min.css"
+    min_file = "#{CSS_DIR}/#{File.basename(JS_BUILD_FILE, '.js')}.min.css"
     
     output, outerr, status = Open3.capture3('cleancss', '-o', min_file, file)
     
@@ -118,7 +125,7 @@ end
 
 desc 'Run JShint'
 task :jshint do
-  Dir.glob("#{SRC_DIR}/**/*.js").each do |file|
+  Dir.glob("#{JS_DIR}/**/*.js").each do |file|
     puts "--> #{File.basename(file)}"
     output, outerr, status = Open3.capture3('jshint', file)
     
