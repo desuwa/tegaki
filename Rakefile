@@ -31,6 +31,8 @@ task :concat do
   
   src = String.new
   
+  src << '/*! tegaki.js, MIT License */'
+  
   src << "'use strict';"
   
   file = "#{JS_DIR}/strings/#{TEGAKI_LANG}.js"
@@ -94,6 +96,10 @@ namespace :minify do
     u = Uglifier.new({
       :compress => {
         :drop_console => true
+      },
+      
+      :output => {
+        :comments => /^\/*!/
       },
       
       :harmony => true,
