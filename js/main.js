@@ -646,6 +646,8 @@ var Tegaki = {
     
     Tegaki.setZoom(1);
     TegakiHistory.clear();
+    
+    Tegaki.startTimeStamp = Date.now();
   },
   
   onOpenClick: function() {
@@ -971,6 +973,8 @@ var Tegaki = {
     Tegaki.copyContextState(tmp, Tegaki.activeCtx);
     
     TegakiHistory.clear();
+    
+    Tegaki.startTimeStamp = Date.now();
   },
   
   onOpenImageError: function() {
