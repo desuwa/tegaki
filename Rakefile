@@ -58,7 +58,7 @@ task :concat do
     src << File.binread(file)
   end
   
-  replay_src = [ 'replayevents.js', 'replayrecorder.js', 'replayviewer.js' ]
+  replay_src = [ 'replayrecorder.js', 'replayviewer.js' ]
   
   Dir.glob("#{JS_DIR}/*.js").each do |file|
     next if (NO_REPLAY && replay_src.include?(File.basename(file)))
