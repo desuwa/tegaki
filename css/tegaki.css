@@ -321,6 +321,7 @@
   position: relative;
   font-size: 0;
   box-shadow: 0 0 8px 2px rgba(0, 0, 0, 0.25);
+  contain: content;
 }
 
 #tegaki-layers:empty {
