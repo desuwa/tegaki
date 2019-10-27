@@ -83,10 +83,8 @@ var TegakiCursor = {
     srcImg = this.tmpCtx.getImageData(0, 0, size, size);
     srcData = new Uint32Array(srcImg.data.buffer);
     
-    destImg = this.cursorCtx.getImageData(x, y, size, size);
+    destImg = this.cursorCtx.createImageData(size, size);
     destData = new Uint32Array(destImg.data.buffer);
-    
-    $T.clearCtx(this.cursorCtx);
     
     for (i = 0, len = buf.length; i < len; ++i) {
       if (buf[i] === 0) {
