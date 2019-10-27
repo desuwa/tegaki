@@ -936,7 +936,7 @@ var TegakiUI = {
   },
   
   updateToolAlpha: function() {
-    var val = 0 | (Tegaki.tool.alpha * 100);
+    var val = Math.round(Tegaki.tool.alpha * 100);
     $T.id('tegaki-alpha-lbl').value = val;
     $T.id('tegaki-alpha').value = val;
   },
