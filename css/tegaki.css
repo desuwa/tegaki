@@ -229,8 +229,8 @@
   -ms-interpolation-mode: nearest-neighbor;
 }
 
-#tegaki .tegaki-smooth-layers canvas {
-  image-rendering: high-quality;
+#tegaki .tegaki-smooth-layers #tegaki-cursor-layer {
+  image-rendering: auto;
 }
 
 .tegaki-tool-active {
