@@ -142,8 +142,6 @@ var TegakiLayers = {
     canvas.width = Tegaki.canvas.width;
     canvas.height = Tegaki.canvas.height;
     
-    Tegaki.updateCanvasZoomSize(canvas);
-    
     id = ++Tegaki.layerCounter;
     
     canvas.id = 'tegaki-canvas-' + id;

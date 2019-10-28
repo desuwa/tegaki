@@ -324,6 +324,11 @@
   contain: content;
 }
 
+#tegaki-layers canvas {
+  width: 100%;
+  height: 100%;
+}
+
 #tegaki-layers:empty {
   display: none;
 }

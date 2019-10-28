@@ -592,19 +592,10 @@ var Tegaki = {
     
     TegakiUI.updateZoomLevel();
     
-    for (el of Tegaki.layersCnt.children) {
-      Tegaki.updateCanvasZoomSize(el);
-    }
-    
     Tegaki.layersCnt.style.width = Tegaki.baseWidth * Tegaki.zoomLevel + 'px';
     Tegaki.layersCnt.style.height = Tegaki.baseHeight * Tegaki.zoomLevel + 'px';
     
     Tegaki.updatePosOffset();
-  },
-  
-  updateCanvasZoomSize: function(el) {
-    el.style.width = Tegaki.baseWidth * Tegaki.zoomLevel + 'px';
-    el.style.height = Tegaki.baseHeight * Tegaki.zoomLevel + 'px';
   },
   
   onZoomChange: function() {
