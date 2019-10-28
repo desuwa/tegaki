@@ -31,6 +31,18 @@ Tegaki.open({
 });
 ```
 
+It's possible to generate animated replays of drawings alongside the image itself.  
+To do so, pass the `saveReplay: true` parameter to Tegaki.open.  
+To get the replay data, call `Tegaki.replayRecorder.toBlob()` in your `onDone` callback.  
+
+To watch a replay, start tegaki.js in replay mode:  
+```javascript
+Tegaki.open({
+  replayMode: true,
+  replayURL: 'https://path/to/replay.tgkr' // Store replay files preferably with the .tgkr extension
+});
+```
+
 #### Building
 
 Pre-built releases are [here](https://github.com/desuwa/tegaki/releases).  
