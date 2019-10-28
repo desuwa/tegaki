@@ -30,9 +30,10 @@ var Tegaki = {
   offsetX: 0,
   offsetY: 0,
   
-  zoomLevel: 1,
-  zoomMax: 5,
-  zoomMin: 1,
+  zoomLevel: 0,
+  zoomFactor: 1.0,
+  zoomFactorList: [0.5, 1.0, 2.0, 5.0, 10.0],
+  zoomBaseLevel: 1,
   
   hasCustomCanvas: false,
   
@@ -370,7 +371,7 @@ var Tegaki = {
           + window.pageXOffset
           + Tegaki.canvasCnt.scrollLeft
           - Tegaki.offsetX
-        ) / Tegaki.zoomLevel);
+        ) / Tegaki.zoomFactor);
     }
     else {
       return 0 | ((
@@ -378,7 +379,7 @@ var Tegaki = {
           + window.pageYOffset
           + Tegaki.canvasCnt.scrollTop
           - Tegaki.offsetY
-        ) / Tegaki.zoomLevel);
+        ) / Tegaki.zoomFactor);
     }
   },
   
@@ -422,7 +423,8 @@ var Tegaki = {
     Tegaki.ctx = null;
     Tegaki.layers = [];
     Tegaki.layerCounter = 0;
-    Tegaki.zoomLevel = 1;
+    Tegaki.zoomLevel = 0;
+    Tegaki.zoomFactor = 1.0;
     Tegaki.activeCtx = null;
     
     Tegaki.tool = null;
@@ -582,18 +584,28 @@ var Tegaki = {
   },
   
   setZoom: function(level) {
-    var el;
+    var idx;
     
-    if (level > Tegaki.zoomMax || level < Tegaki.zoomMin || !Tegaki.canvas) {
+    idx = level + Tegaki.zoomBaseLevel;
+    
+    if (idx >= Tegaki.zoomFactorList.length || idx < 0 || !Tegaki.canvas) {
       return;
     }
     
     Tegaki.zoomLevel = level;
+    Tegaki.zoomFactor = Tegaki.zoomFactorList[idx];
     
     TegakiUI.updateZoomLevel();
     
-    Tegaki.layersCnt.style.width = Tegaki.baseWidth * Tegaki.zoomLevel + 'px';
-    Tegaki.layersCnt.style.height = Tegaki.baseHeight * Tegaki.zoomLevel + 'px';
+    Tegaki.layersCnt.style.width = Math.ceil(Tegaki.baseWidth * Tegaki.zoomFactor) + 'px';
+    Tegaki.layersCnt.style.height = Math.ceil(Tegaki.baseHeight * Tegaki.zoomFactor) + 'px';
+    
+    if (level < 0) {
+      Tegaki.layersCnt.classList.add('tegaki-smooth-layers');
+    }
+    else {
+      Tegaki.layersCnt.classList.remove('tegaki-smooth-layers');
+    }
     
     Tegaki.updatePosOffset();
   },
@@ -635,7 +647,7 @@ var Tegaki = {
     Tegaki.resizeCanvas(width, height);
     Tegaki.copyContextState(tmp, Tegaki.activeCtx);
     
-    Tegaki.setZoom(1);
+    Tegaki.setZoom(0);
     TegakiHistory.clear();
     
     Tegaki.startTimeStamp = Date.now();
@@ -962,6 +974,8 @@ var Tegaki = {
     Tegaki.resizeCanvas(this.naturalWidth, this.naturalHeight);
     Tegaki.activeCtx.drawImage(this, 0, 0);
     Tegaki.copyContextState(tmp, Tegaki.activeCtx);
+    
+    Tegaki.setZoom(0);
     
     TegakiHistory.clear();
     

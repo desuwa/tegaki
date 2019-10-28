@@ -75,7 +75,7 @@ var TegakiUI = {
     ctrl.id = 'tegaki-ctrl-cnt';
     
     // Zoom control
-    ctrl.appendChild(TegakiUI.buildZoomCtrlGroup(Tegaki.zoomLevel));
+    ctrl.appendChild(TegakiUI.buildZoomCtrlGroup());
     
     // Colorpicker
     ctrl.appendChild(
@@ -1097,16 +1097,16 @@ var TegakiUI = {
   },
   
   updateZoomLevel: function() {
-    $T.id('tegaki-zoom-lbl').textContent = (Tegaki.zoomLevel * 100) + '%';
+    $T.id('tegaki-zoom-lbl').textContent = (Tegaki.zoomFactor * 100) + '%';
     
-    if (Tegaki.zoomLevel === Tegaki.zoomMax) {
+    if (Tegaki.zoomLevel + Tegaki.zoomBaseLevel >= Tegaki.zoomFactorList.length) {
       $T.id('tegaki-zoomin-btn').classList.add('tegaki-disabled');
     }
     else {
       $T.id('tegaki-zoomin-btn').classList.remove('tegaki-disabled');
     }
     
-    if (Tegaki.zoomLevel === Tegaki.zoomMin) {
+    if (Tegaki.zoomLevel + Tegaki.zoomBaseLevel <= 0) {
       $T.id('tegaki-zoomout-btn').classList.add('tegaki-disabled');
     }
     else {

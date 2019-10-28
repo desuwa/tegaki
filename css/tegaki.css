@@ -229,6 +229,10 @@
   -ms-interpolation-mode: nearest-neighbor;
 }
 
+#tegaki .tegaki-smooth-layers canvas {
+  image-rendering: high-quality;
+}
+
 .tegaki-tool-active {
   color: #f2f3f4;
 }
