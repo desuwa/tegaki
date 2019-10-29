@@ -8,7 +8,7 @@ class TegakiPen extends TegakiBrush {
     
     this.keybind = 'p';
     
-    this.step = 0.01;
+    this.step = 0.05;
     
     this.size = 8;
     this.alpha = 1.0;

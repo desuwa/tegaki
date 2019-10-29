@@ -8,7 +8,7 @@ class TegakiAirbrush extends TegakiBrush {
     
     this.keybind = 'a';
     
-    this.step = 0.01;
+    this.step = 0.1;
     
     this.size = 32;
     this.alpha = 1.0;
