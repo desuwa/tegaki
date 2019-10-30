@@ -116,21 +116,19 @@ var TegakiUI = {
   },
   
   buildMenuBar: function() {
-    var frag, btn, replayCls;
-    
-    replayCls = Tegaki.saveReplay ? ' tegaki-disabled' : '';
+    var frag, btn;
     
     frag = $T.el('div');
     frag.id = 'tegaki-menu-bar';
     
     btn = $T.el('span');
-    btn.className = 'tegaki-mb-btn' + replayCls;
+    btn.className = 'tegaki-mb-btn';
     btn.textContent = TegakiStrings.newCanvas;
     $T.on(btn, 'click', Tegaki.onNewClick);
     frag.appendChild(btn);
     
     btn = $T.el('span');
-    btn.className = 'tegaki-mb-btn' + replayCls;
+    btn.className = 'tegaki-mb-btn';
     btn.textContent = TegakiStrings.open;
     $T.on(btn, 'click', Tegaki.onOpenClick);
     frag.appendChild(btn);

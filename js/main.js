@@ -620,17 +620,13 @@ var Tegaki = {
   },
   
   onNewClick: function() {
-    var width, height, tmp;
+    var width, height, tmp, self = Tegaki;
     
-    if (Tegaki.saveReplay) {
-      return;
-    }
-    
-    width = prompt(TegakiStrings.promptWidth, Tegaki.canvas.width);
+    width = prompt(TegakiStrings.promptWidth, self.canvas.width);
     
     if (!width) { return; }
     
-    height = prompt(TegakiStrings.promptHeight, Tegaki.canvas.height);
+    height = prompt(TegakiStrings.promptHeight, self.canvas.height);
     
     if (!height) { return; }
     
@@ -643,29 +639,36 @@ var Tegaki = {
     }
     
     tmp = {};
-    Tegaki.copyContextState(Tegaki.activeCtx, tmp);
-    Tegaki.resizeCanvas(width, height);
-    Tegaki.copyContextState(tmp, Tegaki.activeCtx);
+    self.copyContextState(self.activeCtx, tmp);
+    self.resizeCanvas(width, height);
+    self.copyContextState(tmp, self.activeCtx);
     
-    Tegaki.setZoom(0);
+    self.setZoom(0);
     TegakiHistory.clear();
     
-    Tegaki.startTimeStamp = Date.now();
+    self.startTimeStamp = Date.now();
+    
+    if (self.saveReplay) {
+      self.createTools();
+      self.setTool(self.defaultTool);
+      self.replayRecorder = new TegakiReplayRecorder();
+      self.replayRecorder.start();
+    }
   },
   
   onOpenClick: function() {
     var el, tainted;
     
-    if (Tegaki.saveReplay) {
-      return;
-    }
-    
     tainted = TegakiHistory.undoStack[0] || TegakiHistory.redoStack[0];
     
-    if (!tainted || confirm(TegakiStrings.confirmChangeCanvas)) {
-      el = $T.id('tegaki-filepicker');
-      el.click();
+    if (tainted || Tegaki.saveReplay) {
+      if (!confirm(TegakiStrings.confirmChangeCanvas)) {
+        return;
+      }
     }
+    
+    el = $T.id('tegaki-filepicker');
+    el.click();
   },
   
   loadReplayFromFile: function() {
@@ -966,20 +969,27 @@ var Tegaki = {
   },
   
   onOpenImageLoaded: function() {
-    var tmp = {};
+    var tmp = {}, self = Tegaki;
     
-    Tegaki.hasCustomCanvas = true;
+    self.hasCustomCanvas = true;
     
-    Tegaki.copyContextState(Tegaki.activeCtx, tmp);
-    Tegaki.resizeCanvas(this.naturalWidth, this.naturalHeight);
-    Tegaki.activeCtx.drawImage(this, 0, 0);
-    Tegaki.copyContextState(tmp, Tegaki.activeCtx);
+    self.copyContextState(self.activeCtx, tmp);
+    self.resizeCanvas(this.naturalWidth, this.naturalHeight);
+    self.activeCtx.drawImage(this, 0, 0);
+    self.copyContextState(tmp, self.activeCtx);
     
-    Tegaki.setZoom(0);
+    self.setZoom(0);
     
     TegakiHistory.clear();
     
-    Tegaki.startTimeStamp = Date.now();
+    self.startTimeStamp = Date.now();
+    
+    if (self.saveReplay) {
+      self.replayRecorder.stop();
+      self.replayRecorder = null;
+      self.saveReplay = false;
+      TegakiUI.setRecordingStatus(false);
+    }
   },
   
   onOpenImageError: function() {

@@ -10,7 +10,7 @@ var TegakiStrings = {
   noActiveLayer: 'No active layer.',
   hiddenActiveLayer: 'The active layer is not visible.',
   confirmCancel: 'Are you sure? Your work will be lost.',
-  confirmChangeCanvas: 'Are you sure? Changing the canvas will clear all layers and history.',
+  confirmChangeCanvas: 'Are you sure? Changing the canvas will clear all layers and history and disable replay recording.',
   
   // Controls
   color: 'Color',
