@@ -45,6 +45,7 @@
     "TegakiEvents": true,
     "TegakiBinReader": true,
     "TegakiBinWriter": true,
+    "TegakiColorPalettes": true,
     
     "TegakiEventPrelude": true,
     
@@ -98,7 +99,8 @@
     "TegakiReplayRecorder",
     "TegakiReplayViewer",
     "TegakiBinReader",
-    "TegakiBinWriter"
+    "TegakiBinWriter",
+    "TegakiColorPalettes"
   ],
   
   "overrides": {

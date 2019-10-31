@@ -23,6 +23,8 @@ var TegakiStrings = {
   mergeLayers: 'Merge layers',
   moveLayerUp: 'Move up',
   moveLayerDown: 'Move down',
+  switchPalette: 'Switch color palette',
+  paletteSlotReplace: 'Right click to replace with the current color',
   
   // Menu bar
   newCanvas: 'New',

@@ -39,12 +39,6 @@ var Tegaki = {
   
   TWOPI: 2 * Math.PI,
   
-  defaultColorPalette: [
-    '#ffffff', '#000000', '#888888', '#b47575', '#c096c0',
-    '#fa9696', '#8080ff', '#ffb6ff', '#e7e58d', '#25c7c9',
-    '#99cb7b', '#e7962d', '#f9ddcf', '#fcece2'
-  ],
-  
   toolList: [
     TegakiPencil,
     TegakiPen,
@@ -59,6 +53,8 @@ var Tegaki = {
   tools: {},
   
   tool: null,
+  
+  colorPaletteId: 0,
   
   toolColor: '#000000',
   defaultTool: 'pencil',
@@ -536,6 +532,28 @@ var Tegaki = {
   onColorPicked: function(e) {
     $T.id('tegaki-color').style.backgroundColor = this.value;
     Tegaki.setToolColor(this.value);
+  },
+  
+  onSwitchPaletteClick: function(e) {
+    var id;
+    
+    if (e.target.hasAttribute('data-prev')) {
+      id = Tegaki.colorPaletteId - 1;
+    }
+    else {
+      id = Tegaki.colorPaletteId + 1;
+    }
+    
+    Tegaki.setColorPalette(id);
+  },
+  
+  setColorPalette: function(id) {
+    if (id < 0 || id >= TegakiColorPalettes.length) {
+      return;
+    }
+    
+    Tegaki.colorPaletteId = id;
+    TegakiUI.updateColorPalette();
   },
   
   setToolSize: function(size) {

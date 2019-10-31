@@ -79,9 +79,9 @@ var TegakiUI = {
     
     // Colorpicker
     ctrl.appendChild(
-      TegakiUI.buildColorCtrlGroup(Tegaki.toolColor, Tegaki.defaultColorPalette)
+      TegakiUI.buildColorCtrlGroup(Tegaki.toolColor, Tegaki.colorPaletteId)
     );
-
+    
     // Size control
     ctrl.appendChild(TegakiUI.buildSizeCtrlGroup());
     
@@ -470,20 +470,84 @@ var TegakiUI = {
     return ctrl;
   },
   
-  buildColorCtrlGroup: function(mainColor, colorPalette) {
-    var el, btn, ctrl, color, edge;
+  buildColorCtrlGroup: function(mainColor, activePaletteId) {
+    var el, cnt, btn, ctrl, color, edge, i, palette, cls;
     
     edge = / Edge\//i.test(window.navigator.userAgent);
     
     ctrl = this.buildCtrlGroup('color', TegakiStrings.color);
+    
+    cnt = $T.el('div');
+    cnt.id = 'tegaki-color-ctrl';
     
     el = $T.el('div');
     el.id = 'tegaki-color';
     edge && el.classList.add('tegaki-hidden');
     el.style.backgroundColor = mainColor;
     $T.on(el, 'mousedown', Tegaki.onMainColorClick);
+    cnt.appendChild(el);
     
-    ctrl.appendChild(el);
+    el = $T.el('div');
+    el.id = 'tegaki-palette-switcher';
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-palette-prev-btn';
+    btn.title = TegakiStrings.switchPalette;
+    btn.setAttribute('data-prev', '1');
+    btn.className = 'tegaki-ui-btn tegaki-icon tegaki-left-open';
+    $T.on(btn, 'click', Tegaki.onSwitchPaletteClick);
+    el.appendChild(btn);
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-palette-next-btn';
+    btn.title = TegakiStrings.switchPalette;
+    btn.className = 'tegaki-ui-btn tegaki-icon tegaki-right-open';
+    $T.on(btn, 'click', Tegaki.onSwitchPaletteClick);
+    el.appendChild(btn);
+    
+    cnt.appendChild(el);
+    
+    ctrl.appendChild(cnt);
+    
+    cnt = $T.el('div');
+    cnt.id = 'tegaki-color-grids';
+    
+    for (i = 0; i < TegakiColorPalettes.length; ++i) {
+      el = $T.el('div');
+      
+      el.setAttribute('data-id', i);
+      
+      cls = 'tegaki-color-grid';
+      
+      palette = TegakiColorPalettes[i];
+      
+      if (palette.length <= 18) {
+        cls += ' tegaki-color-grid-20';
+      }
+      else {
+        cls += ' tegaki-color-grid-15';
+      }
+      
+      if (i !== activePaletteId) {
+        cls += ' tegaki-hidden';
+      }
+      
+      el.className = cls;
+      
+      for (color of palette) {
+        btn = $T.el('div');
+        btn.title = TegakiStrings.paletteSlotReplace;
+        btn.className = 'tegaki-color-btn';
+        btn.setAttribute('data-color', color);
+        btn.style.backgroundColor = color;
+        $T.on(btn, 'mousedown', Tegaki.onPaletteColorClick);
+        el.appendChild(btn);
+      }
+      
+      cnt.appendChild(el);
+    }
+    
+    ctrl.appendChild(cnt);
     
     el = $T.el('input');
     el.id = 'tegaki-colorpicker';
@@ -491,20 +555,6 @@ var TegakiUI = {
     el.value = color;
     el.type = 'color';
     $T.on(el, 'change', Tegaki.onColorPicked);
-    
-    ctrl.appendChild(el);
-    
-    el = $T.el('div');
-    el.id = 'tegaki-color-grid';
-    
-    for (color of colorPalette) {
-      btn = $T.el('div');
-      btn.className = 'tegaki-color-btn';
-      btn.setAttribute('data-color', color);
-      btn.style.backgroundColor = color;
-      $T.on(btn, 'mousedown', Tegaki.onPaletteColorClick);
-      el.appendChild(btn);
-    }
     
     ctrl.appendChild(el);
     
@@ -1109,6 +1159,41 @@ var TegakiUI = {
     }
     else {
       $T.id('tegaki-zoomout-btn').classList.remove('tegaki-disabled');
+    }
+  },
+  
+  updateColorPalette: function() {
+    var el, nodes, id;
+    
+    id = Tegaki.colorPaletteId;
+    
+    nodes = $T.cls('tegaki-color-grid', $T.id('tegaki-color-grids'));
+    
+    for (el of nodes) {
+      if (+el.getAttribute('data-id') === id) {
+        el.classList.remove('tegaki-hidden');
+      }
+      else {
+        el.classList.add('tegaki-hidden');
+      }
+    }
+    
+    el = $T.id('tegaki-palette-prev-btn');
+    
+    if (id === 0) {
+      el.classList.add('tegaki-disabled');
+    }
+    else {
+      el.classList.remove('tegaki-disabled');
+    }
+    
+    el = $T.id('tegaki-palette-next-btn');
+    
+    if (id === TegakiColorPalettes.length - 1) {
+      el.classList.add('tegaki-disabled');
+    }
+    else {
+      el.classList.remove('tegaki-disabled');
     }
   },
   
