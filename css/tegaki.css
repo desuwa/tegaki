@@ -82,6 +82,10 @@
   grid-gap: 2px;
 }
 
+#tegaki input {
+  color: inherit;
+}
+
 #tegaki > div {
   background-color: #8d99a6;
 }
