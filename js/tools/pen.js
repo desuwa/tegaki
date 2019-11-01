@@ -8,7 +8,7 @@ class TegakiPen extends TegakiBrush {
     
     this.keybind = 'p';
     
-    this.step = 0.05;
+    this.step = 0.1;
     
     this.size = 8;
     this.alpha = 1.0;
@@ -19,44 +19,115 @@ class TegakiPen extends TegakiBrush {
   }
   
   generateShape(size) {
-    var r, brush, ctx, brushSize, offset, data, center;
+    var e, x, y, imageData, data, c, color, r, rr,
+      f, ff, bSize, bData, i, ii, xx, yy, center, brushSize;
     
-    if (size % 2) {
-      brushSize = size + 1;
-      offset = 1;
-    }
-    else {
-      brushSize = size;
-      offset = 0;
-    }
+    center = Math.floor(size / 2) + 1;
     
-    brush = $T.el('canvas');
-    brush.width = brushSize;
-    brush.height = brushSize;
+    brushSize = size + 2;
     
-    ctx = brush.getContext('2d');
+    f = 4;
     
-    if (size > 1) {
-      r = size / 2;
+    ff = f * f;
+    
+    bSize = brushSize * f;
+    
+    r = Math.floor(bSize / 2);
+    
+    rr = Math.floor((bSize + 1) % 2);
+    
+    imageData = new ImageData(bSize, bSize);
+    bData = new Uint32Array(imageData.data.buffer);
+    
+    color = 0x55000000;
+    
+    x = r;
+    y = 0;
+    e = 1 - r;
+    c = r;
+    
+    while (x >= y) {
+      bData[c + x - rr + (c + y - rr) * bSize] = color;
+      bData[c + y - rr + (c + x - rr) * bSize] = color;
       
-      ctx.beginPath();
-      ctx.arc(r + offset, r + offset, r, 0, Tegaki.TWOPI, false);
-      ctx.fillStyle = '#000000';
-      ctx.fill();
-      ctx.closePath();
+      bData[c - y + (c + x - rr) * bSize] = color;
+      bData[c - x + (c + y - rr) * bSize] = color;
       
-      center = Math.ceil(r);
-      data = ctx.getImageData(0, 0, brushSize, brushSize).data;
+      bData[c - y + (c - x) * bSize] = color;
+      bData[c - x + (c - y) * bSize] = color;
+      
+      bData[c + y - rr + (c - x) * bSize] = color;
+      bData[c + x - rr + (c - y) * bSize] = color;
+      
+      ++y;
+      
+      if (e <= 0) {
+        e += 2 * y + 1;
+      }
+      else {
+        x--;
+        e += 2 * (y - x) + 1;
+      }
     }
-    else {
-      center = 0;
-      data = ctx.createImageData(1, 1);
-      data[3] = 255;
+    
+    color = 0xFF000000;
+    
+    x = r - 3;
+    y = 0;
+    e = 1 - r;
+    c = r;
+    
+    while (x >= y) {
+      bData[c + x - rr + (c + y - rr) * bSize] = color;
+      bData[c + y - rr + (c + x - rr) * bSize] = color;
+      
+      bData[c - y + (c + x - rr) * bSize] = color;
+      bData[c - x + (c + y - rr) * bSize] = color;
+      
+      bData[c - y + (c - x) * bSize] = color;
+      bData[c - x + (c - y) * bSize] = color;
+      
+      bData[c + y - rr + (c - x) * bSize] = color;
+      bData[c + x - rr + (c - y) * bSize] = color;
+      
+      ++y;
+      
+      if (e <= 0) {
+        e += 2 * y + 1;
+      }
+      else {
+        x--;
+        e += 2 * (y - x) + 1;
+      }
+    }
+    
+    if (r > 0) {
+      Tegaki.tools.bucket.fill(imageData, imageData, r, r, this.rgb, 1.0);
+    }
+    
+    bData = imageData.data;
+    data = new ImageData(brushSize, brushSize).data;
+    
+    for (x = 0; x < brushSize; ++x) {
+      for (y = 0; y < brushSize; ++y) {
+        i = (y * brushSize + x) * 4 + 3;
+        
+        color = 0;
+        
+        for (xx = 0; xx < f; ++xx) {
+          for (yy = 0; yy < f; ++yy) {
+            ii = ((yy + y * f) * bSize + (xx + x * f)) * 4 + 3;
+            color += bData[ii];
+          }
+        }
+        
+        data[i] = color / ff;
+      }
     }
     
     return {
       center: center,
-      stepSize: Math.floor(size * this.step),
+      stepSize: size * this.step,
       brushSize: brushSize,
       kernel: data,
     };

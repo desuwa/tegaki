@@ -19,17 +19,14 @@ class TegakiAirbrush extends TegakiBrush {
   }
   
   generateShape(size) {
-    var i, r, brush, ctx, dest, data, len, sqd, sqlen, hs, col, row,
+    var i, r, data, len, sqd, sqlen, hs, col, row,
       ecol, erow, a;
     
     r = size;
     size = size * 2;
     
-    brush = $T.el('canvas');
-    brush.width = brush.height = size;
-    ctx = brush.getContext('2d');
-    dest = ctx.getImageData(0, 0, size, size);
-    data = dest.data;
+    data = new ImageData(size, size).data;
+    
     len = size * size * 4;
     sqlen = Math.sqrt(r * r);
     hs = Math.round(r);
@@ -51,7 +48,7 @@ class TegakiAirbrush extends TegakiBrush {
       
       sqd = Math.sqrt(ecol * ecol + erow * erow);
       
-      if (sqd > sqlen) {
+      if (sqd >= sqlen) {
         a = 0;
       }
       else if (sqd === 0) {
@@ -76,7 +73,7 @@ class TegakiAirbrush extends TegakiBrush {
     
     return {
       center: r,
-      stepSize: Math.floor(size * this.step),
+      stepSize: Math.ceil(size * this.step),
       brushSize: size,
       kernel: data,
     };

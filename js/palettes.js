@@ -14,8 +14,8 @@ var TegakiColorPalettes = [
   [
     '#000000', '#ffffff', '#8a8a8a', '#cacaca',
     '#fcece2', '#f9ddcf', '#e0a899', '#a05b53', '#7a444a',
-    '#de4537', '#ff3300', '#ff9800', '#ffc107',
-    '#ffeb3b', '#f3e5ab',
+    '#960018', '#c41e3a', '#de4537', '#ff3300', '#ff9800', '#ffc107',
+    '#ffd700', '#ffeb3b', '#ffffcc', '#f3e5ab',
     '#cddc39', '#8bc34a', '#4caf50', '#3e8948', '#355e3b', '#3eb489',
     '#f0f8ff', '#87ceeb', '#6699cc', '#007fff', '#2d68c4',
     '#364478', '#352c4a', 

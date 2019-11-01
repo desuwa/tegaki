@@ -185,7 +185,7 @@ class TegakiBrush extends TegakiTool {
   
   draw(posX, posY) {
     var mx, my, fromX, fromY, sampleX, sampleY, dx, dy, err, derr, stepAcc,
-      distBase, shape, center, brushSize, t, tainted;
+      lastX, lastY, distBase, shape, center, brushSize, t, tainted;
     
     stepAcc = this.stepAcc;
     
@@ -201,7 +201,7 @@ class TegakiBrush extends TegakiTool {
     if (this.sizeDynamicsEnabled || this.alphaDynamicsEnabled) {
       distBase = Math.sqrt((posX - fromX) * (posX - fromX) + (posY - fromY) * (posY - fromY));
     }
-    
+        
     if (this.sizeDynamicsEnabled) {
       shape = this.shapeCache[this.size - 1];
       center = shape.center;
@@ -225,10 +225,16 @@ class TegakiBrush extends TegakiTool {
     
     tainted = false;
     
+    lastX = fromX;
+    lastY = fromY;
+    
     while (true) {
-      ++stepAcc;
+      stepAcc += Math.max(Math.abs(lastX - fromX), Math.abs(lastY - fromY));
       
-      if (stepAcc > this.stepSize) {
+      lastX = fromX;
+      lastY = fromY;
+      
+      if (stepAcc >= this.stepSize) {
         if (this.sizeDynamicsEnabled || this.alphaDynamicsEnabled) {
           if (distBase > 0) {
             t = 1.0 - (Math.sqrt((posX - fromX) * (posX - fromX) + (posY - fromY) * (posY - fromY)) / distBase);

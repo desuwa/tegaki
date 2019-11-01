@@ -19,23 +19,20 @@ class TegakiPencil extends TegakiBrush {
   }
   
   generateShape(size) {
-    var brush, ctx, e, x, y, imageData, data, c, color, r, rr;
+    var e, x, y, imageData, data, c, color, r, rr;
     
     r = 0 | ((size) / 2);
     
     rr = 0 | ((size + 1) % 2);
     
-    brush = $T.el('canvas');
-    brush.width = brush.height = size;
-    ctx = brush.getContext('2d');
+    imageData = new ImageData(size, size);
     
-    imageData = ctx.getImageData(0, 0, size, size);
     data = new Uint32Array(imageData.data.buffer);
     
     color = 0xFF000000;
     
     x = r;
-    y = 0 | 0;
+    y = 0;
     e = 1 - r;
     c = r;
     
@@ -69,7 +66,7 @@ class TegakiPencil extends TegakiBrush {
     
     return {
       center: r,
-      stepSize: Math.floor(size * this.step),
+      stepSize: Math.ceil(size * this.step),
       brushSize: size,
       kernel: imageData.data,
     };
