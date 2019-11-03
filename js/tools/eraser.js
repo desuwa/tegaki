@@ -13,6 +13,8 @@ class TegakiEraser extends TegakiBrush {
     this.size = 8;
     this.alpha = 1.0;
     
+    this.useFlow = false;
+    
     this.useSizeDynamics = true;
     this.useAlphaDynamics = true;
     this.usePreserveAlpha = false;

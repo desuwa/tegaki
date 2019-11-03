@@ -88,6 +88,9 @@ var TegakiUI = {
     // Alpha control
     ctrl.appendChild(TegakiUI.buildAlphaCtrlGroup());
     
+    // Flow control
+    ctrl.appendChild(TegakiUI.buildFlowCtrlGroup());
+    
     // Layers control
     ctrl.appendChild(TegakiUI.buildLayersCtrlGroup());
     
@@ -223,6 +226,13 @@ var TegakiUI = {
     btn.className = 'tegaki-sw-btn';
     btn.textContent = TegakiStrings.alpha;
     $T.on(btn, 'mousedown', Tegaki.onToolPressureAlphaClick);
+    el.appendChild(btn);
+    
+    btn = $T.el('span');
+    btn.id = 'tegaki-tool-mode-dynamics-flow';
+    btn.className = 'tegaki-sw-btn';
+    btn.textContent = TegakiStrings.flow;
+    $T.on(btn, 'mousedown', Tegaki.onToolPressureFlowClick);
     el.appendChild(btn);
     
     grp.appendChild(el);
@@ -406,7 +416,7 @@ var TegakiUI = {
     
     el = $T.el('input');
     el.id = 'tegaki-size-lbl';
-    el.className = 'tegaki-stealth-input';
+    el.className = 'tegaki-stealth-input tegaki-range-lbl';
     $T.on(el, 'change', Tegaki.onToolSizeChange);
     row.appendChild(el);
     
@@ -435,8 +445,37 @@ var TegakiUI = {
     
     el = $T.el('input');
     el.id = 'tegaki-alpha-lbl';
-    el.className = 'tegaki-stealth-input';
+    el.className = 'tegaki-stealth-input tegaki-range-lbl';
     $T.on(el, 'change', Tegaki.onToolAlphaChange);
+    row.appendChild(el);
+    
+    ctrl.appendChild(row);
+    
+    return ctrl;
+  },
+  
+  buildFlowCtrlGroup: function() {
+    var el, ctrl, row;
+    
+    ctrl = this.buildCtrlGroup('flow', TegakiStrings.flow);
+    
+    row = $T.el('div');
+    row.className = 'tegaki-ctrlrow';
+    
+    el = $T.el('input');
+    el.id = 'tegaki-flow';
+    el.className = 'tegaki-ctrl-range';
+    el.min = 0;
+    el.max = 100;
+    el.step = 1;
+    el.type = 'range';
+    $T.on(el, 'input', Tegaki.onToolFlowChange);
+    row.appendChild(el);
+    
+    el = $T.el('input');
+    el.id = 'tegaki-flow-lbl';
+    el.className = 'tegaki-stealth-input tegaki-range-lbl';
+    $T.on(el, 'change', Tegaki.onToolFlowChange);
     row.appendChild(el);
     
     ctrl.appendChild(row);
@@ -856,6 +895,7 @@ var TegakiUI = {
     $T.id('tegaki-toolmode-bar').classList.remove('tegaki-hidden');
     TegakiUI.updateToolSize();
     TegakiUI.updateToolAlpha();
+    TegakiUI.updateToolFlow();
     TegakiUI.updateToolModes();
   },
   
@@ -979,14 +1019,47 @@ var TegakiUI = {
   },
   
   updateToolSize: function() {
-    $T.id('tegaki-size-lbl').value = Tegaki.tool.size;
-    $T.id('tegaki-size').value = Tegaki.tool.size;
+    var el = $T.id('tegaki-ctrlgrp-size');
+    
+    if (Tegaki.tool.useSize) {
+      el.classList.remove('tegaki-hidden');
+      
+      $T.id('tegaki-size-lbl').value = Tegaki.tool.size;
+      $T.id('tegaki-size').value = Tegaki.tool.size;
+    }
+    else {
+      el.classList.add('tegaki-hidden');
+    }
   },
   
   updateToolAlpha: function() {
-    var val = Math.round(Tegaki.tool.alpha * 100);
-    $T.id('tegaki-alpha-lbl').value = val;
-    $T.id('tegaki-alpha').value = val;
+    var val, el = $T.id('tegaki-ctrlgrp-alpha');
+    
+    if (Tegaki.tool.useAlpha) {
+      el.classList.remove('tegaki-hidden');
+      
+      val = Math.round(Tegaki.tool.alpha * 100);
+      $T.id('tegaki-alpha-lbl').value = val;
+      $T.id('tegaki-alpha').value = val;
+    }
+    else {
+      el.classList.add('tegaki-hidden');
+    }
+  },
+  
+  updateToolFlow: function() {
+    var val, el = $T.id('tegaki-ctrlgrp-flow');
+    
+    if (Tegaki.tool.useFlow) {
+      el.classList.remove('tegaki-hidden');
+      
+      val = Math.round(Tegaki.tool.flow * 100);
+      $T.id('tegaki-flow-lbl').value = val;
+      $T.id('tegaki-flow').value = val;
+    }
+    else {
+      el.classList.add('tegaki-hidden');
+    }
   },
   
   updateToolDynamics: function() {
@@ -994,7 +1067,7 @@ var TegakiUI = {
     
     ctrl = $T.id('tegaki-tool-mode-dynamics');
     
-    if (!Tegaki.tool.useSizeDynamics && !Tegaki.tool.useAlphaDynamics) {
+    if (!Tegaki.tool.usesDynamics()) {
       ctrl.classList.add('tegaki-hidden');
     }
     else {
@@ -1018,6 +1091,22 @@ var TegakiUI = {
       
       if (Tegaki.tool.useAlphaDynamics) {
         if (Tegaki.tool.alphaDynamicsEnabled) {
+          cb.classList.add('tegaki-sw-btn-a');
+        }
+        else {
+          cb.classList.remove('tegaki-sw-btn-a');
+        }
+        
+        cb.classList.remove('tegaki-hidden');
+      }
+      else {
+        cb.classList.add('tegaki-hidden');
+      }
+      
+      cb = $T.id('tegaki-tool-mode-dynamics-flow');
+      
+      if (Tegaki.tool.useFlowDynamics) {
+        if (Tegaki.tool.flowDynamicsEnabled) {
           cb.classList.add('tegaki-sw-btn-a');
         }
         else {

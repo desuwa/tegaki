@@ -8,13 +8,16 @@ class TegakiPen extends TegakiBrush {
     
     this.keybind = 'p';
     
-    this.step = 0.1;
+    this.step = 0.05;
     
     this.size = 8;
     this.alpha = 1.0;
+    this.flow = 1.0;
     
     this.useSizeDynamics = true;
     this.useAlphaDynamics = true;
+    this.useFlowDynamics = true;
+    
     this.usePreserveAlpha = true;
   }
   
@@ -127,7 +130,7 @@ class TegakiPen extends TegakiBrush {
     
     return {
       center: center,
-      stepSize: size * this.step,
+      stepSize: Math.ceil(size * this.step),
       brushSize: brushSize,
       kernel: data,
     };

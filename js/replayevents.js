@@ -321,6 +321,30 @@ class TegakiEventSetToolAlpha {
   }
 }
 
+class TegakiEventSetToolFlow {
+  constructor(timeStamp, value) {
+    this.timeStamp = timeStamp;
+    this.value = value;
+    this.type = TegakiEvents[this.constructor.name][0];
+    this.coalesce = true;
+    this.size = 9;
+  }
+  
+  pack(w) {
+    w.writeUint8(this.type);
+    w.writeUint32(this.timeStamp);
+    w.writeFloat32(this.value);
+  }
+  
+  static unpack(r) {
+    return new this(r.readUint32(), r.readFloat32());
+  }
+  
+  dispatch() {
+    Tegaki.setToolFlow(this.value);
+  }
+}
+
 class TegakiEventPreserveAlpha extends TegakiEvent_c {
   constructor(timeStamp, value) {
     super();
@@ -360,6 +384,20 @@ class TegakiEventSetToolAlphaDynamics extends TegakiEvent_c {
   
   dispatch() {
     Tegaki.setToolAlphaDynamics(!!this.value);
+  }
+}
+
+class TegakiEventSetToolFlowDynamics extends TegakiEvent_c {
+  constructor(timeStamp, value) {
+    super();
+    this.timeStamp = timeStamp;
+    this.value = value;
+    this.type = TegakiEvents[this.constructor.name][0];
+    this.coalesce = true;
+  }
+  
+  dispatch() {
+    Tegaki.setToolFlowDynamics(!!this.value);
   }
 }
 
@@ -484,7 +522,9 @@ const TegakiEvents = Object.freeze({
   TegakiEventSetToolAlphaDynamics:    [14,  TegakiEventSetToolAlphaDynamics],
   TegakiEventSetToolTip:              [15,  TegakiEventSetToolTip],
   TegakiEventPreserveAlpha:           [16,  TegakiEventPreserveAlpha],
-  
+  TegakiEventSetToolFlowDynamics:     [17,  TegakiEventSetToolFlowDynamics],
+  TegakiEventSetToolFlow:             [18,  TegakiEventSetToolFlow],
+
   TegakiEventAddLayer:                [20,  TegakiEventAddLayer],
   TegakiEventDeleteLayers:            [21,  TegakiEventDeleteLayers],
   TegakiEventMoveLayers:              [22,  TegakiEventMoveLayers],

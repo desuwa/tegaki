@@ -10,6 +10,8 @@ class TegakiTone extends TegakiPencil {
     
     this.step = 0.01;
     
+    this.useFlow = false;
+
     this.size = 8;
     this.alpha = 0.5;
     

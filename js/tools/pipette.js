@@ -10,7 +10,9 @@ class TegakiPipette extends TegakiTool {
     
     this.step = 100.0;
     
-    this.size = 1;
+    this.useSize = false;
+    this.useAlpha = false;
+    this.useFlow = false;
     
     this.noCursor = true;
   }

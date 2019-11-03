@@ -15,7 +15,7 @@ class TegakiBrush extends TegakiTool {
       r, g, b,
       pr, pg, pb,
       ax, cx, ba,
-      brushSize, brushAlpha, preserveAlpha;
+      brushSize, brushAlpha, brushFlow, preserveAlpha;
     
     x = 0 | x;
     y = 0 | y;
@@ -28,6 +28,7 @@ class TegakiBrush extends TegakiTool {
     kernel = this.kernel;
     
     brushAlpha = this.brushAlpha;
+    brushFlow = this.brushFlow * this.brushFlow;
     brushSize = this.brushSize;
     
     aData = this.activeImgData.data;
@@ -69,7 +70,7 @@ class TegakiBrush extends TegakiTool {
         cx = (iy * canvasWidth + ix) * 4;
         
         sa = bData[cx + 3] / 255;
-        sa = sa + ka * brushAlpha - sa * ka;
+        sa = sa + ka * brushFlow * (brushAlpha - sa);
         
         ba = Math.ceil(sa * 255);
         
@@ -152,6 +153,16 @@ class TegakiBrush extends TegakiTool {
       this.brushAlpha = val;
     }
     
+    if (this.flowDynamicsEnabled) {
+      val = this.flow * pressure;
+      
+      if (val <= 0) {
+        return false;
+      }
+      
+      this.brushFlow = val;
+    }
+    
     return true;
   }
   
@@ -162,7 +173,7 @@ class TegakiBrush extends TegakiTool {
     this.posX = posX; 
     this.posY = posY;
     
-    if (this.sizeDynamicsEnabled || this.alphaDynamicsEnabled) {
+    if (this.enabledDynamics()) {
       if (!this.updateDynamics(1.0)) {
         return;
       }
@@ -198,7 +209,7 @@ class TegakiBrush extends TegakiTool {
     if (fromY < posY) { dy = posY - fromY; sampleY = fromY; my = 1; }
     else { dy = fromY - posY; sampleY = posY; my = -1; }
     
-    if (this.sizeDynamicsEnabled || this.alphaDynamicsEnabled) {
+    if (this.enabledDynamics()) {
       distBase = Math.sqrt((posX - fromX) * (posX - fromX) + (posY - fromY) * (posY - fromY));
     }
         
@@ -235,7 +246,7 @@ class TegakiBrush extends TegakiTool {
       lastY = fromY;
       
       if (stepAcc >= this.stepSize) {
-        if (this.sizeDynamicsEnabled || this.alphaDynamicsEnabled) {
+        if (this.enabledDynamics()) {
           if (distBase > 0) {
             t = 1.0 - (Math.sqrt((posX - fromX) * (posX - fromX) + (posY - fromY) * (posY - fromY)) / distBase);
           }
@@ -318,18 +329,6 @@ class TegakiBrush extends TegakiTool {
     }
     
     this.sizeDynamicsEnabled = flag;
-  }
-  
-  setAlphaDynamics(flag) {
-    if (!this.useAlphaDynamics) {
-      return;
-    }
-    
-    if (!flag) {
-      this.setAlpha(this.alpha);
-    }
-    
-    this.alphaDynamicsEnabled = flag;
   }
   
   setTip(tipId) {

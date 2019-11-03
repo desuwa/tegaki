@@ -252,7 +252,9 @@ class TegakiReplayViewer {
       ['sizeDynamicsEnabled', 'Uint8'],
       ['alphaDynamicsEnabled', 'Uint8'],
       ['usePreserveAlpha', 'Uint8'],
-      ['tipId', 'Int8']
+      ['tipId', 'Int8'],
+      ['flow', 'Float32'],
+      ['flowDynamicsEnabled', 'Uint8'],
     ];
     
     len = r.readUint8();
@@ -265,6 +267,10 @@ class TegakiReplayViewer {
       tool = {};
       
       for (field of fields) {
+        if (r.pos >= pos) {
+          break;
+        }
+        
         tool[field[0]] = r['read' + field[1]]();
       }
       

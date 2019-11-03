@@ -10,7 +10,8 @@ class TegakiBucket extends TegakiTool {
     
     this.step = 100.0;
     
-    this.size = 1;
+    this.useSize = false;
+    this.useFlow = false;
     
     this.noCursor = true;
   }

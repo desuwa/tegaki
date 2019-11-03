@@ -453,7 +453,7 @@
   width: calc(100% - 34px);
   padding: 0;
   margin: 0;
-  height: 20px;
+  height: 14px;
 }
 
 /* zoom ctrl group */
@@ -505,13 +505,11 @@
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
-/* size / opacity ctrl groups */
-#tegaki-size-lbl,
-#tegaki-alpha-lbl {
+.tegaki-range-lbl {
   display: inline-block;
   text-align: center;
   width: 28px;
-  height: 20px;
+  height: 14px;
   font-size: 12px;
   vertical-align: top;
   margin-left: 4px;

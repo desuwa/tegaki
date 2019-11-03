@@ -16,6 +16,7 @@ var TegakiStrings = {
   color: 'Color',
   size: 'Size',
   alpha: 'Opacity',
+  flow: 'Flow',
   zoom: 'Zoom',
   layers: 'Layers',
   addLayer: 'Add layer',

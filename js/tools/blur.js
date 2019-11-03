@@ -6,9 +6,12 @@ class TegakiBlur extends TegakiBrush {
     
     this.name = 'blur';
     
+    this.step = 0.25;
+    
+    this.useFlow = false;
+    
     this.size = 32;
     this.alpha = 0.5;
-    this.step = 0.25;
     
     this.useAlphaDynamics = true;
     this.usePreserveAlpha = false;

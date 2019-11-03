@@ -38,9 +38,11 @@ class TegakiReplayRecorder {
         id: tool.id, 
         size: tool.size,
         alpha: tool.alpha,
+        flow: tool.flow,
         step: tool.step,
         sizeDynamicsEnabled: +tool.sizeDynamicsEnabled,
         alphaDynamicsEnabled: +tool.alphaDynamicsEnabled,
+        flowDynamicsEnabled: +tool.flowDynamicsEnabled,
         usePreserveAlpha: +tool.usePreserveAlpha,
         tipId: tool.tipId
       });
@@ -109,7 +111,7 @@ class TegakiReplayRecorder {
   }
   
   getToolSize() {
-    return 14;
+    return 19;
   }
   
   getToolListSize() {
@@ -127,7 +129,9 @@ class TegakiReplayRecorder {
       ['sizeDynamicsEnabled', 'Uint8'],
       ['alphaDynamicsEnabled', 'Uint8'],
       ['usePreserveAlpha', 'Uint8'],
-      ['tipId', 'Int8']
+      ['tipId', 'Int8'],
+      ['flow', 'Float32'],
+      ['flowDynamicsEnabled', 'Uint8'],
     ];
     
     w.writeUint8(this.toolList.length);

@@ -172,7 +172,7 @@ var Tegaki = {
   },
   
   initToolsFromReplay: function() {
-    var self, r, name, tool, rTool;
+    var self, r, name, tool, rTool, prop, props;
     
     self = Tegaki;
     r = self.replayViewer;
@@ -186,13 +186,24 @@ var Tegaki = {
       
       rTool = r.toolMap[tool.id];
       
-      tool.size = rTool.size;
-      tool.alpha = rTool.alpha;
-      tool.step = rTool.step;
-      tool.sizeDynamicsEnabled = !!rTool.sizeDynamicsEnabled;
-      tool.alphaDynamicsEnabled = !!rTool.alphaDynamicsEnabled;
-      tool.usePreserveAlpha = !!rTool.usePreserveAlpha;
-      tool.tipId = rTool.tipId;
+      props = ['step', 'size', 'alpha', 'flow', 'tipId'];
+      
+      for (prop of props) {
+        if (rTool[prop] !== undefined) {
+          tool[prop] = rTool[prop];
+        }
+      }
+      
+      props = [
+        'sizeDynamicsEnabled', 'alphaDynamicsEnabled', 'flowDynamicsEnabled',
+        'usePreserveAlpha'
+      ];
+      
+      for (prop of props) {
+        if (rTool[prop] !== undefined) {
+          tool[prop] = !!rTool[prop];
+        }
+      }
     }
   },
   
@@ -574,6 +585,15 @@ var Tegaki = {
     }
   },
   
+  setToolFlow: function(flow) {
+    if (flow >= 0.0 && flow <= 1.0) {
+      flow = Math.fround(flow);
+      Tegaki.tool.setFlow(flow);
+      Tegaki.recordEvent(TegakiEventSetToolFlow, performance.now(), flow);
+      TegakiUI.updateToolFlow();
+    }
+  },
+  
   setToolColor: function(color) {
     Tegaki.toolColor = color;
     $T.id('tegaki-color').style.backgroundColor = color;
@@ -776,6 +796,21 @@ var Tegaki = {
     Tegaki.setToolAlpha(val);
   },
   
+  onToolFlowChange: function(e) {
+    var val = +this.value;
+    
+    val = val / 100;
+    
+    if (val < 0.0) {
+      val = 0.0;
+    }
+    else if (val > 1.0) {
+      val = 1.0;
+    }
+    
+    Tegaki.setToolFlow(val);
+  },
+  
   onToolPressureSizeClick: function(e) {
     if (!Tegaki.tool.useSizeDynamics) {
       return;
@@ -802,6 +837,20 @@ var Tegaki = {
     Tegaki.tool.setAlphaDynamics(flag);
     TegakiUI.updateToolDynamics();
     Tegaki.recordEvent(TegakiEventSetToolAlphaDynamics, performance.now(), +flag);
+  },
+  
+  onToolPressureFlowClick: function(e) {
+    if (!Tegaki.tool.useFlowDynamics) {
+      return;
+    }
+    
+    Tegaki.setToolFlowDynamics(!Tegaki.tool.flowDynamicsEnabled);
+  },
+  
+  setToolFlowDynamics: function(flag) {
+    Tegaki.tool.setFlowDynamics(flag);
+    TegakiUI.updateToolDynamics();
+    Tegaki.recordEvent(TegakiEventSetToolFlowDynamics, performance.now(), +flag);
   },
   
   onToolPreserveAlphaClick: function(e) {
@@ -1091,7 +1140,7 @@ var Tegaki = {
   },
   
   onPointerMove: function(e) {
-    var events, x, y, tool, noPressure, ts, p;
+    var events, x, y, tool, ts, p;
     
     if (e.mozInputSource !== undefined) {
       // Firefox thing where mouse events fire for no reason when the pointer is a pen
@@ -1110,8 +1159,6 @@ var Tegaki = {
     if (Tegaki.isPainting) {
       tool = Tegaki.tool;
       
-      noPressure = !tool.sizeDynamicsEnabled && !tool.alphaDynamicsEnabled;
-      
       if (Tegaki.activePointerIsPen && e.getCoalescedEvents) {
         events = e.getCoalescedEvents();
         
@@ -1121,7 +1168,7 @@ var Tegaki = {
           x = Tegaki.getCursorPos(e, 0);
           y = Tegaki.getCursorPos(e, 1);
           
-          if (noPressure) {
+          if (!tool.enabledDynamics()) {
             Tegaki.recordEvent(TegakiEventDrawNoP, ts, x, y);
           }
           else {
@@ -1194,7 +1241,7 @@ var Tegaki = {
       
       tool = Tegaki.tool;
 
-      if (!tool.sizeDynamicsEnabled && !tool.alphaDynamicsEnabled) {
+      if (!tool.enabledDynamics()) {
         Tegaki.recordEvent(TegakiEventDrawStartNoP, e.timeStamp, x, y);
       }
       else {

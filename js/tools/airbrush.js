@@ -15,6 +15,8 @@ class TegakiAirbrush extends TegakiBrush {
     
     this.useSizeDynamics = true;
     this.useAlphaDynamics = true;
+    this.useFlowDynamics = true;
+    
     this.usePreserveAlpha = true;
   }
   

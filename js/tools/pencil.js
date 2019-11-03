@@ -10,6 +10,8 @@ class TegakiPencil extends TegakiBrush {
     
     this.step = 0.01;
     
+    this.useFlow = false;
+    
     this.size = 1;
     this.alpha = 1.0;
     
