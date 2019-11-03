@@ -28,7 +28,7 @@ class TegakiBrush extends TegakiTool {
     kernel = this.kernel;
     
     brushAlpha = this.brushAlpha;
-    brushFlow = this.brushFlow * this.brushFlow;
+    brushFlow = this.brushFlow;
     brushSize = this.brushSize;
     
     aData = this.activeImgData.data;
@@ -160,7 +160,7 @@ class TegakiBrush extends TegakiTool {
         return false;
       }
       
-      this.brushFlow = val;
+      this.brushFlow = this.easeFlow(val);
     }
     
     return true;

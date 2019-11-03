@@ -21,6 +21,10 @@ class TegakiPen extends TegakiBrush {
     this.usePreserveAlpha = true;
   }
   
+  easeFlow(flow) {
+    return 1 - Math.sqrt(1 - Math.pow(flow, 3));
+  }
+
   generateShape(size) {
     var e, x, y, imageData, data, c, color, r, rr,
       f, ff, bSize, bData, i, ii, xx, yy, center, brushSize;

@@ -77,7 +77,11 @@ class TegakiTool {
   
   setFlow(flow) {
     this.flow = flow;
-    this.brushFlow = flow;
+    this.brushFlow = this.easeFlow(flow);
+  }
+  
+  easeFlow(flow) {
+    return flow;
   }
   
   setColor(hex) {

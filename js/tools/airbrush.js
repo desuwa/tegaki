@@ -20,6 +20,10 @@ class TegakiAirbrush extends TegakiBrush {
     this.usePreserveAlpha = true;
   }
   
+  easeFlow(flow) {
+    return 1 - Math.sqrt(1 - flow);
+  }
+  
   generateShape(size) {
     var i, r, data, len, sqd, sqlen, hs, col, row,
       ecol, erow, a;
