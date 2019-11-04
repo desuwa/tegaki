@@ -397,6 +397,7 @@ var Tegaki = {
     
     Tegaki.bg.classList.remove('tegaki-hidden');
     document.body.classList.add('tegaki-backdrop');
+    Tegaki.setZoom(0);
     Tegaki.centerLayersCnt();
     Tegaki.updatePosOffset();
     Tegaki.bindGlobalEvents();
