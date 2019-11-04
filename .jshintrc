@@ -57,15 +57,17 @@
     "TegakiEventUndo": true,
     "TegakiEventRedo": true,
     "TegakiEventSetColor": true,
-
+    
     "TegakiEventSetTool": true,
     "TegakiEventSetToolSize": true,
     "TegakiEventSetToolAlpha": true,
+    "TegakiEventSetToolFlow": true,
     "TegakiEventSetToolSizeDynamics": true,
     "TegakiEventSetToolAlphaDynamics": true,
+    "TegakiEventSetToolFlowDynamics": true,
     "TegakiEventSetToolTip": true,
     "TegakiEventPreserveAlpha": true,
-
+    
     "TegakiEventAddLayer": true,
     "TegakiEventDeleteLayers": true,
     "TegakiEventMoveLayers": true,
