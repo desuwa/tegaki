@@ -40,7 +40,7 @@ class TegakiBlur extends TegakiBrush {
   
   brushFn(x, y, offsetX, offsetY) {
     var i, j, size, srcData, destData, limX, limY,
-      kernel, alpha, alpha0, canvasLimX, canvasLimY,
+      kernel, alpha, alpha0,
       sx, sy, r, g, b, a, kx, ky, px, w, h, pa, acc, aa;
     
     x = 0 | x;
@@ -64,28 +64,26 @@ class TegakiBlur extends TegakiBrush {
     limX = w - 1;
     limY = h - 1;
     
-    canvasLimX = Tegaki.baseWidth - 1;
-    canvasLimY = Tegaki.baseHeight - 1;
-    
     for (sx = 0; sx < size; ++sx) {
       for (sy = 0; sy < size; ++sy) {
         i = (sy * size + sx) * 4;
-        px = ((sy + y) * w + (sx + x)) * 4;
         
         if (kernel[i + 3] === 0) {
           continue;
         }
         
-        if (sx === 0 || sy === 0 || (sx + x) === limX || (sy + y) === limY) {
+        if ((sx + x) <= 0 || (sy + y) <= 0 || (sx + x) >= limX || (sy + y) >= limY) {
           continue;
         }
+        
+        px = ((sy + y) * w + (sx + x)) * 4;
         
         r = g = b = a = acc = 0;
         
         for (kx = -1; kx < 2; ++kx) {
           for (ky = -1; ky < 2; ++ky) {
             j = ((sy + y - ky) * w + (sx + x - kx)) * 4;
-            pa = (srcData[j + 3] / 255);
+            pa = srcData[j + 3];
             
             if (kx === 0 && ky === 0) {
               aa = pa * alpha0;
@@ -112,7 +110,7 @@ class TegakiBlur extends TegakiBrush {
         destData[px] = Math.round((r / acc) / a);
         destData[px + 1] = Math.round((g / acc) / a);
         destData[px + 2] = Math.round((b / acc) / a);
-        destData[px + 3] = Math.round(a * 255);
+        destData[px + 3] = Math.round(a);
       }
     }
   }
