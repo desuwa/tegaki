@@ -41,16 +41,12 @@ class TegakiTone extends TegakiPencil {
   
   brushFn(x, y, offsetX, offsetY) {
     var data, kernel, brushSize, map, idx, preserveAlpha,
-      px, mapWidth, xx, yy, gx, gy, width;
+      px, mx, mapWidth, xx, yy, ix, iy, canvasWidth, canvasHeight;
     
-    x = 0 | x;
-    y = 0 | y;
+    data = Tegaki.activeLayer.imageData.data;
     
-    gx = 0 | (x + offsetX);
-    gy = 0 | (y + offsetY);
-    
-    data = this.activeImgData.data;
-    width = this.activeImgData.width;
+    canvasWidth = Tegaki.baseWidth;
+    canvasHeight = Tegaki.baseHeight;
     
     kernel = this.kernel;
     
@@ -69,20 +65,33 @@ class TegakiTone extends TegakiPencil {
     map = this.mapCache[idx];
     
     for (yy = 0; yy < brushSize; ++yy) {
+      iy = y + yy + offsetY;
+      
+      if (iy < 0 || iy >= canvasHeight) {
+        continue;
+      }
+      
       for (xx = 0; xx < brushSize; ++xx) {
-        if (kernel[((yy * brushSize + xx) * 4) + 3] === 0) {
+        ix = x + xx + offsetX;
+        
+        if (ix < 0 || ix >= canvasWidth) {
           continue;
         }
         
-        if (map[(yy + gy) * mapWidth + xx + gx] === 0) {
-          px = ((yy + y) * width + xx + x) * 4;
-          
-          data[px] = this.rgb[0]; ++px;
-          data[px] = this.rgb[1]; ++px;
-          data[px] = this.rgb[2]; ++px;
+        if (kernel[(yy * brushSize + xx) * 4 + 3] === 0) {
+          continue;
+        }
+        
+        mx = iy * canvasWidth + ix;
+        px = mx * 4;
+        
+        if (map[mx] === 0) {
+          data[px] = this.rgb[0];
+          data[px + 1] = this.rgb[1];
+          data[px + 2] = this.rgb[2];
           
           if (!preserveAlpha) {
-            data[px] = 255;
+            data[px + 3] = 255;
           }
         }
       }

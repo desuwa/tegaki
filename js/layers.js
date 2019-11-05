@@ -386,7 +386,7 @@ var TegakiLayers = {
       return;
     }
     
-    layer = Tegaki.layers[idx]
+    layer = Tegaki.layers[idx];
     
     if (Tegaki.activeLayer) {
       Tegaki.copyContextState(Tegaki.activeLayer.ctx, layer.ctx);

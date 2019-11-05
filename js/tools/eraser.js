@@ -24,7 +24,8 @@ class TegakiEraser extends TegakiBrush {
   }
   
   brushFn(x, y, offsetX, offsetY) {
-    var aData, bData, kernel, aWidth, canvasWidth, ka, ba, px, bx, xx, yy,
+    var aData, bData, gData, kernel, canvasWidth, canvasHeight,
+      ka, ba, px, xx, yy, ix, iy,
       brushSize, brushAlpha;
     
     x = 0 | x;
@@ -35,31 +36,42 @@ class TegakiEraser extends TegakiBrush {
     
     kernel = this.kernel;
     
-    aData = this.activeImgData.data;
-    aWidth = this.activeImgData.width;
+    aData = Tegaki.activeLayer.imageData.data;
+    gData = Tegaki.ghostBuffer.data;
+    bData = Tegaki.blendBuffer.data;
     
-    bData = Tegaki.blendBuffer;
     canvasWidth = Tegaki.baseWidth;
+    canvasHeight = Tegaki.baseHeight;
     
     for (yy = 0; yy < brushSize; ++yy) {
+      iy = y + yy + offsetY;
+      
+      if (iy < 0 || iy >= canvasHeight) {
+        continue;
+      }
+      
       for (xx = 0; xx < brushSize; ++xx) {
+        ix = x + xx + offsetX;
+        
+        if (ix < 0 || ix >= canvasWidth) {
+          continue;
+        }
+        
         ka = kernel[(yy * brushSize + xx) * 4 + 3] / 255;
         
-        px = ((y + yy) * aWidth + (x + xx)) * 4 + 3;
+        px = (iy * canvasWidth + ix) * 4 + 3;
         
         if (ka > 0 && aData[px] > 0) {
-          bx = ((y + yy + offsetY) * canvasWidth + (x + xx + offsetX)) * 2;
+          ba = bData[px] / 255;
+          ba = Math.ceil((ba + ka * (brushAlpha - ba)) * 255);
           
-          ba = bData[bx + 1] / 255;
-          ba = Math.ceil((ba + ka * brushAlpha - ba * ka) * 255);
-          
-          if (bData[bx] === 0) {
-            bData[bx] = aData[px];
+          if (gData[px] === 0) {
+            gData[px] = aData[px];
           }
           
-          if (ba > bData[bx + 1]) {
-            bData[bx + 1] = ba;
-            aData[px] = bData[bx] - ba;
+          if (ba > bData[px]) {
+            bData[px] = ba;
+            aData[px] = gData[px] - ba;
           }
         }
       }

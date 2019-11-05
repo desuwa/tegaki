@@ -16,30 +16,25 @@ class TegakiBucket extends TegakiTool {
     this.noCursor = true;
   }
   
-  fill(srcId, destId, x, y, color, alpha) {
-    var r, g, b, a, px, tr, tg, tb, ta, q, pxMap, yy, xx, yn, ys,
-      yyy, yyn, yys, xd, srcData, destData, w, h;
+  fill(imageData, x, y, color, alpha) {
+    var r, g, b, px, tr, tg, tb, ta, q, pxMap, yy, xx, yn, ys,
+      yyy, yyn, yys, xd, data, w, h;
     
-    x = 0 | x;
-    y = 0 | y;
+    w = imageData.width;
+    h = imageData.height;
     
-    w = 0 | srcId.width;
-    h = 0 | srcId.height;
+    r = color[0];
+    g = color[1];
+    b = color[2];
     
-    r = 0 | color[0];
-    g = 0 | color[1];
-    b = 0 | color[2];
-    a = 0 | (alpha * 255);
+    px = (y * w + x) * 4;
     
-    px = 0 | ((y * w + x) * 4);
+    data = imageData.data;
     
-    srcData = srcId.data;
-    destData = destId.data;
-    
-    tr = 0 | srcData[px];
-    tg = 0 | srcData[px + 1];
-    tb = 0 | srcData[px + 2];
-    ta = 0 | srcData[px + 3];
+    tr = data[px];
+    tg = data[px + 1];
+    tb = data[px + 2];
+    ta = data[px + 3];
     
     pxMap = new Uint8Array(w * h * 4);
     
@@ -64,18 +59,18 @@ class TegakiBucket extends TegakiTool {
       while (xd >= 0) {
         px = (yyy + xd) * 4;
         
-        if (!this.testPixel(srcData, px, pxMap, tr, tg, tb, ta)) {
+        if (!this.testPixel(data, px, pxMap, tr, tg, tb, ta)) {
           break;
         }
         
-        this.setPixel(destData, px, r, g, b, a);
+        this.blendPixel(data, px, r, g, b, alpha);
         
         pxMap[px] = 1;
         
         if (yn >= 0) {
           px = (yyn + xd) * 4;
           
-          if (this.testPixel(srcData, px, pxMap, tr, tg, tb, ta)) {
+          if (this.testPixel(data, px, pxMap, tr, tg, tb, ta)) {
             q.push(xd);
             q.push(yn);
           }
@@ -84,7 +79,7 @@ class TegakiBucket extends TegakiTool {
         if (ys < h) {
           px = (yys + xd) * 4;
           
-          if (this.testPixel(srcData, px, pxMap, tr, tg, tb, ta)) {
+          if (this.testPixel(data, px, pxMap, tr, tg, tb, ta)) {
             q.push(xd);
             q.push(ys);
           }
@@ -98,18 +93,18 @@ class TegakiBucket extends TegakiTool {
       while (xd < w) {
         px = (yyy + xd) * 4;
         
-        if (!this.testPixel(srcData, px, pxMap, tr, tg, tb, ta)) {
+        if (!this.testPixel(data, px, pxMap, tr, tg, tb, ta)) {
           break;
         }
         
-        this.setPixel(destData, px, r, g, b, a);
+        this.blendPixel(data, px, r, g, b, alpha);
         
         pxMap[px] = 1;
         
         if (yn >= 0) {
           px = (yyn + xd) * 4;
           
-          if (this.testPixel(srcData, px, pxMap, tr, tg, tb, ta)) {
+          if (this.testPixel(data, px, pxMap, tr, tg, tb, ta)) {
             q.push(xd);
             q.push(yn);
           }
@@ -118,7 +113,7 @@ class TegakiBucket extends TegakiTool {
         if (ys < h) {
           px = (yys + xd) * 4;
           
-          if (this.testPixel(srcData, px, pxMap, tr, tg, tb, ta)) {
+          if (this.testPixel(data, px, pxMap, tr, tg, tb, ta)) {
             q.push(xd);
             q.push(ys);
           }
@@ -130,41 +125,34 @@ class TegakiBucket extends TegakiTool {
   }
   
   brushFn(x, y) {
-    var aCtx, gCtx, w, h, srcId, destId, el;
-    
-    x = 0 | x;
-    y = 0 | y;
-    
-    aCtx = Tegaki.activeLayer.ctx;
-    
-    w = aCtx.canvas.width;
-    h = aCtx.canvas.height;
-    
-    if (x < 0 || y < 0 || x >= w || y >= h) {
+    if (x < 0 || y < 0 || x >= Tegaki.baseWidth || y >= Tegaki.baseHeight) {
       return;
     }
     
-    el = $T.el('canvas');
-    el.width = w;
-    el.height = h;
+    this.fill(Tegaki.activeLayer.imageData, x, y, this.rgb, this.alpha);
     
-    gCtx = el.getContext('2d');
-    
-    srcId = aCtx.getImageData(0, 0, w, h);
-    destId = gCtx.getImageData(0, 0, w, h);
-    
-    this.fill(srcId, destId, x, y, this.rgb, this.alpha);
-    
-    gCtx.putImageData(destId, 0, 0);
-    
-    aCtx.drawImage(el, 0, 0);
+    // TODO: write back only the tainted rect
+    Tegaki.activeLayer.ctx.putImageData(Tegaki.activeLayer.imageData, 0, 0);
   }
   
-  setPixel(data, px, r, g, b, a) {
-    data[px] = r; ++px;
-    data[px] = g; ++px;
-    data[px] = b; ++px;
-    data[px] = a;
+  blendPixel(data, px, r, g, b, a) {
+    var sr, sg, sb, sa, dr, dg, db, da;
+    
+    sr = data[px];
+    sg = data[px + 1];
+    sb = data[px + 2];
+    sa = data[px + 3] / 255;
+    
+    da = sa + a - sa * a;
+    
+    dr = ((r * a) + (sr * sa) * (1 - a)) / da;
+    dg = ((g * a) + (sg * sa) * (1 - a)) / da;
+    db = ((b * a) + (sb * sa) * (1 - a)) / da;
+    
+    data[px] = (r > sr) ? Math.ceil(dr) : Math.floor(dr);
+    data[px + 1] = (g > sg) ? Math.ceil(dg) : Math.floor(dg);
+    data[px + 2] = (b > sb) ? Math.ceil(db) : Math.floor(db);
+    data[px + 3] = Math.ceil(da * 255);
   }
   
   testPixel(data, px, pxMap, tr, tg, tb, ta) {

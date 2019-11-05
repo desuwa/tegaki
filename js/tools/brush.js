@@ -1,27 +1,19 @@
 class TegakiBrush extends TegakiTool {
   constructor() {
     super();
-    
-    this.activeImgData = null;
   }
   
   generateShape(size) {}
   
   brushFn(x, y, offsetX, offsetY) {
-    var i, aData, gData, bData, aWidth, canvasWidth, canvasHeight,
+    var aData, gData, bData, aWidth, canvasWidth, canvasHeight,
       kernel, xx, yy, ix, iy,
       pa, ka, a, sa,
       kr, kg, kb,
       r, g, b,
       pr, pg, pb,
-      ax, cx, ba,
+      px, ba,
       brushSize, brushAlpha, brushFlow, preserveAlpha;
-    
-    x = 0 | x;
-    y = 0 | y;
-    
-    offsetX = 0 | offsetX;
-    offsetY = 0 | offsetY;
     
     preserveAlpha = this.preserveAlphaEnabled;
     
@@ -31,14 +23,14 @@ class TegakiBrush extends TegakiTool {
     brushFlow = this.brushFlow;
     brushSize = this.brushSize;
     
-    aData = this.activeImgData.data;
-    gData = Tegaki.ghostBuffer;
-    bData = Tegaki.blendBuffer;
-    
-    aWidth = this.activeImgData.width;
+    aData = Tegaki.activeLayer.imageData.data;
+    gData = Tegaki.ghostBuffer.data;
+    bData = Tegaki.blendBuffer.data;
     
     canvasWidth = Tegaki.baseWidth;
     canvasHeight = Tegaki.baseHeight;
+    
+    aWidth = canvasWidth;
     
     kr = this.rgb[0];
     kg = this.rgb[1];
@@ -58,37 +50,34 @@ class TegakiBrush extends TegakiTool {
           continue;
         }
         
-        i = (yy * brushSize + xx) * 4;
-        
-        ka = kernel[i + 3] / 255;
+        ka = kernel[(yy * brushSize + xx) * 4 + 3] / 255;
         
         if (ka <= 0.0) {
           continue;
         }
         
-        ax = ((y + yy) * aWidth + (x + xx)) * 4;
-        cx = (iy * canvasWidth + ix) * 4;
+        px = (iy * canvasWidth + ix) * 4;
         
-        sa = bData[cx + 3] / 255;
+        sa = bData[px + 3] / 255;
         sa = sa + ka * brushFlow * (brushAlpha - sa);
         
         ba = Math.ceil(sa * 255);
         
-        if (ba > bData[cx + 3]) {
-          if (bData[cx] === 0) {
-            gData[cx] = aData[ax];
-            gData[cx + 1] = aData[ax + 1];
-            gData[cx + 2] = aData[ax + 2];
-            gData[cx + 3] = aData[ax + 3];
+        if (ba > bData[px + 3]) {
+          if (bData[px] === 0) {
+            gData[px] = aData[px];
+            gData[px + 1] = aData[px + 1];
+            gData[px + 2] = aData[px + 2];
+            gData[px + 3] = aData[px + 3];
           }
           
-          bData[cx] = 1;
-          bData[cx + 3] = ba;
+          bData[px] = 1;
+          bData[px + 3] = ba;
           
-          pr = gData[cx];
-          pg = gData[cx + 1];
-          pb = gData[cx + 2];
-          pa = gData[cx + 3] / 255;
+          pr = gData[px];
+          pg = gData[px + 1];
+          pb = gData[px + 2];
+          pa = gData[px + 3] / 255;
           
           a = pa + sa - pa * sa;
           
@@ -96,12 +85,12 @@ class TegakiBrush extends TegakiTool {
           g = ((kg * sa) + (pg * pa) * (1 - sa)) / a;
           b = ((kb * sa) + (pb * pa) * (1 - sa)) / a;
           
-          aData[ax] = (kr > pr) ? Math.ceil(r) : Math.floor(r);
-          aData[ax + 1] = (kg > pg) ? Math.ceil(g) : Math.floor(g);
-          aData[ax + 2] = (kb > pb) ? Math.ceil(b) : Math.floor(b);
+          aData[px] = (kr > pr) ? Math.ceil(r) : Math.floor(r);
+          aData[px + 1] = (kg > pg) ? Math.ceil(g) : Math.floor(g);
+          aData[px + 2] = (kb > pb) ? Math.ceil(b) : Math.floor(b);
           
           if (!preserveAlpha) {
-            aData[ax + 3] = Math.ceil(a * 255);
+            aData[px + 3] = Math.ceil(a * 255);
           }
         }
       }
@@ -186,17 +175,16 @@ class TegakiBrush extends TegakiTool {
     
     this.brushFn(0, 0, sampleX, sampleY);
     
-    this.writeImageData(sampleX, sampleY);
+    this.writeImageData(sampleX, sampleY, this.brushSize, this.brushSize);
   }
   
   commit() {
-    this.activeImgData = null;
     Tegaki.clearBuffers();
   }
   
   draw(posX, posY) {
     var mx, my, fromX, fromY, sampleX, sampleY, dx, dy, err, derr, stepAcc,
-      lastX, lastY, distBase, shape, center, brushSize, t, tainted;
+      lastX, lastY, distBase, shape, center, brushSize, t, tainted, w, h;
     
     stepAcc = this.stepAcc;
     
@@ -226,7 +214,10 @@ class TegakiBrush extends TegakiTool {
     sampleX -= center;
     sampleY -= center;
     
-    this.readImageData(sampleX, sampleY, dx + brushSize, dy + brushSize);
+    w = dx + brushSize;
+    h = dy + brushSize;
+    
+    this.readImageData(sampleX, sampleY, w, h);
     
     err = (dx > dy ? dx : (dy !== 0 ? -dy : 0)) / 2;
     
@@ -282,17 +273,15 @@ class TegakiBrush extends TegakiTool {
     this.posY = posY;
     
     if (tainted) {
-      this.writeImageData(sampleX, sampleY);
+      this.writeImageData(sampleX, sampleY, w, h);
     }
   }
   
-  writeImageData(x, y) {
-    Tegaki.activeLayer.ctx.putImageData(this.activeImgData, x, y);
+  writeImageData(x, y, w, h) {
+    Tegaki.activeLayer.ctx.putImageData(Tegaki.activeLayer.imageData, 0, 0, x, y, w, h);
   }
   
-  readImageData(x, y, w, h) {
-    this.activeImgData = Tegaki.activeLayer.ctx.getImageData(x, y, w, h);
-  }
+  readImageData(x, y, w, h) {}
   
   setShape(shape) {
     this.center = shape.center;

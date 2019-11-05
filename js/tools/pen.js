@@ -109,7 +109,7 @@ class TegakiPen extends TegakiBrush {
     }
     
     if (r > 0) {
-      Tegaki.tools.bucket.fill(imageData, imageData, r, r, this.rgb, 1.0);
+      Tegaki.tools.bucket.fill(imageData, r, r, this.rgb, 1.0);
     }
     
     bData = imageData.data;

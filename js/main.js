@@ -295,10 +295,10 @@ var Tegaki = {
   },
   
   createBuffers() {
-    Tegaki.ghostBuffer = new Uint8ClampedArray(Tegaki.baseWidth * Tegaki.baseHeight * 4);
-    Tegaki.blendBuffer = new Uint8ClampedArray(Tegaki.baseWidth * Tegaki.baseHeight * 4);
-    Tegaki.ghostBuffer32 = new Uint32Array(Tegaki.ghostBuffer.buffer);
-    Tegaki.blendBuffer32 = new Uint32Array(Tegaki.blendBuffer.buffer);
+    Tegaki.ghostBuffer = new ImageData(Tegaki.baseWidth, Tegaki.baseHeight);
+    Tegaki.blendBuffer = new ImageData(Tegaki.baseWidth, Tegaki.baseHeight);
+    Tegaki.ghostBuffer32 = new Uint32Array(Tegaki.ghostBuffer.data.buffer);
+    Tegaki.blendBuffer32 = new Uint32Array(Tegaki.blendBuffer.data.buffer);
   },
   
   clearBuffers() {
@@ -1043,6 +1043,9 @@ var Tegaki = {
     self.copyContextState(self.activeLayer.ctx, tmp);
     self.resizeCanvas(this.naturalWidth, this.naturalHeight);
     self.activeLayer.ctx.drawImage(this, 0, 0);
+    self.activeLayer.imageData = self.activeLayer.ctx.getImageData(
+      0, 0, Tegaki.baseWidth, Tegaki.baseHeight
+    );
     self.copyContextState(tmp, self.activeLayer.ctx);
     
     self.setZoom(0);
