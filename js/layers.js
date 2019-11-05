@@ -4,6 +4,7 @@ var TegakiLayers = {
     
     newLayer.canvas = $T.copyCanvas(layer.canvas, true);
     newLayer.ctx = newLayer.canvas.getContext('2d');
+    newLayer.imageData = $T.copyImageData(layer.imageData);
     
     return newLayer;
   },
@@ -228,7 +229,7 @@ var TegakiLayers = {
   },
   
   mergeLayers: function(idSet) {
-    var bgLayer, canvasAfter, canvasBefore,
+    var bgLayer, imageDataAfter, imageDataBefore,
       targetLayer, action, layer, layers, delIds;
     
     layers = [];
@@ -258,7 +259,8 @@ var TegakiLayers = {
     }
     
     bgLayer = TegakiLayers.cloneLayer(bgLayer);
-    canvasBefore = $T.copyCanvas(targetLayer.canvas);
+    
+    imageDataBefore = $T.copyImageData(targetLayer.imageData);
     
     delIds = [];
     
@@ -273,15 +275,18 @@ var TegakiLayers = {
     }
     
     $T.clearCtx(targetLayer.ctx);
+    
     targetLayer.ctx.drawImage(bgLayer.canvas, 0, 0);
     
-    canvasAfter = $T.copyCanvas(targetLayer.canvas);
+    Tegaki.syncLayerImageData(targetLayer);
+    
+    imageDataAfter = $T.copyImageData(targetLayer.imageData);
     
     action = TegakiLayers.deleteLayers(delIds, {
       tgtLayerId: targetLayer.id,
       aLayerIdAfter: targetLayer.id,
-      canvasBefore: canvasBefore,
-      canvasAfter: canvasAfter,
+      imageDataBefore: imageDataBefore,
+      imageDataAfter: imageDataAfter,
       mergeDown: layers.length === 1
     });
     

@@ -77,8 +77,8 @@ var TegakiHistory = {
 
 var TegakiHistoryActions = {
   Draw: function(layerId) {
-    this.canvasBefore = null;
-    this.canvasAfter = null;
+    this.imageDataBefore = null;
+    this.imageDataAfter = null;
     this.layerId = layerId;
   },
   
@@ -97,8 +97,8 @@ var TegakiHistoryActions = {
     this.aLayerIdBefore = null;
     this.aLayerIdAfter = null;
     
-    this.canvasBefore = null;
-    this.canvasAfter = null;
+    this.imageDataBefore = null;
+    this.imageDataAfter = null;
     
     this.mergeDown = false;
     
@@ -125,21 +125,27 @@ var TegakiHistoryActions = {
 
 // ---
 
-TegakiHistoryActions.Draw.prototype.addCanvasState = function(canvas, type) {
+TegakiHistoryActions.Draw.prototype.addCanvasState = function(imageData, type) {
   if (type) {
-    this.canvasAfter = $T.copyCanvas(canvas);
+    this.imageDataAfter = $T.copyImageData(imageData);
   }
   else {
-    this.canvasBefore = $T.copyCanvas(canvas);
+    this.imageDataBefore = $T.copyImageData(imageData);
   }
 };
 
 TegakiHistoryActions.Draw.prototype.exec = function(type) {
-  var layer;
+  var layer = TegakiLayers.getLayerById(this.layerId);
   
-  layer = TegakiLayers.getLayerById(this.layerId);
-  $T.clearCtx(layer.ctx);
-  layer.ctx.drawImage(type ? this.canvasAfter: this.canvasBefore, 0, 0);
+  if (type) {
+    layer.ctx.putImageData(this.imageDataAfter, 0, 0);
+    Tegaki.syncLayerImageData(layer, this.imageDataAfter);
+  }
+  else {
+    layer.ctx.putImageData(this.imageDataBefore, 0, 0);
+    Tegaki.syncLayerImageData(layer, this.imageDataBefore);
+  }
+  
   TegakiLayers.setActiveLayer(this.layerId);
 };
 
@@ -186,10 +192,10 @@ TegakiHistoryActions.DeleteLayers.prototype.undo = function() {
   }
   
   if (this.tgtLayerId) {
-    if (this.canvasBefore) {
+    if (this.imageDataBefore) {
       layer = TegakiLayers.getLayerById(this.tgtLayerId);
-      $T.clearCtx(layer.ctx);
-      layer.ctx.drawImage(this.canvasBefore, 0, 0);
+      layer.ctx.putImageData(this.imageDataBefore, 0, 0);
+      Tegaki.syncLayerImageData(layer, this.imageDataBefore);
     }
   }
   

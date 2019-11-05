@@ -25,6 +25,13 @@ var $T = {
     return document.createDocumentFragment();
   },
   
+  copyImageData(imageData) {
+    return new ImageData(
+      new Uint8ClampedArray(imageData.data),
+      imageData.width
+    );
+  },
+  
   copyCanvas: function(source, clone) {
     var canvas;
     

@@ -1023,6 +1023,17 @@ var Tegaki = {
     TegakiCursor.invalidateCache();
   },
   
+  syncLayerImageData(layer, imageData = null) {
+    if (imageData) {
+      layer.imageData = $T.copyImageData(imageData);
+    }
+    else {
+      layer.imageData = layer.ctx.getImageData(
+        0, 0, Tegaki.baseWidth, Tegaki.baseHeight
+      );
+    }
+  },
+  
   onOpenFileSelected: function() {
     var img;
     
@@ -1043,9 +1054,7 @@ var Tegaki = {
     self.copyContextState(self.activeLayer.ctx, tmp);
     self.resizeCanvas(this.naturalWidth, this.naturalHeight);
     self.activeLayer.ctx.drawImage(this, 0, 0);
-    self.activeLayer.imageData = self.activeLayer.ctx.getImageData(
-      0, 0, Tegaki.baseWidth, Tegaki.baseHeight
-    );
+    self.syncLayerImageData(self.activeLayer);
     self.copyContextState(tmp, self.activeLayer.ctx);
     
     self.setZoom(0);
@@ -1259,7 +1268,7 @@ var Tegaki = {
         Tegaki.activeLayer.id
       );
       
-      TegakiHistory.pendingAction.addCanvasState(Tegaki.activeLayer.canvas, 0);
+      TegakiHistory.pendingAction.addCanvasState(Tegaki.activeLayer.imageData, 0);
       
       tool.start(x, y);
     }
@@ -1277,7 +1286,7 @@ var Tegaki = {
     if (Tegaki.isPainting) {
       Tegaki.recordEvent(TegakiEventDrawCommit, e.timeStamp);
       Tegaki.tool.commit();
-      TegakiHistory.pendingAction.addCanvasState(Tegaki.activeLayer.canvas, 1);
+      TegakiHistory.pendingAction.addCanvasState(Tegaki.activeLayer.imageData, 1);
       TegakiHistory.push(TegakiHistory.pendingAction);
       Tegaki.isPainting = false;
     }
