@@ -31,7 +31,7 @@ var Tegaki = {
   
   zoomLevel: 0,
   zoomFactor: 1.0,
-  zoomFactorList: [0.5, 1.0, 2.0, 5.0, 10.0],
+  zoomFactorList: [0.5, 1.0, 2.0, 4.0, 8.0, 16.0],
   zoomBaseLevel: 1,
   
   hasCustomCanvas: false,
