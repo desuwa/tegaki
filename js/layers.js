@@ -13,7 +13,7 @@ var TegakiLayers = {
   },
   
   getActiveLayer: function() {
-    return TegakiLayers.getLayerById(Tegaki.activeLayerId);
+    return Tegaki.activeLayer;
   },
   
   getLayerPosById: function(id) {
@@ -127,11 +127,17 @@ var TegakiLayers = {
   
   addLayer: function(baseLayer = {}) {
     var id, canvas, k, params, layer, afterNode, afterPos,
-      aLayerIdBefore;
+      aLayerIdBefore, ctx;
     
-    aLayerIdBefore = Tegaki.activeLayerId || 0;
-    afterPos = TegakiLayers.getLayerPosById(Tegaki.activeLayerId);
-    afterNode = $T.cls('tegaki-layer', Tegaki.layersCnt)[afterPos];
+    if (Tegaki.activeLayer) {
+      aLayerIdBefore = Tegaki.activeLayer.id;
+      afterPos = TegakiLayers.getLayerPosById(Tegaki.activeLayer.id);
+      afterNode = $T.cls('tegaki-layer', Tegaki.layersCnt)[afterPos];
+    }
+    else {
+      afterPos = -1;
+      afterNode = null;
+    }
     
     if (!afterNode) {
       afterNode = Tegaki.layersCnt.firstElementChild;
@@ -139,8 +145,8 @@ var TegakiLayers = {
     
     canvas = $T.el('canvas');
     canvas.className = 'tegaki-layer';
-    canvas.width = Tegaki.canvas.width;
-    canvas.height = Tegaki.canvas.height;
+    canvas.width = Tegaki.baseWidth;
+    canvas.height = Tegaki.baseHeight;
     
     id = ++Tegaki.layerCounter;
     
@@ -153,10 +159,13 @@ var TegakiLayers = {
       opacity: 1.0,
     };
     
+    ctx = canvas.getContext('2d');
+    
     layer = {
       id: id,
       canvas: canvas,
-      ctx: canvas.getContext('2d')
+      ctx: ctx,
+      imageData: ctx.getImageData(0, 0, canvas.width, canvas.height)
     };
     
     for (k in params) {
@@ -182,7 +191,7 @@ var TegakiLayers = {
     var id, idx, layer, layers, delIndexes, params;
     
     params = {
-      aLayerIdBefore: Tegaki.activeLayerId,
+      aLayerIdBefore: Tegaki.activeLayer ? Tegaki.activeLayer.id : -1,
       aLayerIdAfter: TegakiLayers.getTopFencedLayerId()
     };
     
@@ -339,7 +348,8 @@ var TegakiLayers = {
     Tegaki.onLayerStackChanged();
     
     return new TegakiHistoryActions.MoveLayers(
-      historyLayers, belowPos, Tegaki.activeLayerId
+      historyLayers, belowPos,
+      Tegaki.activeLayer ? Tegaki.activeLayer.id : -1
     );
   },
   
@@ -359,14 +369,13 @@ var TegakiLayers = {
   },
   
   setActiveLayer: function(id) {
-    var ctx, idx;
+    var idx, layer;
     
     if (!id) {
       id = TegakiLayers.getTopLayerId();
       
       if (!id) {
-        Tegaki.activeLayerId = -1;
-        Tegaki.activeCtx = null;
+        Tegaki.activeLayer = null;
         return;
       }
     }
@@ -377,14 +386,13 @@ var TegakiLayers = {
       return;
     }
     
-    ctx = Tegaki.layers[idx].ctx;
+    layer = Tegaki.layers[idx]
     
-    if (Tegaki.activeCtx) {
-      Tegaki.copyContextState(Tegaki.activeCtx, ctx);
+    if (Tegaki.activeLayer) {
+      Tegaki.copyContextState(Tegaki.activeLayer.ctx, layer.ctx);
     }
     
-    Tegaki.activeCtx = ctx;
-    Tegaki.activeLayerId = id;
+    Tegaki.activeLayer = layer;
     
     TegakiLayers.selectedLayersClear();
     TegakiLayers.selectedLayersAdd(id);

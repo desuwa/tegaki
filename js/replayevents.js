@@ -84,10 +84,10 @@ class TegakiEventDrawStart {
     TegakiPressure.set(this.pressure);
     
     TegakiHistory.pendingAction = new TegakiHistoryActions.Draw(
-      Tegaki.activeLayerId
+      Tegaki.activeLayer.id
     );
     
-    TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 0);
+    TegakiHistory.pendingAction.addCanvasState(Tegaki.activeLayer.canvas, 0);
     
     Tegaki.tool.start(this.x, this.y);
   }
@@ -123,10 +123,10 @@ class TegakiEventDrawStartNoP {
     TegakiPressure.set(0.5);
     
     TegakiHistory.pendingAction = new TegakiHistoryActions.Draw(
-      Tegaki.activeLayerId
+      Tegaki.activeLayer.id
     );
     
-    TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 0);
+    TegakiHistory.pendingAction.addCanvasState(Tegaki.activeLayer.canvas, 0);
     
     Tegaki.tool.start(this.x, this.y);
   }
@@ -208,7 +208,7 @@ class TegakiEventDrawCommit extends TegakiEvent_void {
   
   dispatch() {
     Tegaki.tool.commit();
-    TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 1);
+    TegakiHistory.pendingAction.addCanvasState(Tegaki.activeLayer.canvas, 1);
     TegakiHistory.push(TegakiHistory.pendingAction);
   }
 }

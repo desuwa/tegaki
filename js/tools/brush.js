@@ -287,11 +287,11 @@ class TegakiBrush extends TegakiTool {
   }
   
   writeImageData(x, y) {
-    Tegaki.activeCtx.putImageData(this.activeImgData, x, y);
+    Tegaki.activeLayer.ctx.putImageData(this.activeImgData, x, y);
   }
   
   readImageData(x, y, w, h) {
-    this.activeImgData = Tegaki.activeCtx.getImageData(x, y, w, h);
+    this.activeImgData = Tegaki.activeLayer.ctx.getImageData(x, y, w, h);
   }
   
   setShape(shape) {

@@ -49,7 +49,7 @@ var TegakiCursor = {
   },
   
   render: function(x, y) {
-    var i, len, layer, buf, size, srcImg, srcData, destImg, destData;
+    var i, len, layer, buf, size, srcImg, srcData, destImg, destData, layerId;
     
     if (!this.cached) {
       this.buildCache();
@@ -62,13 +62,15 @@ var TegakiCursor = {
     $T.clearCtx(this.cursorCtx);
     $T.clearCtx(this.tmpCtx);
     
+    layerId = Tegaki.activeLayer.id;
+    
     for (i = 0, len = Tegaki.layers.length; i < len; ++i) {
       layer = Tegaki.layers[i];
       
-      if (layer.id === Tegaki.activeLayerId) {
+      if (layer.id === layerId) {
         this.tmpCtx.drawImage(this.flatCtxBelow.canvas, x, y, size, size, 0, 0, size, size);
         
-        this.tmpCtx.drawImage(Tegaki.activeCtx.canvas, x, y, size, size, 0, 0, size, size);
+        this.tmpCtx.drawImage(Tegaki.activeLayer.canvas, x, y, size, size, 0, 0, size, size);
         
         if (i < Tegaki.layers.length - 1) {
           this.tmpCtx.drawImage(this.flatCtxAbove.canvas, x, y, size, size, 0, 0, size, size);
@@ -98,12 +100,14 @@ var TegakiCursor = {
   },
   
   buildCache: function() {
-    var i, layer, ctx, len;
+    var i, layer, ctx, len, layerId;
     
     ctx = this.flatCtxBelow;
     $T.clearCtx(ctx);
     
     ctx.drawImage(Tegaki.canvas, 0, 0);
+    
+    layerId = Tegaki.activeLayer.id;
     
     for (i = 0, len = Tegaki.layers.length; i < len; ++i) {
       layer = Tegaki.layers[i];
@@ -112,7 +116,7 @@ var TegakiCursor = {
         continue;
       }
       
-      if (layer.id === Tegaki.activeLayerId) {
+      if (layer.id === layerId) {
         ctx = this.flatCtxAbove;
         $T.clearCtx(ctx);
         continue;

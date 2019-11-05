@@ -16,9 +16,8 @@ var Tegaki = {
   ghostBuffer32: null,
   blendBuffer32: null,
   
-  activeCtx: null,
+  activeLayer: null,
   
-  activeLayerId: -1,
   layerCounter: 0,
   selectedLayers: new Set(),
   
@@ -433,7 +432,7 @@ var Tegaki = {
     Tegaki.layerCounter = 0;
     Tegaki.zoomLevel = 0;
     Tegaki.zoomFactor = 1.0;
-    Tegaki.activeCtx = null;
+    Tegaki.activeLayer = null;
     
     Tegaki.tool = null;
     
@@ -678,9 +677,9 @@ var Tegaki = {
     }
     
     tmp = {};
-    self.copyContextState(self.activeCtx, tmp);
+    self.copyContextState(self.activeLayer.ctx, tmp);
     self.resizeCanvas(width, height);
-    self.copyContextState(tmp, self.activeCtx);
+    self.copyContextState(tmp, self.activeLayer.ctx);
     
     self.setZoom(0);
     TegakiHistory.clear();
@@ -1041,10 +1040,10 @@ var Tegaki = {
     
     self.hasCustomCanvas = true;
     
-    self.copyContextState(self.activeCtx, tmp);
+    self.copyContextState(self.activeLayer.ctx, tmp);
     self.resizeCanvas(this.naturalWidth, this.naturalHeight);
-    self.activeCtx.drawImage(this, 0, 0);
-    self.copyContextState(tmp, self.activeCtx);
+    self.activeLayer.ctx.drawImage(this, 0, 0);
+    self.copyContextState(tmp, self.activeLayer.ctx);
     
     self.setZoom(0);
     
@@ -1078,7 +1077,7 @@ var Tegaki = {
     Tegaki.ctx.fillStyle = Tegaki.bgColor;
     Tegaki.ctx.fillRect(0, 0, width, height);
     
-    Tegaki.activeCtx = null;
+    Tegaki.activeLayer = null;
     
     Tegaki.resetLayers();
     
@@ -1211,7 +1210,7 @@ var Tegaki = {
     
     Tegaki.activePointerIsPen = e.pointerType === 'pen';
     
-    if (Tegaki.activeCtx === null) {
+    if (Tegaki.activeLayer === null) {
       if (e.target.parentNode === Tegaki.layersCnt) {
         TegakiUI.printMsg(TegakiStrings.noActiveLayer);
       }
@@ -1254,10 +1253,10 @@ var Tegaki = {
       Tegaki.isPainting = true;
       
       TegakiHistory.pendingAction = new TegakiHistoryActions.Draw(
-        Tegaki.activeLayerId
+        Tegaki.activeLayer.id
       );
       
-      TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 0);
+      TegakiHistory.pendingAction.addCanvasState(Tegaki.activeLayer.canvas, 0);
       
       tool.start(x, y);
     }
@@ -1275,7 +1274,7 @@ var Tegaki = {
     if (Tegaki.isPainting) {
       Tegaki.recordEvent(TegakiEventDrawCommit, e.timeStamp);
       Tegaki.tool.commit();
-      TegakiHistory.pendingAction.addCanvasState(Tegaki.activeCtx.canvas, 1);
+      TegakiHistory.pendingAction.addCanvasState(Tegaki.activeLayer.canvas, 1);
       TegakiHistory.push(TegakiHistory.pendingAction);
       Tegaki.isPainting = false;
     }

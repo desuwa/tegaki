@@ -135,7 +135,7 @@ class TegakiBucket extends TegakiTool {
     x = 0 | x;
     y = 0 | y;
     
-    aCtx = Tegaki.activeCtx;
+    aCtx = Tegaki.activeLayer.ctx;
     
     w = aCtx.canvas.width;
     h = aCtx.canvas.height;
@@ -157,7 +157,7 @@ class TegakiBucket extends TegakiTool {
     
     gCtx.putImageData(destId, 0, 0);
     
-    Tegaki.activeCtx.drawImage(el, 0, 0);
+    aCtx.drawImage(el, 0, 0);
   }
   
   setPixel(data, px, r, g, b, a) {

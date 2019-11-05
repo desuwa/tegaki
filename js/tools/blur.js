@@ -21,11 +21,11 @@ class TegakiBlur extends TegakiBrush {
   }
   
   writeImageData(x, y) {
-    Tegaki.activeCtx.putImageData(this.tmpImgData, x, y);
+    Tegaki.activeLayer.ctx.putImageData(this.tmpImgData, x, y);
   }
   
   readImageData(x, y, w, h) {
-    this.activeImgData = Tegaki.activeCtx.getImageData(x, y, w, h);
+    this.activeImgData = Tegaki.activeLayer.ctx.getImageData(x, y, w, h);
     
     this.tmpImgData = new ImageData(
       new Uint8ClampedArray(this.activeImgData.data), 
