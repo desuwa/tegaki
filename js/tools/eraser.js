@@ -28,9 +28,6 @@ class TegakiEraser extends TegakiBrush {
       ka, ba, px, xx, yy, ix, iy,
       brushSize, brushAlpha;
     
-    x = 0 | x;
-    y = 0 | y;
-    
     brushAlpha = this.brushAlpha;
     brushSize = this.brushSize;
     
@@ -61,19 +58,15 @@ class TegakiEraser extends TegakiBrush {
         
         px = (iy * canvasWidth + ix) * 4 + 3;
         
-        if (ka > 0 && aData[px] > 0) {
-          ba = bData[px] / 255;
-          ba = Math.ceil((ba + ka * (brushAlpha - ba)) * 255);
-          
-          if (gData[px] === 0) {
-            gData[px] = aData[px];
-          }
-          
-          if (ba > bData[px]) {
-            bData[px] = ba;
-            aData[px] = gData[px] - ba;
-          }
+        if (gData[px] === 0) {
+          gData[px] = aData[px];
         }
+        
+        ba = bData[px] / 255;
+        ba = ba + ka * (brushAlpha - ba);
+        
+        bData[px] = Math.ceil(ba * 255);
+        aData[px] = Math.ceil(gData[px] * (1 - ba));
       }
     }
   }
