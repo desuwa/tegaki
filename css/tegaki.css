@@ -54,7 +54,6 @@
 }
 
 .tegaki-replay-mode #tegaki-tools-cnt,
-.tegaki-replay-mode #tegaki-canvas-cnt,
 .tegaki-replay-mode #tegaki-toolmode-bar,
 .tegaki-replay-mode .tegaki-ctrlgrp:not(#tegaki-ctrlgrp-zoom):not(#tegaki-ctrlgrp-layers),
 .tegaki-replay-mode .tegaki-layers-cell,
