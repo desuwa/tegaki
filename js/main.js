@@ -463,10 +463,11 @@ var Tegaki = {
     for (i = 0, len = Tegaki.layers.length; i < len; ++i) {
       layer = Tegaki.layers[i];
       
-      if (layer.canvas.classList.contains('tegaki-hidden')) {
+      if (!layer.visible) {
         continue;
       }
       
+      ctx.globalAlpha = layer.alpha;
       ctx.drawImage(layer.canvas, 0, 0);
     }
     
@@ -577,8 +578,9 @@ var Tegaki = {
   },
   
   setToolAlpha: function(alpha) {
+    alpha = Math.fround(alpha);
+    
     if (alpha >= 0.0 && alpha <= 1.0) {
-      alpha = Math.fround(alpha);
       Tegaki.tool.setAlpha(alpha);
       Tegaki.recordEvent(TegakiEventSetToolAlpha, performance.now(), alpha);
       TegakiUI.updateToolAlpha();
@@ -586,8 +588,9 @@ var Tegaki = {
   },
   
   setToolFlow: function(flow) {
+    flow = Math.fround(flow);
+    
     if (flow >= 0.0 && flow <= 1.0) {
-      flow = Math.fround(flow);
       Tegaki.tool.setFlow(flow);
       Tegaki.recordEvent(TegakiEventSetToolFlow, performance.now(), flow);
       TegakiUI.updateToolFlow();
@@ -900,6 +903,62 @@ var Tegaki = {
   setActiveLayer: function(id) {
     TegakiLayers.setActiveLayer(id);
     Tegaki.recordEvent(TegakiEventSetActiveLayer, performance.now(), id);
+  },
+  
+  onLayerAlphaDragStart: function(e) {
+    TegakiUI.setupDragLabel(e, Tegaki.onLayerAlphaDragMove);
+  },
+  
+  onLayerAlphaDragMove: function(delta) {
+    var val;
+    
+    if (!delta) {
+      return;
+    }
+    
+    val = Tegaki.activeLayer.alpha + delta / 100 ;
+    
+    if (val < 0.0) {
+      val = 0.0;
+    }
+    else if (val > 1.0) {
+      val = 1.0;
+    }
+    
+    Tegaki.setSelectedLayersAlpha(val);
+  },
+  
+  onLayerAlphaChange: function() {
+    var val = +this.value;
+    
+    val = val / 100;
+    
+    if (val < 0.0) {
+      val = 0.0;
+    }
+    else if (val > 1.0) {
+      val = 1.0;
+    }
+    
+    Tegaki.setSelectedLayersAlpha(val);
+  },
+  
+  setSelectedLayersAlpha: function(alpha) {
+    var layer, id;
+    
+    alpha = Math.fround(alpha);
+    
+    if (alpha >= 0.0 && alpha <= 1.0 && Tegaki.selectedLayers.size > 0) {
+      for (id of Tegaki.selectedLayers) {
+        if (layer = TegakiLayers.getLayerById(id)) {
+          layer.alpha = alpha;
+          layer.canvas.style.opacity = alpha;
+        }
+      }
+      TegakiUI.updateLayerAlphaOpt();
+    }
+    
+    Tegaki.recordEvent(TegakiEventSetSelectedLayersAlpha, performance.now(), alpha);
   },
   
   onLayerAddClick: function() {

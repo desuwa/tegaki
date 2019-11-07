@@ -75,6 +75,7 @@
     "TegakiEventToggleLayerVisibility": true,
     "TegakiEventSetActiveLayer": true,
     "TegakiEventToggleLayerSelection": true,
+    "TegakiEventSetSelectedLayersAlpha": true,
     
     "TegakiEventConclusion": true
   },

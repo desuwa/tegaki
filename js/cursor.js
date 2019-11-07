@@ -49,7 +49,7 @@ var TegakiCursor = {
   },
   
   render: function(x, y) {
-    var i, size, srcImg, srcData, destImg, destData;
+    var i, size, srcImg, srcData, destImg, destData, activeLayer;
     
     if (!this.cached) {
       this.buildCache();
@@ -64,8 +64,17 @@ var TegakiCursor = {
     
     this.tmpCtx.drawImage(this.flatCtxBelow.canvas, x, y, size, size, 0, 0, size, size);
     
-    if (Tegaki.activeLayer.visible) {
-      this.tmpCtx.drawImage(Tegaki.activeLayer.canvas, x, y, size, size, 0, 0, size, size);
+    activeLayer = Tegaki.activeLayer;
+    
+    if (activeLayer.visible) {
+      if (activeLayer.alpha < 1.0) {
+        this.tmpCtx.globalAlpha = activeLayer.alpha;
+        this.tmpCtx.drawImage(Tegaki.activeLayer.canvas, x, y, size, size, 0, 0, size, size);
+        this.tmpCtx.globalAlpha = 1.0;
+      }
+      else {
+        this.tmpCtx.drawImage(Tegaki.activeLayer.canvas, x, y, size, size, 0, 0, size, size);
+      }
     }
     
     this.tmpCtx.drawImage(this.flatCtxAbove.canvas, x, y, size, size, 0, 0, size, size);
@@ -87,6 +96,7 @@ var TegakiCursor = {
     var i, layer, ctx, len, layerId;
     
     ctx = this.flatCtxBelow;
+    ctx.globalAlpha = 1.0;
     $T.clearCtx(ctx);
     
     ctx.drawImage(Tegaki.canvas, 0, 0);
@@ -102,10 +112,12 @@ var TegakiCursor = {
       
       if (layer.id === layerId) {
         ctx = this.flatCtxAbove;
+        ctx.globalAlpha = 1.0;
         $T.clearCtx(ctx);
         continue;
       }
       
+      ctx.globalAlpha = layer.alpha;
       ctx.drawImage(layer.canvas, 0, 0);
     }
     

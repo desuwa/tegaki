@@ -41,7 +41,9 @@
 .tegaki-eraser:before { content: '\f12d'; } /* '' */
 .tegaki-pipette:before { content: '\f1fb'; } /* '' */
 
-.tegaki-disabled {
+.tegaki-disabled,
+.tegaki-disabled::after,
+.tegaki-disabled::before {
   opacity: 0.35;
 }
 
@@ -423,6 +425,46 @@
   background-color: rgba(0, 0, 0, 0.1);
 }
 
+.tegaki-range-lbl,
+.tegaki-range-lbl-xs {
+  display: inline-block;
+  text-align: center;
+  vertical-align: top;
+}
+
+.tegaki-range-lbl {
+  width: 28px;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.tegaki-range-lbl-xs {
+  width: 20px;
+  font-size: 10px;
+}
+
+.tegaki-label-xs {
+  font-size: 10px;
+  vertical-align: top;
+}
+
+.tegaki-lbl-c::after {
+  content: ':';
+}
+
+.tegaki-lbl-p::after {
+  content: '%';
+  margin-left: 1px;
+}
+
+.tegaki-drag-lbl:not(.tegaki-disabled) {
+  cursor: ew-resize;
+}
+
+.tegaki-disabled .tegaki-drag-lbl {
+  cursor: auto;
+}
+
 /* control groups */
 .tegaki-ctrlgrp {
   margin-bottom: 10px;
@@ -504,19 +546,18 @@
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
-.tegaki-range-lbl {
-  display: inline-block;
-  text-align: center;
-  width: 28px;
-  height: 14px;
-  font-size: 12px;
-  vertical-align: top;
-  margin-left: 4px;
-}
-
 /* layers ctrl group */
 #tegaki-ctrlgrp-layers {
   position: relative;
+}
+
+#tegaki-layers-opts {
+  height: 18px;
+  display: flex;
+}
+
+#tegaki-layer-alpha-cell {
+  margin-left: auto;
 }
 
 #tegaki-layers-ctrl {

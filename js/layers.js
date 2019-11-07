@@ -157,7 +157,7 @@ var TegakiLayers = {
     params = {
       name: 'Layer ' + id,
       visible: true,
-      opacity: 1.0,
+      alpha: 1.0,
     };
     
     ctx = canvas.getContext('2d');
@@ -403,6 +403,7 @@ var TegakiLayers = {
     TegakiLayers.selectedLayersAdd(id);
     
     TegakiUI.updateLayersGridActive(id);
+    TegakiUI.updateLayerAlphaOpt();
     
     Tegaki.onLayerStackChanged();
   },
@@ -413,16 +414,19 @@ var TegakiLayers = {
   
   selectedLayersClear: function() {
     Tegaki.selectedLayers.clear();
+    TegakiUI.updateLayerAlphaOpt();
     TegakiUI.updateLayersGridSelectedClear();
   },
   
   selectedLayersAdd: function(id) {
     Tegaki.selectedLayers.add(+id);
+    TegakiUI.updateLayerAlphaOpt();
     TegakiUI.updateLayersGridSelectedSet(id, true);
   },
   
   selectedLayersRemove: function(id) {
     Tegaki.selectedLayers.delete(+id);
+    TegakiUI.updateLayerAlphaOpt();
     TegakiUI.updateLayersGridSelectedSet(id, false);
   },
   

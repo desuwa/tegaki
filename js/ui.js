@@ -1,7 +1,27 @@
 var TegakiUI = {
   draggedNode: null,
   
+  draggedLabelLastX: 0,
+  draggedLabelFn: null,
+  
   statusTimeout: 0,
+  
+  setupDragLabel: function(e, moveFn) {
+    TegakiUI.draggedLabelFn = moveFn;
+    TegakiUI.draggedLabelLastX = e.clientX;
+    $T.on(document, 'pointermove', TegakiUI.processDragLabel);
+    $T.on(document, 'pointerup', TegakiUI.clearDragLabel);
+  },
+  
+  processDragLabel: function(e) {
+    TegakiUI.draggedLabelFn.call(Tegaki, e.clientX - TegakiUI.draggedLabelLastX);
+    TegakiUI.draggedLabelLastX = e.clientX;
+  },
+  
+  clearDragLabel: function(e) {
+    $T.off(document, 'pointermove', TegakiUI.processDragLabel);
+    $T.off(document, 'pointerup', TegakiUI.clearDragLabel);
+  },
   
   printMsg: function(str, timeout = 5000) {
     TegakiUI.clearMsg();
@@ -347,9 +367,34 @@ var TegakiUI = {
   },
   
   buildLayersCtrlGroup: function() {
-    var el, ctrl, row;
+    var el, ctrl, row, cnt;
     
     ctrl = this.buildCtrlGroup('layers', TegakiStrings.layers);
+    
+    // Layer options row
+    row = $T.el('div');
+    row.id = 'tegaki-layers-opts';
+    
+    // Alpha
+    cnt = $T.el('div');
+    cnt.id = 'tegaki-layer-alpha-cell';
+    
+    el = $T.el('span');
+    el.className = 'tegaki-label-xs tegaki-lbl-c tegaki-drag-lbl';
+    el.textContent = TegakiStrings.alpha;
+    $T.on(el, 'pointerdown', Tegaki.onLayerAlphaDragStart);
+    cnt.appendChild(el);
+    
+    el = $T.el('input');
+    el.id = 'tegaki-layer-alpha-opt';
+    el.className = 'tegaki-stealth-input tegaki-range-lbl-xs';
+    el.setAttribute('maxlength', 3);
+    $T.on(el, 'input', Tegaki.onLayerAlphaChange);
+    cnt.appendChild(el);
+    
+    row.appendChild(cnt);
+    
+    ctrl.appendChild(row);
     
     el = $T.el('div');
     el.id = 'tegaki-layers-grid';
@@ -416,8 +461,9 @@ var TegakiUI = {
     
     el = $T.el('input');
     el.id = 'tegaki-size-lbl';
+    el.setAttribute('maxlength', 3);
     el.className = 'tegaki-stealth-input tegaki-range-lbl';
-    $T.on(el, 'change', Tegaki.onToolSizeChange);
+    $T.on(el, 'input', Tegaki.onToolSizeChange);
     row.appendChild(el);
     
     ctrl.appendChild(row);
@@ -445,8 +491,9 @@ var TegakiUI = {
     
     el = $T.el('input');
     el.id = 'tegaki-alpha-lbl';
+    el.setAttribute('maxlength', 3);
     el.className = 'tegaki-stealth-input tegaki-range-lbl';
-    $T.on(el, 'change', Tegaki.onToolAlphaChange);
+    $T.on(el, 'input', Tegaki.onToolAlphaChange);
     row.appendChild(el);
     
     ctrl.appendChild(row);
@@ -474,8 +521,9 @@ var TegakiUI = {
     
     el = $T.el('input');
     el.id = 'tegaki-flow-lbl';
+    el.setAttribute('maxlength', 3);
     el.className = 'tegaki-stealth-input tegaki-range-lbl';
-    $T.on(el, 'change', Tegaki.onToolFlowChange);
+    $T.on(el, 'input', Tegaki.onToolFlowChange);
     row.appendChild(el);
     
     ctrl.appendChild(row);
@@ -901,6 +949,11 @@ var TegakiUI = {
   
   // ---
   
+  updateLayerAlphaOpt: function() {
+    var el = $T.id('tegaki-layer-alpha-opt');
+    el.value = Math.round(Tegaki.activeLayer.alpha * 100);
+  },
+  
   updateLayersGridClear: function() {
     $T.id('tegaki-layers-grid').innerHTML = '';
   },
@@ -934,6 +987,8 @@ var TegakiUI = {
     if (el) {
       el.classList.add('tegaki-layers-cell-a');
     }
+    
+    TegakiUI.updateLayerAlphaOpt();
   },
   
   updateLayersGridAdd: function(layer, aboveId) {

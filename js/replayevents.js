@@ -503,6 +503,30 @@ class TegakiEventToggleLayerSelection extends TegakiEvent_c {
   }
 }
 
+class TegakiEventSetSelectedLayersAlpha {
+  constructor(timeStamp, value) {
+    this.timeStamp = timeStamp;
+    this.value = value;
+    this.type = TegakiEvents[this.constructor.name][0];
+    this.coalesce = true;
+    this.size = 9;
+  }
+  
+  pack(w) {
+    w.writeUint8(this.type);
+    w.writeUint32(this.timeStamp);
+    w.writeFloat32(this.value);
+  }
+  
+  static unpack(r) {
+    return new this(r.readUint32(), r.readFloat32());
+  }
+  
+  dispatch() {
+    Tegaki.setSelectedLayersAlpha(this.value);
+  }
+}
+
 const TegakiEvents = Object.freeze({
   TegakiEventPrelude:                 [0,   TegakiEventPrelude],
   
@@ -532,6 +556,7 @@ const TegakiEvents = Object.freeze({
   TegakiEventToggleLayerVisibility:   [24,  TegakiEventToggleLayerVisibility],
   TegakiEventSetActiveLayer:          [25,  TegakiEventSetActiveLayer],
   TegakiEventToggleLayerSelection:    [26,  TegakiEventToggleLayerSelection],
+  TegakiEventSetSelectedLayersAlpha:  [27,  TegakiEventSetSelectedLayersAlpha],
   
   TegakiEventConclusion:              [255, TegakiEventConclusion]
 });
