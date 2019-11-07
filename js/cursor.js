@@ -63,7 +63,11 @@ var TegakiCursor = {
     $T.clearCtx(this.tmpCtx);
     
     this.tmpCtx.drawImage(this.flatCtxBelow.canvas, x, y, size, size, 0, 0, size, size);
-    this.tmpCtx.drawImage(Tegaki.activeLayer.canvas, x, y, size, size, 0, 0, size, size);
+    
+    if (Tegaki.activeLayer.visible) {
+      this.tmpCtx.drawImage(Tegaki.activeLayer.canvas, x, y, size, size, 0, 0, size, size);
+    }
+    
     this.tmpCtx.drawImage(this.flatCtxAbove.canvas, x, y, size, size, 0, 0, size, size);
     
     srcImg = this.tmpCtx.getImageData(0, 0, size, size);
@@ -92,7 +96,7 @@ var TegakiCursor = {
     for (i = 0, len = Tegaki.layers.length; i < len; ++i) {
       layer = Tegaki.layers[i];
       
-      if (layer.canvas.classList.contains('tegaki-hidden')) {
+      if (!layer.visible) {
         continue;
       }
       
