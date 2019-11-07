@@ -2,7 +2,7 @@ var TegakiCursor = {
   size: 0,
   radius: 0,
   
-  buffer: null,
+  points: null,
   
   tmpCtx: null,
   
@@ -49,7 +49,7 @@ var TegakiCursor = {
   },
   
   render: function(x, y) {
-    var i, len, layer, buf, size, srcImg, srcData, destImg, destData, layerId;
+    var i, size, srcImg, srcData, destImg, destData;
     
     if (!this.cached) {
       this.buildCache();
@@ -62,25 +62,9 @@ var TegakiCursor = {
     $T.clearCtx(this.cursorCtx);
     $T.clearCtx(this.tmpCtx);
     
-    layerId = Tegaki.activeLayer.id;
-    
-    for (i = 0, len = Tegaki.layers.length; i < len; ++i) {
-      layer = Tegaki.layers[i];
-      
-      if (layer.id === layerId) {
-        this.tmpCtx.drawImage(this.flatCtxBelow.canvas, x, y, size, size, 0, 0, size, size);
-        
-        this.tmpCtx.drawImage(Tegaki.activeLayer.canvas, x, y, size, size, 0, 0, size, size);
-        
-        if (i < Tegaki.layers.length - 1) {
-          this.tmpCtx.drawImage(this.flatCtxAbove.canvas, x, y, size, size, 0, 0, size, size);
-        }
-        
-        break;
-      }
-    }
-    
-    buf = this.buffer;
+    this.tmpCtx.drawImage(this.flatCtxBelow.canvas, x, y, size, size, 0, 0, size, size);
+    this.tmpCtx.drawImage(Tegaki.activeLayer.canvas, x, y, size, size, 0, 0, size, size);
+    this.tmpCtx.drawImage(this.flatCtxAbove.canvas, x, y, size, size, 0, 0, size, size);
     
     srcImg = this.tmpCtx.getImageData(0, 0, size, size);
     srcData = new Uint32Array(srcImg.data.buffer);
@@ -88,11 +72,7 @@ var TegakiCursor = {
     destImg = this.cursorCtx.createImageData(size, size);
     destData = new Uint32Array(destImg.data.buffer);
     
-    for (i = 0, len = buf.length; i < len; ++i) {
-      if (buf[i] === 0) {
-        continue;
-      }
-      
+    for (i of this.points) {
       destData[i] = srcData[i] ^ 0x00FFFF7F;
     }
     
@@ -135,7 +115,7 @@ var TegakiCursor = {
   destroy() {
     this.size = 0;
     this.radius = 0;
-    this.buffer = null;
+    this.points = null;
     this.tmpCtx = null;
     this.cursorCtx = null;
     this.flatCtxAbove = null;
@@ -143,33 +123,31 @@ var TegakiCursor = {
   },
   
   generate: function(size) {
-    var e, x, y, data, bufSize, c, r, rr;
+    var e, x, y, c, r, rr, points;
     
     r = 0 | ((size) / 2);
     
     rr = 0 | ((size + 1) % 2);
     
-    bufSize = size * size + (-(size * size) & 3);
-    
-    data = new Uint8Array(bufSize);
+    points = [];
     
     x = r;
-    y = 0 | 0;
+    y = 0;
     e = 1 - r;
     c = r;
     
     while (x >= y) {
-      data[c + x - rr + (c + y - rr) * size] = 255;
-      data[c + y - rr + (c + x - rr) * size] = 255;
+      points.push(c + x - rr + (c + y - rr) * size);
+      points.push(c + y - rr + (c + x - rr) * size);
       
-      data[c - y + (c + x - rr) * size] = 255;
-      data[c - x + (c + y - rr) * size] = 255;
+      points.push(c - y + (c + x - rr) * size);
+      points.push(c - x + (c + y - rr) * size);
       
-      data[c - y + (c - x) * size] = 255;
-      data[c - x + (c - y) * size] = 255;
+      points.push(c - y + (c - x) * size);
+      points.push(c - x + (c - y) * size);
       
-      data[c + y - rr + (c - x) * size] = 255;
-      data[c + x - rr + (c - y) * size] = 255;
+      points.push(c + y - rr + (c - x) * size);
+      points.push(c + x - rr + (c - y) * size);
       
       ++y;
       
@@ -187,6 +165,6 @@ var TegakiCursor = {
     
     this.size = size;
     this.radius = r;
-    this.buffer = data;
+    this.points = points;
   }
 };
