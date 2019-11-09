@@ -65,8 +65,8 @@ class TegakiEraser extends TegakiBrush {
         ba = bData[px] / 255;
         ba = ba + ka * (brushAlpha - ba);
         
-        bData[px] = Math.ceil(ba * 255);
-        aData[px] = Math.ceil(gData[px] * (1 - ba));
+        bData[px] = Math.floor(ba * 255);
+        aData[px] = Math.floor(gData[px] * (1 - ba));
       }
     }
   }
