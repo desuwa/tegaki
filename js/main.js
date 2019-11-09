@@ -687,6 +687,8 @@ var Tegaki = {
     self.setZoom(0);
     TegakiHistory.clear();
     
+    TegakiUI.updateLayerPreviewSize();
+    
     self.startTimeStamp = Date.now();
     
     if (self.saveReplay) {
@@ -886,6 +888,10 @@ var Tegaki = {
   
   onLayerSelectorClick: function(e) {
     var id = +this.getAttribute('data-id');
+    
+    if (!id || e.target.classList.contains('tegaki-ui-cb')) {
+      return;
+    }
     
     if (e.ctrlKey) {
       Tegaki.toggleSelectedLayer(id);
@@ -1120,6 +1126,8 @@ var Tegaki = {
     
     TegakiHistory.clear();
     
+    TegakiUI.updateLayerPreviewSize(true);
+    
     self.startTimeStamp = Date.now();
     
     if (self.saveReplay) {
@@ -1345,6 +1353,7 @@ var Tegaki = {
     if (Tegaki.isPainting) {
       Tegaki.recordEvent(TegakiEventDrawCommit, e.timeStamp);
       Tegaki.tool.commit();
+      TegakiUI.updateLayerPreview(Tegaki.activeLayer);
       TegakiHistory.pendingAction.addCanvasState(Tegaki.activeLayer.imageData, 1);
       TegakiHistory.push(TegakiHistory.pendingAction);
       Tegaki.isPainting = false;

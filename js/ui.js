@@ -6,6 +6,12 @@ var TegakiUI = {
   
   statusTimeout: 0,
   
+  layerPreviewCtxCache: new WeakMap(),
+  
+  getLayerPreviewSize: function() {
+    return $T.calcThumbSize(Tegaki.baseWidth, Tegaki.baseHeight, 24);
+  },
+  
   setupDragLabel: function(e, moveFn) {
     TegakiUI.draggedLabelFn = moveFn;
     TegakiUI.draggedLabelLastX = e.clientX;
@@ -747,39 +753,62 @@ var TegakiUI = {
   },
   
   buildLayerGridCell: function(layer) {
-    var cnt, el;
+    var cnt, el, cell;
     
     cnt = $T.el('div');
     cnt.id = 'tegaki-layers-cell-' + layer.id;
     cnt.className = 'tegaki-layers-cell';
     cnt.setAttribute('data-id', layer.id);
+    cnt.draggable = true;
+    cnt.setAttribute('data-id', layer.id);
+    $T.on(cnt, 'click', Tegaki.onLayerSelectorClick);
+    
+    $T.on(cnt, 'dragstart', TegakiUI.onLayerDragStart);
+    $T.on(cnt, 'dragover', TegakiUI.onLayerDragOver);
+    $T.on(cnt, 'drop', TegakiUI.onLayerDragDrop);
+    $T.on(cnt, 'dragend', TegakiUI.onLayerDragEnd);
+    $T.on(cnt, 'dragleave', TegakiUI.onLayerDragLeave);
+    $T.on(cnt, 'dragexit', TegakiUI.onLayerDragLeave);
+    
+    // visibility toggle
+    cell = $T.el('div');
+    cell.className = 'tegaki-layers-cell-v';
     
     el = $T.el('span');
-    el.className = 'tegaki-layers-cell-v tegaki-ui-cb';
+    el.id = 'tegaki-layers-cb-v-' + layer.id;
+    el.className = 'tegaki-ui-cb';
     el.setAttribute('data-id', layer.id);
+    el.title = TegakiStrings.toggleVisibility;
     $T.on(el, 'click', Tegaki.onLayerToggleVisibilityClick);
     
     if (layer.visible) {
       el.className += ' tegaki-ui-cb-a';
     }
     
-    cnt.appendChild(el);
+    cell.appendChild(el)
+    cnt.appendChild(cell);
     
-    el = $T.el('span');
-    el.className = 'tegaki-layers-cell-n';
-    el.setAttribute('draggable', 'true');
-    el.setAttribute('data-id', layer.id);
+    // preview
+    cell = $T.el('div');
+    cell.className = 'tegaki-layers-cell-p';
+    
+    el = $T.el('canvas');
+    el.id = 'tegaki-layers-p-canvas-' + layer.id;
+    el.className = 'tegaki-alpha-bg-xs';
+    [el.width, el.height] = TegakiUI.getLayerPreviewSize(); 
+    
+    cell.appendChild(el)
+    cnt.appendChild(cell);
+    
+    // name
+    cell = $T.el('div');
+    cell.className = 'tegaki-layers-cell-n';
+    
+    el = $T.el('div');
     el.textContent = 'Layer ' + layer.id;
-    $T.on(el, 'click', Tegaki.onLayerSelectorClick);
     
-    $T.on(el, 'dragstart', TegakiUI.onLayerDragStart);
-    $T.on(el, 'dragover', TegakiUI.onLayerDragOver);
-    $T.on(el, 'drop', TegakiUI.onLayerDragDrop);
-    $T.on(el, 'dragend', TegakiUI.onLayerDragEnd);
-    $T.on(el, 'dragleave', TegakiUI.onLayerDragLeave);
-    $T.on(el, 'dragexit', TegakiUI.onLayerDragLeave);
-    
-    cnt.appendChild(el);
+    cell.appendChild(el)
+    cnt.appendChild(cell);
     
     return cnt;
   },
@@ -819,7 +848,7 @@ var TegakiUI = {
     e.dataTransfer.dropEffect = 'move';
     
     TegakiUI.updateLayersGridDragEffect(
-      e.target.parentNode,
+      e.target,
       +TegakiUI.draggedNode.getAttribute('data-id')
     );
   },
@@ -841,11 +870,11 @@ var TegakiUI = {
     
     TegakiUI.draggedNode = null;
     
+    [tgtId] = TegakiUI.layersGridFindDropTgt(e.target);
+    srcId = +e.dataTransfer.getData('text/plain');
+    
     TegakiUI.updateLayersGridDragEffect(e.target.parentNode);
     TegakiUI.updateLayersGridDragExt(false);
-    
-    tgtId = +e.target.getAttribute('data-id');
-    srcId = +e.dataTransfer.getData('text/plain');
     
     if (!TegakiUI.layersGridCanDrop(tgtId, srcId)) {
       return;
@@ -873,6 +902,7 @@ var TegakiUI = {
     if (flag) {
       el = $T.el('div');
       el.id = 'tegaki-layers-cell-dx';
+      el.draggable = true;
       $T.on(el, 'dragover', TegakiUI.onLayerDragOver);
       $T.on(el, 'drop', TegakiUI.onLayerDragDrop);
       cnt.parentNode.insertBefore(el, cnt);
@@ -897,17 +927,36 @@ var TegakiUI = {
       return;
     }
     
-    tgtId = +tgt.getAttribute('data-id');
+    [tgtId, tgt] = TegakiUI.layersGridFindDropTgt(tgt);
     
     if (!TegakiUI.layersGridCanDrop(tgtId, srcId)) {
       return;
     }
     
-    if (!tgtId) {
+    if (!tgt) {
       tgt = $T.id('tegaki-layers-grid');
     }
     
     tgt.classList.add('tegaki-layers-cell-d');
+  },
+  
+  layersGridFindDropTgt: function(tgt) {
+    var tgtId, cnt;
+    
+    tgtId = +tgt.getAttribute('data-id');
+    
+    cnt = $T.id('tegaki-ctrlgrp-layers');
+    
+    while (!tgt.draggable && tgt !== cnt) {
+      tgt = tgt.parentNode;
+      tgtId = +tgt.getAttribute('data-id');
+    }
+    
+    if (tgt === cnt || !tgt.draggable) {
+      return [0, null];
+    }
+    
+    return [tgtId, tgt];
   },
   
   layersGridCanDrop: function(tgtId, srcId) {
@@ -952,6 +1001,55 @@ var TegakiUI = {
   updateLayerAlphaOpt: function() {
     var el = $T.id('tegaki-layer-alpha-opt');
     el.value = Math.round(Tegaki.activeLayer.alpha * 100);
+  },
+  
+  updateLayerPreview: function(layer) {
+    var canvas, ctx;
+    
+    canvas = $T.id('tegaki-layers-p-canvas-' + layer.id);
+    
+    if (!canvas) {
+      return;
+    }
+    
+    ctx = TegakiUI.getLayerPreviewCtx(layer);
+    
+    if (!ctx) {
+      ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      TegakiUI.setLayerPreviewCtx(layer, ctx);
+    }
+    
+    $T.clearCtx(ctx);
+    ctx.drawImage(layer.canvas, 0, 0, canvas.width, canvas.height);
+  },
+  
+  updateLayerPreviewSize: function(regen) {
+    var el, layer, size;
+    
+    size = TegakiUI.getLayerPreviewSize();
+    
+    for (layer of Tegaki.layers) {
+      if (el = $T.id('tegaki-layers-p-canvas-' + layer.id)) {
+        [el.width, el.height] = size;
+        
+        if (regen) {
+          TegakiUI.updateLayerPreview(layer);
+        }
+      }
+    }
+  },
+  
+  getLayerPreviewCtx: function(layer) {
+    TegakiUI.layerPreviewCtxCache.get(layer);
+  },
+  
+  setLayerPreviewCtx: function(layer, ctx) {
+    TegakiUI.layerPreviewCtxCache.set(layer, ctx);
+  },
+  
+  deleteLayerPreviewCtx: function(layer) {
+    TegakiUI.layerPreviewCtxCache.delete(layer);
   },
   
   updateLayersGridClear: function() {
@@ -1028,25 +1126,19 @@ var TegakiUI = {
   },
   
   updateLayersGridVisibility: function(id, flag) {
-    var el, cb;
+    var el;
     
-    el = $T.id('tegaki-layers-cell-' + id);
+    el = $T.id('tegaki-layers-cb-v-' + id);
     
     if (!el) {
       return;
     }
     
-    cb = $T.cls('tegaki-layers-cell-v', el)[0];
-    
-    if (!cb) {
-      return;
-    }
-    
     if (flag) {
-      cb.classList.add('tegaki-ui-cb-a');
+      el.classList.add('tegaki-ui-cb-a');
     }
     else {
-      cb.classList.remove('tegaki-ui-cb-a');
+      el.classList.remove('tegaki-ui-cb-a');
     }
   },
   

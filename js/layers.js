@@ -211,6 +211,8 @@ var TegakiLayers = {
       delIndexes.push(idx);
       
       TegakiUI.updateLayersGridRemove(id);
+      
+      TegakiUI.deleteLayerPreviewCtx(layer);
     }
     
     delIndexes = delIndexes.sort($T.sortDescCb);
@@ -289,6 +291,8 @@ var TegakiLayers = {
       imageDataAfter: imageDataAfter,
       mergeDown: layers.length === 1
     });
+    
+    TegakiUI.updateLayerPreview(targetLayer);
     
     Tegaki.onLayerStackChanged();
     

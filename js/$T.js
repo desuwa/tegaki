@@ -125,5 +125,23 @@ var $T = {
     }
     
     return ary.join(':');
+  },
+  
+  calcThumbSize(w, h, maxSide) {
+    var r;
+    
+    if (w > maxSide) {
+      r = maxSide / w;
+      w = maxSide;
+      h = h * r;
+    }
+    
+    if (h > maxSide) {
+      r = maxSide / h;
+      h = maxSide;
+      w = w * r;
+    }
+    
+    return [Math.ceil(w), Math.ceil(h)];
   }
 };

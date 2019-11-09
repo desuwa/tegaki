@@ -360,6 +360,24 @@
 }
 
 /* generic ui */
+.tegaki-alpha-bg,
+.tegaki-alpha-bg-xs {
+  background-color: #fefefe;
+  background-image:
+    linear-gradient(45deg, #cacaca 25%, transparent 25%, transparent 75%, #cacaca 75%, #cacaca),
+    linear-gradient(45deg, #cacaca 25%, transparent 25%, transparent 75%, #cacaca 75%, #cacaca);
+}
+
+.tegaki-alpha-bg {
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+}
+
+.tegaki-alpha-bg-xs {
+  background-size: 6px 6px;
+  background-position: 0 0, 3px 3px;
+}
+
 .tegaki-ui-cb {
   display: inline-block;
   vertical-align: middle;
@@ -387,11 +405,6 @@
 .tegaki-ui-cb-w:hover .tegaki-ui-cb::after,
 .tegaki-ui-cb:hover::after {
   background-color: #555;
-}
-
-.tegaki-ui-cb-w:hover .tegaki-ui-cb-a::after,
-.tegaki-ui-cb-a:hover::after {
-  background-color: #222;
 }
 
 .tegaki-ui-ellipsis::after {
@@ -565,8 +578,8 @@
 }
 
 #tegaki-layers-grid {
-  height: 72px;
-  min-height: 72px;
+  height: 84px;
+  min-height: 84px;
   overflow: auto;
   background-color: #8d99a6;
   display: flex;
@@ -578,10 +591,12 @@
 .tegaki-layers-cell {
   box-sizing: border-box;
   box-shadow: 0 1px 0 0px #a3b1bf;
-  padding: 0 6px;
-  height: 24px;
-  flex: none;
+  padding: 0;
+  height: 28px;
+  flex-shrink: 0;
   overflow: hidden;
+  display: flex;
+  align-items: center;
 }
 
 .tegaki-layers-cell-s,
@@ -594,8 +609,33 @@
 }
 
 .tegaki-layers-cell-v {
+  margin: 0 6px 0 4px;
+}
+
+.tegaki-layers-cell-v .tegaki-ui-cb {
+  vertical-align: unset;
+  margin: 0;
+}
+
+.tegaki-layers-cell-p {
   margin-right: 6px;
+}
+
+.tegaki-layers-cell-p canvas {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  vertical-align: middle;
+}
+
+.tegaki-layers-cell-s .tegaki-layers-cell-p canvas {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 1.0);
+}
+
+.tegaki-layers-cell-n {
   font-size: 11px;
+  margin-right: auto;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .tegaki-layers-cell-d {
@@ -610,19 +650,8 @@
 #tegaki-layers-cell-dx {
   position: absolute;
   background: transparent;
-  top: 0;
   width: 100%;
-  height: 24px;
+  height: 32px;
+  margin-top: -32px;
 }
 
-.tegaki-layers-cell-n {
-  font-size: 11px;
-  display: inline-block;
-  vertical-align: middle;
-  line-height: 24px;
-  width: calc(100% - 18px);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-  cursor: pointer;
-}

@@ -146,6 +146,7 @@ TegakiHistoryActions.Draw.prototype.exec = function(type) {
     Tegaki.syncLayerImageData(layer, this.imageDataBefore);
   }
   
+  TegakiUI.updateLayerPreview(layer);
   TegakiLayers.setActiveLayer(this.layerId);
 };
 
@@ -173,6 +174,7 @@ TegakiHistoryActions.DeleteLayers.prototype.undo = function() {
       }
       
       TegakiUI.updateLayersGridAdd(layer, refId);
+      TegakiUI.updateLayerPreview(layer);
       Tegaki.layersCnt.insertBefore(layer.canvas, refLayer.canvas);
       Tegaki.layers.splice(pos, 0, layer);
     }
@@ -186,6 +188,7 @@ TegakiHistoryActions.DeleteLayers.prototype.undo = function() {
       }
       
       TegakiUI.updateLayersGridAdd(layer, TegakiLayers.getTopLayerId());
+      TegakiUI.updateLayerPreview(layer);
       Tegaki.layersCnt.insertBefore(layer.canvas, refLayer.nextElementSibling);
       Tegaki.layers.push(layer);
     }
@@ -196,6 +199,7 @@ TegakiHistoryActions.DeleteLayers.prototype.undo = function() {
       layer = TegakiLayers.getLayerById(this.tgtLayerId);
       layer.ctx.putImageData(this.imageDataBefore, 0, 0);
       Tegaki.syncLayerImageData(layer, this.imageDataBefore);
+      TegakiUI.updateLayerPreview(layer);
     }
   }
   

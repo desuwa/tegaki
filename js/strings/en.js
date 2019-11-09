@@ -19,13 +19,16 @@ var TegakiStrings = {
   flow: 'Flow',
   zoom: 'Zoom',
   layers: 'Layers',
+  switchPalette: 'Switch color palette',
+  paletteSlotReplace: 'Right click to replace with the current color',
+  
+  // Layers
   addLayer: 'Add layer',
   delLayers: 'Delete layers',
   mergeLayers: 'Merge layers',
   moveLayerUp: 'Move up',
   moveLayerDown: 'Move down',
-  switchPalette: 'Switch color palette',
-  paletteSlotReplace: 'Right click to replace with the current color',
+  toggleVisibility: 'Toggle visibility',
   
   // Menu bar
   newCanvas: 'New',
