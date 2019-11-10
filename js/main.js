@@ -950,21 +950,26 @@ var Tegaki = {
   },
   
   setSelectedLayersAlpha: function(alpha) {
-    var layer, id;
+    var layer, id, layerAlphas;
     
     alpha = Math.fround(alpha);
     
     if (alpha >= 0.0 && alpha <= 1.0 && Tegaki.selectedLayers.size > 0) {
+      layerAlphas = [];
+      
       for (id of Tegaki.selectedLayers) {
         if (layer = TegakiLayers.getLayerById(id)) {
-          layer.alpha = alpha;
-          layer.canvas.style.opacity = alpha;
+          layerAlphas.push([layer.id, layer.alpha]);
+          TegakiLayers.setLayerAlpha(layer, alpha);
         }
       }
+      
       TegakiUI.updateLayerAlphaOpt();
+      
+      TegakiHistory.push(new TegakiHistoryActions.SetLayersAlpha(layerAlphas, alpha));
+      
+      Tegaki.recordEvent(TegakiEventSetSelectedLayersAlpha, performance.now(), alpha);
     }
-    
-    Tegaki.recordEvent(TegakiEventSetSelectedLayersAlpha, performance.now(), alpha);
   },
   
   onLayerAddClick: function() {
@@ -1088,17 +1093,6 @@ var Tegaki = {
     TegakiCursor.invalidateCache();
   },
   
-  syncLayerImageData(layer, imageData = null) {
-    if (imageData) {
-      layer.imageData = $T.copyImageData(imageData);
-    }
-    else {
-      layer.imageData = layer.ctx.getImageData(
-        0, 0, Tegaki.baseWidth, Tegaki.baseHeight
-      );
-    }
-  },
-  
   onOpenFileSelected: function() {
     var img;
     
@@ -1119,7 +1113,7 @@ var Tegaki = {
     self.copyContextState(self.activeLayer.ctx, tmp);
     self.resizeCanvas(this.naturalWidth, this.naturalHeight);
     self.activeLayer.ctx.drawImage(this, 0, 0);
-    self.syncLayerImageData(self.activeLayer);
+    TegakiLayers.syncLayerImageData(self.activeLayer);
     self.copyContextState(tmp, self.activeLayer.ctx);
     
     self.setZoom(0);

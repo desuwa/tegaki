@@ -231,8 +231,8 @@ var TegakiLayers = {
   },
   
   mergeLayers: function(idSet) {
-    var bgLayer, imageDataAfter, imageDataBefore,
-      targetLayer, action, layer, layers, delIds;
+    var canvas, ctx, imageDataAfter, imageDataBefore,
+      targetLayer, action, layer, layers, delIds, mergeDown;
     
     layers = [];
     
@@ -253,14 +253,21 @@ var TegakiLayers = {
         return;
       }
       
-      bgLayer = targetLayer;
+      layers.unshift(targetLayer);
+      
+      mergeDown = true;
     }
     else {
       targetLayer = layers[layers.length - 1];
-      bgLayer = layers[0];
+      
+      mergeDown = false;
     }
     
-    bgLayer = TegakiLayers.cloneLayer(bgLayer);
+    canvas = $T.el('canvas');
+    canvas.width = Tegaki.baseWidth;
+    canvas.height = Tegaki.baseHeight;
+    
+    ctx = canvas.getContext('2d');
     
     imageDataBefore = $T.copyImageData(targetLayer.imageData);
     
@@ -271,26 +278,30 @@ var TegakiLayers = {
         delIds.push(layer.id);
       }
       
-      if (layer.id !== bgLayer.id) {
-        bgLayer.ctx.drawImage(layer.canvas, 0, 0);
-      }
+      ctx.globalAlpha = layer.alpha;
+      ctx.drawImage(layer.canvas, 0, 0);
     }
     
     $T.clearCtx(targetLayer.ctx);
     
-    targetLayer.ctx.drawImage(bgLayer.canvas, 0, 0);
+    targetLayer.ctx.drawImage(canvas, 0, 0);
     
-    Tegaki.syncLayerImageData(targetLayer);
+    TegakiLayers.syncLayerImageData(targetLayer);
     
     imageDataAfter = $T.copyImageData(targetLayer.imageData);
     
     action = TegakiLayers.deleteLayers(delIds, {
       tgtLayerId: targetLayer.id,
+      tgtLayerAlpha: targetLayer.alpha,
       aLayerIdAfter: targetLayer.id,
       imageDataBefore: imageDataBefore,
       imageDataAfter: imageDataAfter,
-      mergeDown: layers.length === 1
+      mergeDown: mergeDown
     });
+    
+    TegakiLayers.setLayerAlpha(targetLayer, 1.0);
+    
+    TegakiUI.updateLayerAlphaOpt();
     
     TegakiUI.updateLayerPreview(targetLayer);
     
@@ -377,6 +388,11 @@ var TegakiLayers = {
     TegakiUI.updateLayersGridVisibility(layer.id, flag);
   },
   
+  setLayerAlpha: function(layer, alpha) {
+    layer.alpha = alpha;
+    layer.canvas.style.opacity = alpha;
+  },
+  
   setActiveLayer: function(id) {
     var idx, layer;
     
@@ -410,6 +426,17 @@ var TegakiLayers = {
     TegakiUI.updateLayerAlphaOpt();
     
     Tegaki.onLayerStackChanged();
+  },
+  
+  syncLayerImageData(layer, imageData = null) {
+    if (imageData) {
+      layer.imageData = $T.copyImageData(imageData);
+    }
+    else {
+      layer.imageData = layer.ctx.getImageData(
+        0, 0, Tegaki.baseWidth, Tegaki.baseHeight
+      );
+    }
   },
   
   selectedLayersHas: function(id) {

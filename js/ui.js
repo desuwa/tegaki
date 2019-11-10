@@ -785,7 +785,7 @@ var TegakiUI = {
       el.className += ' tegaki-ui-cb-a';
     }
     
-    cell.appendChild(el)
+    cell.appendChild(el);
     cnt.appendChild(cell);
     
     // preview
@@ -797,7 +797,7 @@ var TegakiUI = {
     el.className = 'tegaki-alpha-bg-xs';
     [el.width, el.height] = TegakiUI.getLayerPreviewSize(); 
     
-    cell.appendChild(el)
+    cell.appendChild(el);
     cnt.appendChild(cell);
     
     // name
@@ -807,7 +807,7 @@ var TegakiUI = {
     el = $T.el('div');
     el.textContent = 'Layer ' + layer.id;
     
-    cell.appendChild(el)
+    cell.appendChild(el);
     cnt.appendChild(cell);
     
     return cnt;

@@ -19,6 +19,14 @@ var TegakiHistory = {
       return;
     }
     
+    if (action.coalesce) {
+      if (this.undoStack[this.undoStack.length - 1] instanceof action.constructor) {
+        if (this.undoStack[this.undoStack.length - 1].coalesce(action)) {
+          return;
+        }
+      }
+    }
+    
     this.undoStack.push(action);
     
     if (this.undoStack.length > this.maxSize) {
@@ -77,6 +85,8 @@ var TegakiHistory = {
 
 var TegakiHistoryActions = {
   Draw: function(layerId) {
+    this.coalesce = false;
+    
     this.imageDataBefore = null;
     this.imageDataAfter = null;
     this.layerId = layerId;
@@ -84,6 +94,8 @@ var TegakiHistoryActions = {
   
   DeleteLayers: function(layerPosMap, params) {
     var item;
+    
+    this.coalesce = false;
     
     this.layerPosMap = [];
     
@@ -110,6 +122,8 @@ var TegakiHistoryActions = {
   },
   
   AddLayer: function(params, aLayerIdBefore, aLayerIdAfter) {
+    this.coalesce = false;
+    
     this.layer = params;
     this.layerId = params.id;
     this.aLayerIdBefore = aLayerIdBefore;
@@ -117,9 +131,16 @@ var TegakiHistoryActions = {
   },
   
   MoveLayers: function(layers, belowPos, activeLayerId) {
+    this.coalesce = false;
+    
     this.layers = layers;
     this.belowPos = belowPos;
     this.aLayerId = activeLayerId;
+  },
+  
+  SetLayersAlpha: function(layerAlphas, newAlpha) {
+    this.layerAlphas = layerAlphas;
+    this.newAlpha = newAlpha;
   }
 };
 
@@ -139,11 +160,11 @@ TegakiHistoryActions.Draw.prototype.exec = function(type) {
   
   if (type) {
     layer.ctx.putImageData(this.imageDataAfter, 0, 0);
-    Tegaki.syncLayerImageData(layer, this.imageDataAfter);
+    TegakiLayers.syncLayerImageData(layer, this.imageDataAfter);
   }
   else {
     layer.ctx.putImageData(this.imageDataBefore, 0, 0);
-    Tegaki.syncLayerImageData(layer, this.imageDataBefore);
+    TegakiLayers.syncLayerImageData(layer, this.imageDataBefore);
   }
   
   TegakiUI.updateLayerPreview(layer);
@@ -195,12 +216,11 @@ TegakiHistoryActions.DeleteLayers.prototype.undo = function() {
   }
   
   if (this.tgtLayerId) {
-    if (this.imageDataBefore) {
-      layer = TegakiLayers.getLayerById(this.tgtLayerId);
-      layer.ctx.putImageData(this.imageDataBefore, 0, 0);
-      Tegaki.syncLayerImageData(layer, this.imageDataBefore);
-      TegakiUI.updateLayerPreview(layer);
-    }
+    layer = TegakiLayers.getLayerById(this.tgtLayerId);
+    layer.ctx.putImageData(this.imageDataBefore, 0, 0);
+    TegakiLayers.syncLayerImageData(layer, this.imageDataBefore);
+    TegakiLayers.setLayerAlpha(layer, this.tgtLayerAlpha);
+    TegakiUI.updateLayerPreview(layer);
   }
   
   TegakiLayers.setActiveLayer(this.aLayerIdBefore);
@@ -279,4 +299,50 @@ TegakiHistoryActions.AddLayer.prototype.redo = function() {
   TegakiLayers.setActiveLayer(this.aLayerIdBefore);
   TegakiLayers.addLayer(this.layer);
   TegakiLayers.setActiveLayer(this.aLayerIdAfter);
+};
+
+TegakiHistoryActions.SetLayersAlpha.prototype.undo = function() {
+  var id, layerAlpha, layer;
+
+  for (layerAlpha of this.layerAlphas) {
+    [id, layerAlpha] = layerAlpha;
+    
+    if (layer = TegakiLayers.getLayerById(id)) {
+      TegakiLayers.setLayerAlpha(layer, layerAlpha);
+    }
+  }
+  
+  TegakiUI.updateLayerAlphaOpt();
+};
+
+TegakiHistoryActions.SetLayersAlpha.prototype.redo = function() {
+  var id, layerAlpha, layer;
+
+  for (layerAlpha of this.layerAlphas) {
+    [id, layerAlpha] = layerAlpha;
+    
+    if (layer = TegakiLayers.getLayerById(id)) {
+      TegakiLayers.setLayerAlpha(layer, this.newAlpha);
+    }
+  }
+  
+  TegakiUI.updateLayerAlphaOpt();
+};
+
+TegakiHistoryActions.SetLayersAlpha.prototype.coalesce = function(action) {
+  var i;
+  
+  if (this.layerAlphas.length !== action.layerAlphas.length) {
+    return false;
+  }
+  
+  for (i = 0; i < this.layerAlphas.length; ++i) {
+    if (this.layerAlphas[i][0] !== action.layerAlphas[i][0]) {
+      return false;
+    }
+  }
+  
+  this.newAlpha = action.newAlpha;
+  
+  return true;
 };
