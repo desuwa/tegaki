@@ -761,7 +761,7 @@ var TegakiUI = {
     cnt.setAttribute('data-id', layer.id);
     cnt.draggable = true;
     cnt.setAttribute('data-id', layer.id);
-    $T.on(cnt, 'click', Tegaki.onLayerSelectorClick);
+    $T.on(cnt, 'pointerup', Tegaki.onLayerSelectorClick);
     
     $T.on(cnt, 'dragstart', TegakiUI.onLayerDragStart);
     $T.on(cnt, 'dragover', TegakiUI.onLayerDragOver);
@@ -825,11 +825,7 @@ var TegakiUI = {
       return;
     }
     
-    id = e.target.getAttribute('data-id');
-    
-    if (!TegakiLayers.selectedLayersHas(id)) {
-      return;
-    }
+    id = +e.target.getAttribute('data-id');
     
     el = $T.el('div');
     el.className = 'tegaki-invis';
@@ -885,6 +881,10 @@ var TegakiUI = {
     }
     else {
       belowPos = TegakiLayers.getLayerPosById(tgtId);
+    }
+    
+    if (!TegakiLayers.selectedLayersHas(srcId)) {
+      Tegaki.setActiveLayer(srcId);
     }
     
     Tegaki.moveSelectedLayers(belowPos);
