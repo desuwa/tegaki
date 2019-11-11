@@ -761,6 +761,8 @@ var TegakiUI = {
     cnt.setAttribute('data-id', layer.id);
     cnt.draggable = true;
     cnt.setAttribute('data-id', layer.id);
+    
+    $T.on(cnt, 'pointerdown', TegakiUI.onLayerSelectorPtrDown);
     $T.on(cnt, 'pointerup', Tegaki.onLayerSelectorClick);
     
     $T.on(cnt, 'dragstart', TegakiUI.onLayerDragStart);
@@ -814,6 +816,19 @@ var TegakiUI = {
   },
   
   // ---
+  
+  onLayerSelectorPtrDown: function(e) {
+    if (e.pointerType === 'mouse') {
+      if (this.hasAttribute('data-nodrag')) {
+        this.removeAttribute('data-nodrag');
+        $T.on(this, 'dragstart', TegakiUI.onLayerDragStart);
+      }
+    }
+    else if (!this.hasAttribute('data-nodrag')) {
+      this.setAttribute('data-nodrag', 1);
+      $T.off(this, 'dragstart', TegakiUI.onLayerDragStart);
+    }
+  },
   
   onLayerDragStart: function(e) {
     var el, id;
