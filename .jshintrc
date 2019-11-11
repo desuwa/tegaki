@@ -77,6 +77,8 @@
     "TegakiEventToggleLayerSelection": true,
     "TegakiEventSetSelectedLayersAlpha": true,
     
+    "TegakiEventHistoryDummy": true,
+    
     "TegakiEventConclusion": true
   },
   

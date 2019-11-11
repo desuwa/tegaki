@@ -972,6 +972,44 @@ var Tegaki = {
     }
   },
   
+  onLayerNameChangeClick: function(e) {
+    var id, name, layer;
+    
+    id = +this.getAttribute('data-id');
+    
+    layer = TegakiLayers.getLayerById(id);
+    
+    if (!layer) {
+      return;
+    }
+    
+    if (name = prompt(undefined, layer.name)) {
+      Tegaki.setLayerName(id, name);
+    }
+  },
+  
+  setLayerName: function(id, name) {
+    var oldName, layer;
+    
+    name = name.trim().slice(0, 25);
+    
+    layer = TegakiLayers.getLayerById(id);
+    
+    if (!layer || !name || name === layer.name) {
+      return;
+    }
+    
+    oldName = layer.name;
+    
+    layer.name = name;
+    
+    TegakiUI.updateLayerName(layer);
+    
+    TegakiHistory.push(new TegakiHistoryActions.SetLayerName(id, oldName, name));
+    
+    Tegaki.recordEvent(TegakiEventHistoryDummy, performance.now());
+  },
+  
   onLayerAddClick: function() {
     Tegaki.addLayer();
   },

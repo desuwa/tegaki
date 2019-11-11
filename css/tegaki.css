@@ -378,6 +378,12 @@
   background-position: 0 0, 3px 3px;
 }
 
+.tegaki-ellipsis {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
 .tegaki-ui-cb {
   display: inline-block;
   vertical-align: middle;
@@ -632,10 +638,8 @@
 
 .tegaki-layers-cell-n {
   font-size: 11px;
-  margin-right: auto;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
+  margin-right: 1px;
+  min-width: 20px;
 }
 
 .tegaki-layers-cell-d {

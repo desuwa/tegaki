@@ -155,7 +155,7 @@ var TegakiLayers = {
     canvas.setAttribute('data-id', id);
     
     params = {
-      name: 'Layer ' + id,
+      name: TegakiStrings.layer + ' ' + id,
       visible: true,
       alpha: 1.0,
     };

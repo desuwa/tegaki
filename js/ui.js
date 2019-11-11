@@ -807,7 +807,11 @@ var TegakiUI = {
     cell.className = 'tegaki-layers-cell-n';
     
     el = $T.el('div');
-    el.textContent = 'Layer ' + layer.id;
+    el.id = 'tegaki-layer-name-' + layer.id;
+    el.className = 'tegaki-ellipsis';
+    el.setAttribute('data-id', layer.id);
+    el.textContent = layer.name;
+    $T.on(el, 'dblclick', Tegaki.onLayerNameChangeClick);
     
     cell.appendChild(el);
     cnt.appendChild(cell);
@@ -1020,6 +1024,14 @@ var TegakiUI = {
   updateLayerAlphaOpt: function() {
     var el = $T.id('tegaki-layer-alpha-opt');
     el.value = Math.round(Tegaki.activeLayer.alpha * 100);
+  },
+  
+  updateLayerName: function(layer) {
+    var el;
+    
+    if (el = $T.id('tegaki-layer-name-' + layer.id)) {
+      el.textContent = layer.name;
+    }
   },
   
   updateLayerPreview: function(layer) {

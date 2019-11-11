@@ -51,6 +51,18 @@ class TegakiEventConclusion extends TegakiEvent_void {
   dispatch() {}
 }
 
+class TegakiEventHistoryDummy extends TegakiEvent_void {
+  constructor(timeStamp) {
+    super();
+    this.timeStamp = timeStamp;
+    this.type = TegakiEvents[this.constructor.name][0];
+  }
+  
+  dispatch() {
+    TegakiHistory.push(new TegakiHistoryActions.Dummy());
+  }
+}
+
 class TegakiEventDrawStart {
   constructor(timeStamp, x, y, pressure) {
     this.timeStamp = timeStamp;
@@ -559,6 +571,8 @@ const TegakiEvents = Object.freeze({
   TegakiEventSetActiveLayer:          [25,  TegakiEventSetActiveLayer],
   TegakiEventToggleLayerSelection:    [26,  TegakiEventToggleLayerSelection],
   TegakiEventSetSelectedLayersAlpha:  [27,  TegakiEventSetSelectedLayersAlpha],
+  
+  TegakiEventHistoryDummy:            [254,  TegakiEventHistoryDummy],
   
   TegakiEventConclusion:              [255, TegakiEventConclusion]
 });

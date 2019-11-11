@@ -84,6 +84,11 @@ var TegakiHistory = {
 };
 
 var TegakiHistoryActions = {
+  Dummy: function() {
+    this.undo = function() {};
+    this.redo = function() {};
+  },
+  
   Draw: function(layerId) {
     this.coalesce = false;
     
@@ -141,6 +146,12 @@ var TegakiHistoryActions = {
   SetLayersAlpha: function(layerAlphas, newAlpha) {
     this.layerAlphas = layerAlphas;
     this.newAlpha = newAlpha;
+  },
+  
+  SetLayerName: function(id, oldName, newName) {
+    this.layerId = id;
+    this.oldName = oldName;
+    this.newName = newName;
   }
 };
 
@@ -345,4 +356,21 @@ TegakiHistoryActions.SetLayersAlpha.prototype.coalesce = function(action) {
   this.newAlpha = action.newAlpha;
   
   return true;
+};
+
+TegakiHistoryActions.SetLayerName.prototype.exec = function(type) {
+  var layer = TegakiLayers.getLayerById(this.layerId);
+  
+  if (layer) {
+    layer.name = type ? this.newName : this.oldName;
+    TegakiUI.updateLayerName(layer);
+  }
+};
+
+TegakiHistoryActions.SetLayerName.prototype.undo = function() {
+  this.exec(0);
+};
+
+TegakiHistoryActions.SetLayerName.prototype.redo = function() {
+  this.exec(1);
 };

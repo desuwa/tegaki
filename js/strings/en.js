@@ -23,6 +23,7 @@ var TegakiStrings = {
   paletteSlotReplace: 'Right click to replace with the current color',
   
   // Layers
+  layer: 'Layer',
   addLayer: 'Add layer',
   delLayers: 'Delete layers',
   mergeLayers: 'Merge layers',
