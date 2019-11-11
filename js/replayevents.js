@@ -208,8 +208,10 @@ class TegakiEventDrawCommit extends TegakiEvent_void {
   
   dispatch() {
     Tegaki.tool.commit();
+    TegakiUI.updateLayerPreview(Tegaki.activeLayer);
     TegakiHistory.pendingAction.addCanvasState(Tegaki.activeLayer.imageData, 1);
     TegakiHistory.push(TegakiHistory.pendingAction);
+    Tegaki.isPainting = false;
   }
 }
 
