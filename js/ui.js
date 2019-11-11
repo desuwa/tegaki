@@ -818,6 +818,10 @@ var TegakiUI = {
   onLayerDragStart: function(e) {
     var el, id;
     
+    if (e.ctrlKey) {
+      return;
+    }
+    
     TegakiUI.draggedNode = null;
     
     if (!$T.id('tegaki-layers-grid').children[1]) {
