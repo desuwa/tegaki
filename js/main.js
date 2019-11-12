@@ -358,7 +358,9 @@ var Tegaki = {
     
     TegakiKeybinds.map = {
       'ctrl-z': [ TegakiHistory, 'undo' ],
-      'ctrl-y': [ TegakiHistory, 'redo' ]
+      'ctrl-y': [ TegakiHistory, 'redo' ],
+      'arrowup': [ Tegaki, 'setToolSizeUp' ],
+      'arrowdown': [ Tegaki, 'setToolSizeDown' ],
     };
     
     for (tool in Tegaki.tools) {
@@ -566,6 +568,14 @@ var Tegaki = {
     
     Tegaki.colorPaletteId = id;
     TegakiUI.updateColorPalette();
+  },
+  
+  setToolSizeUp: function() {
+    Tegaki.setToolSize(Tegaki.tool.size + 1);
+  },
+  
+  setToolSizeDown: function() {
+    Tegaki.setToolSize(Tegaki.tool.size - 1);
   },
   
   setToolSize: function(size) {
