@@ -172,7 +172,7 @@ var TegakiUI = {
     btn.id = 'tegaki-undo-btn';
     btn.className = 'tegaki-mb-btn';
     btn.textContent = TegakiStrings.undo;
-    btn.title = 'Ctrl+Z';
+    btn.title = TegakiKeybinds.getCaption('undo');
     $T.on(btn, 'click', Tegaki.onUndoClick);
     frag.appendChild(btn);
     
@@ -180,7 +180,7 @@ var TegakiUI = {
     btn.id = 'tegaki-redo-btn';
     btn.className = 'tegaki-mb-btn';
     btn.textContent = TegakiStrings.redo;
-    btn.title = 'Ctrl+Y';
+    btn.title = TegakiKeybinds.getCaption('redo');
     $T.on(btn, 'click', Tegaki.onRedoClick);
     frag.appendChild(btn);
     
@@ -462,6 +462,7 @@ var TegakiUI = {
     el.min = 1;
     el.max = Tegaki.maxSize;
     el.type = 'range';
+    el.title = TegakiKeybinds.getCaption('toolSize');
     $T.on(el, 'input', Tegaki.onToolSizeChange);
     row.appendChild(el);
     

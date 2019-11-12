@@ -106,6 +106,8 @@ var Tegaki = {
     
     self.createTools();
     
+    self.initKeybinds();
+    
     [self.bg, self.canvasCnt, self.layersCnt] = TegakiUI.buildUI();
     
     document.body.appendChild(self.bg);
@@ -144,8 +146,6 @@ var Tegaki = {
     self.updatePosOffset();
     
     self.resetLayers();
-    
-    self.initKeybinds();
     
     self.bindGlobalEvents();
     
@@ -356,18 +356,17 @@ var Tegaki = {
       return;
     }
     
-    TegakiKeybinds.map = {
-      'ctrl-z': [ TegakiHistory, 'undo' ],
-      'ctrl-y': [ TegakiHistory, 'redo' ],
-      'arrowup': [ Tegaki, 'setToolSizeUp' ],
-      'arrowdown': [ Tegaki, 'setToolSizeDown' ],
-    };
+    TegakiKeybinds.bind('ctrl+z', TegakiHistory, 'undo', 'undo', 'Ctrl+Z');
+    TegakiKeybinds.bind('ctrl+y', TegakiHistory, 'redo', 'redo', 'Ctrl+Y');
+    
+    TegakiKeybinds.bind('+', Tegaki, 'setToolSizeUp', 'toolSize', 'Numpad +/-');
+    TegakiKeybinds.bind('-', Tegaki, 'setToolSizeDown');
     
     for (tool in Tegaki.tools) {
       cls = Tegaki.tools[tool];
       
       if (cls.keybind) {
-        TegakiKeybinds.map[cls.keybind] = [ cls, 'set' ];
+        TegakiKeybinds.bind(cls.keybind, cls, 'set');
       }
     }
   },
@@ -416,6 +415,8 @@ var Tegaki = {
   
   destroy: function() {
     Tegaki.unBindGlobalEvents();
+    
+    TegakiKeybinds.clear();
     
     TegakiHistory.clear();
     
@@ -579,7 +580,7 @@ var Tegaki = {
   },
   
   setToolSize: function(size) {
-    if (size >= 0 && size <= Tegaki.maxSize) {
+    if (size > 0 && size <= Tegaki.maxSize) {
       Tegaki.tool.setSize(size);
       Tegaki.updateCursorStatus();
       Tegaki.recordEvent(TegakiEventSetToolSize, performance.now(), size);

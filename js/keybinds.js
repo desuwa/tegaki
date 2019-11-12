@@ -1,5 +1,24 @@
 var TegakiKeybinds = {
-  map: null,
+  keyMap: {},
+  
+  captionMap: {},
+  
+  clear: function() {
+    this.keyMap = {};
+    this.captionMap = {};
+  },
+  
+  bind: function(keys, klass, fn, id, caption) {
+    this.keyMap[keys] = [klass, fn];
+    
+    if (id) {
+      this.captionMap[id] = caption;
+    }
+  },
+  
+  getCaption(id) {
+    return this.captionMap[id];
+  },
   
   resolve: function(e) {
     var fn, mods, keys, el;
@@ -23,10 +42,10 @@ var TegakiKeybinds = {
     keys = e.key.toLowerCase();
     
     if (mods[0]) {
-      keys = mods.join('-') + '-' + keys;
+      keys = mods.join('+') + '+' + keys;
     }
     
-    fn = TegakiKeybinds.map[keys];
+    fn = TegakiKeybinds.keyMap[keys];
     
     if (fn && !e.altKey && !e.metaKey) {
       e.preventDefault();
