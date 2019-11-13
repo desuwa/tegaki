@@ -105,7 +105,7 @@ var TegakiUI = {
     
     // Colorpicker
     ctrl.appendChild(
-      TegakiUI.buildColorCtrlGroup(Tegaki.toolColor, Tegaki.colorPaletteId)
+      TegakiUI.buildColorCtrlGroup(Tegaki.toolColor)
     );
     
     // Size control
@@ -564,7 +564,7 @@ var TegakiUI = {
     return ctrl;
   },
   
-  buildColorCtrlGroup: function(mainColor, activePaletteId) {
+  buildColorCtrlGroup: function(mainColor) {
     var el, cnt, btn, ctrl, color, edge, i, palette, cls;
     
     edge = / Edge\//i.test(window.navigator.userAgent);
@@ -588,7 +588,7 @@ var TegakiUI = {
     btn.id = 'tegaki-palette-prev-btn';
     btn.title = TegakiStrings.switchPalette;
     btn.setAttribute('data-prev', '1');
-    btn.className = 'tegaki-ui-btn tegaki-icon tegaki-left-open';
+    btn.className = 'tegaki-ui-btn tegaki-icon tegaki-left-open tegaki-disabled';
     $T.on(btn, 'click', Tegaki.onSwitchPaletteClick);
     el.appendChild(btn);
     
@@ -622,7 +622,7 @@ var TegakiUI = {
         cls += ' tegaki-color-grid-15';
       }
       
-      if (i !== activePaletteId) {
+      if (i > 0) {
         cls += ' tegaki-hidden';
       }
       
