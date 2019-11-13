@@ -4,142 +4,92 @@ var TegakiCursor = {
   
   points: null,
   
-  tmpCtx: null,
-  
   cursorCtx: null,
   
-  flatCtxAbove: null,
-  flatCtxBelow: null,
+  offsetX: 0,
+  offsetY: 0,
   
-  cached: false,
+  lastX: 0,
+  lastY: 0,
+  lastSize: 0,
   
   init: function(w, h) {
     var el;
     
-    this.tmpCtx = $T.el('canvas').getContext('2d');
-    
     el = $T.el('canvas');
     el.id = 'tegaki-cursor-layer';
-    el.width = w;
-    el.height = h;
-    Tegaki.layersCnt.appendChild(el);
+    el.width = Tegaki.canvasCnt.clientWidth;
+    el.height = Tegaki.canvasCnt.clientHeight;
+    
+    Tegaki.canvasCnt.appendChild(el);
+    
+    this.offsetX = el.offsetLeft;
+    this.offsetY = el.offsetTop;
     
     this.cursorCtx = el.getContext('2d');
-    
-    el = $T.el('canvas');
-    el.width = w;
-    el.height = h;
-    this.flatCtxAbove = el.getContext('2d');
-    
-    el = $T.el('canvas');
-    el.width = w;
-    el.height = h;
-    this.flatCtxBelow = el.getContext('2d');
   },
   
-  updateCanvasSize: function(w, h) {
-    this.cursorCtx.canvas.width = w;
-    this.cursorCtx.canvas.height = h;
+  updateCanvasSize: function() {
+    var canvas = this.cursorCtx.canvas;
     
-    this.flatCtxAbove.canvas.width = w;
-    this.flatCtxAbove.canvas.height = h;
+    canvas.width = Tegaki.canvasCnt.clientWidth;
+    canvas.height = Tegaki.canvasCnt.clientHeight;
     
-    this.flatCtxBelow.canvas.width = w;
-    this.flatCtxBelow.canvas.height = h;
+    this.offsetX = canvas.offsetLeft;
+    this.offsetY = canvas.offsetTop;
   },
   
-  render: function(x, y) {
-    var i, size, srcImg, srcData, destImg, destData, activeLayer;
+  render: function(rawX, rawY) {
+    var x, y, i, destImg, destData;
     
-    if (!this.cached) {
-      this.buildCache();
-    }
+    x = rawX - this.offsetX - this.radius;
+    y = rawY - this.offsetY - this.radius;
     
-    size = this.size;
-    x = x - this.radius;
-    y = y - this.radius;
+    this.clear();
     
-    $T.clearCtx(this.cursorCtx);
-    $T.clearCtx(this.tmpCtx);
+    this.lastX = x;
+    this.lastY = y;
+    this.lastSize = this.size;
     
-    this.tmpCtx.drawImage(this.flatCtxBelow.canvas, x, y, size, size, 0, 0, size, size);
-    
-    activeLayer = Tegaki.activeLayer;
-    
-    if (activeLayer.visible) {
-      if (activeLayer.alpha < 1.0) {
-        this.tmpCtx.globalAlpha = activeLayer.alpha;
-        this.tmpCtx.drawImage(Tegaki.activeLayer.canvas, x, y, size, size, 0, 0, size, size);
-        this.tmpCtx.globalAlpha = 1.0;
-      }
-      else {
-        this.tmpCtx.drawImage(Tegaki.activeLayer.canvas, x, y, size, size, 0, 0, size, size);
-      }
-    }
-    
-    this.tmpCtx.drawImage(this.flatCtxAbove.canvas, x, y, size, size, 0, 0, size, size);
-    
-    srcImg = this.tmpCtx.getImageData(0, 0, size, size);
-    srcData = new Uint32Array(srcImg.data.buffer);
-    
-    destImg = this.cursorCtx.createImageData(size, size);
+    destImg = this.cursorCtx.createImageData(this.size, this.size);
     destData = new Uint32Array(destImg.data.buffer);
     
-    for (i of this.points) {
-      destData[i] = srcData[i] ^ 0x00FFFF7F;
+    for (i = 0; i < this.points.length; ++i) {
+      destData[this.points[i]] = 0xFFFFFF7F;
     }
     
     this.cursorCtx.putImageData(destImg, x, y);
   },
   
-  buildCache: function() {
-    var i, layer, ctx, len, layerId;
-    
-    ctx = this.flatCtxBelow;
-    ctx.globalAlpha = 1.0;
-    $T.clearCtx(ctx);
-    
-    ctx.drawImage(Tegaki.canvas, 0, 0);
-    
-    layerId = Tegaki.activeLayer.id;
-    
-    for (i = 0, len = Tegaki.layers.length; i < len; ++i) {
-      layer = Tegaki.layers[i];
-      
-      if (!layer.visible) {
-        continue;
-      }
-      
-      if (layer.id === layerId) {
-        ctx = this.flatCtxAbove;
-        ctx.globalAlpha = 1.0;
-        $T.clearCtx(ctx);
-        continue;
-      }
-      
-      ctx.globalAlpha = layer.alpha;
-      ctx.drawImage(layer.canvas, 0, 0);
-    }
-    
-    this.cached = true;
+  clear: function() {
+    this.cursorCtx.clearRect(this.lastX, this.lastY, this.lastSize, this.lastSize);
   },
   
-  invalidateCache() {
-    this.cached = false;
+  clearAll: function() {
+    var canvas = this.cursorCtx.canvas;
+    this.cursorCtx.clearRect(0, 0, canvas.width, canvas.height);
   },
   
   destroy() {
     this.size = 0;
     this.radius = 0;
+    this.offsetX = 0;
+    this.offsetY = 0;
+    this.lastX = 0;
+    this.lastY = 0;
+    this.lastSize = 0;
     this.points = null;
-    this.tmpCtx = null;
     this.cursorCtx = null;
-    this.flatCtxAbove = null;
-    this.flatCtxBelow = null;
   },
   
   generate: function(size) {
     var e, x, y, c, r, rr, points;
+    
+    size = 0 | (size * Tegaki.zoomFactor);
+    
+    if (size < 2) {
+      return false;
+    }
     
     r = 0 | ((size) / 2);
     
@@ -176,11 +126,10 @@ var TegakiCursor = {
       }
     }
     
-    this.tmpCtx.canvas.width = size;
-    this.tmpCtx.canvas.height = size;
-    
     this.size = size;
     this.radius = r;
     this.points = points;
+    
+    return true;
   }
 };

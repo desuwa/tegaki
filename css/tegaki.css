@@ -243,10 +243,6 @@
   -ms-interpolation-mode: nearest-neighbor;
 }
 
-#tegaki .tegaki-smooth-layers #tegaki-cursor-layer {
-  image-rendering: auto;
-}
-
 .tegaki-tool-active {
   color: #f2f3f4;
 }
@@ -364,6 +360,12 @@
 
 #tegaki-finish-btn {
   font-weight: bold;
+}
+
+#tegaki-cursor-layer {
+  position: absolute;
+  mix-blend-mode: difference;
+  pointer-events: none;
 }
 
 /* generic ui */

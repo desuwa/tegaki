@@ -139,7 +139,7 @@ var Tegaki = {
     
     self.createCanvas();
     
-    self.centerLayersCnt();
+    self.updateLayersCntSize();
     
     self.createBuffers();
     
@@ -256,6 +256,8 @@ var Tegaki = {
     if (!self.replayMode) {
       $T.on(self.canvasCnt, 'pointermove', self.onPointerMove);
       $T.on(self.canvasCnt, 'pointerdown', self.onPointerDown);
+      $T.on(self.canvasCnt, 'pointerout', self.onPointerOut);
+      
       $T.on(document, 'pointerup', self.onPointerUp);
       $T.on(document, 'pointercancel', self.onPointerUp);
       
@@ -268,7 +270,7 @@ var Tegaki = {
     }
     
     $T.on(self.bg, 'contextmenu', self.onDummy);
-    $T.on(window, 'resize', self.updatePosOffset);
+    $T.on(window, 'resize', self.onWindowResized);
     $T.on(window, 'scroll', self.updatePosOffset);
   },
   
@@ -278,6 +280,8 @@ var Tegaki = {
     if (!self.replayMode) {
       $T.off(self.canvasCnt, 'pointermove', self.onPointerMove);
       $T.off(self.canvasCnt, 'pointerdown', self.onPointerDown);
+      $T.off(self.canvasCnt, 'pointerout', self.onPointerOut);
+      
       $T.off(document, 'pointerup', self.onPointerUp);
       $T.off(document, 'pointercancel', self.onPointerUp);
       
@@ -290,7 +294,7 @@ var Tegaki = {
     }
     
     $T.off(self.bg, 'contextmenu', self.onDummy);
-    $T.off(window, 'resize', self.updatePosOffset);
+    $T.off(window, 'resize', self.onWindowResized);
     $T.off(window, 'scroll', self.updatePosOffset);
   },
   
@@ -320,7 +324,7 @@ var Tegaki = {
     ctx.imageSmoothingEnabled = false;
   },
   
-  centerLayersCnt: function() {
+  updateLayersCntSize: function() {
     var style = Tegaki.layersCnt.style;
     
     style.width = Tegaki.baseWidth + 'px';
@@ -349,6 +353,11 @@ var Tegaki = {
     }
   },
   
+  onWindowResized: function() {
+    Tegaki.updatePosOffset();
+    TegakiCursor.updateCanvasSize();
+  },
+  
   initKeybinds: function() {
     var cls, tool;
     
@@ -371,7 +380,7 @@ var Tegaki = {
     }
   },
   
-  getCursorPos: function(e, axis) {
+  getPointerPos: function(e, axis) {
     if (axis === 0) {
       return 0 | ((
         e.clientX
@@ -398,7 +407,7 @@ var Tegaki = {
     Tegaki.bg.classList.remove('tegaki-hidden');
     document.body.classList.add('tegaki-backdrop');
     Tegaki.setZoom(0);
-    Tegaki.centerLayersCnt();
+    Tegaki.updateLayersCntSize();
     Tegaki.updatePosOffset();
     Tegaki.bindGlobalEvents();
   },
@@ -652,13 +661,7 @@ var Tegaki = {
     Tegaki.layersCnt.style.width = Math.ceil(Tegaki.baseWidth * Tegaki.zoomFactor) + 'px';
     Tegaki.layersCnt.style.height = Math.ceil(Tegaki.baseHeight * Tegaki.zoomFactor) + 'px';
     
-    if (level < 0) {
-      Tegaki.layersCnt.classList.add('tegaki-smooth-layers');
-    }
-    else {
-      Tegaki.layersCnt.classList.remove('tegaki-smooth-layers');
-    }
-    
+    Tegaki.updateCursorStatus();
     Tegaki.updatePosOffset();
   },
   
@@ -1138,9 +1141,7 @@ var Tegaki = {
     Tegaki.updateCursorStatus();
   },
   
-  onLayerStackChanged: function() {
-    TegakiCursor.invalidateCache();
-  },
+  onLayerStackChanged: function() {},
   
   onOpenFileSelected: function() {
     var img;
@@ -1194,8 +1195,6 @@ var Tegaki = {
     Tegaki.canvas.width = width;
     Tegaki.canvas.height = height;
     
-    TegakiCursor.updateCanvasSize(width, height);
-    
     Tegaki.ctx.fillStyle = Tegaki.bgColor;
     Tegaki.ctx.fillRect(0, 0, width, height);
     
@@ -1203,7 +1202,7 @@ var Tegaki = {
     
     Tegaki.resetLayers();
     
-    Tegaki.centerLayersCnt();
+    Tegaki.updateLayersCntSize();
     Tegaki.updatePosOffset();
   },
   
@@ -1220,12 +1219,11 @@ var Tegaki = {
   
   updateCursorStatus: function() {
     if (!Tegaki.tool.noCursor && Tegaki.tool.size > 1) {
-      Tegaki.cursor = true;
-      TegakiCursor.generate(Tegaki.tool.size);
+      Tegaki.cursor = TegakiCursor.generate(Tegaki.tool.size);
     }
     else {
       Tegaki.cursor = false;
-      $T.clearCtx(TegakiCursor.cursorCtx);
+      TegakiCursor.clear();
     }
   },
   
@@ -1287,8 +1285,8 @@ var Tegaki = {
         ts = e.timeStamp;
         
         for (e of events) {
-          x = Tegaki.getCursorPos(e, 0);
-          y = Tegaki.getCursorPos(e, 1);
+          x = Tegaki.getPointerPos(e, 0);
+          y = Tegaki.getPointerPos(e, 1);
           
           if (!tool.enabledDynamics()) {
             Tegaki.recordEvent(TegakiEventDrawNoP, ts, x, y);
@@ -1303,8 +1301,8 @@ var Tegaki = {
         }
       }
       else {
-        x = Tegaki.getCursorPos(e, 0);
-        y = Tegaki.getCursorPos(e, 1);
+        x = Tegaki.getPointerPos(e, 0);
+        y = Tegaki.getPointerPos(e, 1);
         p = TegakiPressure.toShort(e.pressure);
         Tegaki.recordEvent(TegakiEventDraw, e.timeStamp, x, y, p);
         TegakiPressure.push(p);
@@ -1312,12 +1310,12 @@ var Tegaki = {
       }
     }
     else {
-      x = Tegaki.getCursorPos(e, 0);
-      y = Tegaki.getCursorPos(e, 1);
+      x = Tegaki.getPointerPos(e, 0);
+      y = Tegaki.getPointerPos(e, 1);
     }
     
     if (Tegaki.cursor) {
-      TegakiCursor.render(x, y);
+      TegakiCursor.render(e.clientX, e.clientY);
     }
   },
   
@@ -1348,8 +1346,8 @@ var Tegaki = {
       return;
     }
     
-    x = Tegaki.getCursorPos(e, 0);
-    y = Tegaki.getCursorPos(e, 1);
+    x = Tegaki.getPointerPos(e, 0);
+    y = Tegaki.getPointerPos(e, 1);
     
     if (e.button === 2 || e.altKey) {
       e.preventDefault();
@@ -1384,7 +1382,7 @@ var Tegaki = {
     }
     
     if (Tegaki.cursor) {
-      TegakiCursor.render(x, y);
+      TegakiCursor.render(e.clientX, e.clientY);
     }
   },
   
@@ -1401,6 +1399,10 @@ var Tegaki = {
       TegakiHistory.push(TegakiHistory.pendingAction);
       Tegaki.isPainting = false;
     }
+  },
+  
+  onPointerOut: function(e) {
+    TegakiCursor.clearAll();
   },
   
   onDummy: function(e) {
