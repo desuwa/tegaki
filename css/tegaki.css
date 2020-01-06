@@ -57,10 +57,15 @@
 
 .tegaki-replay-mode #tegaki-tools-cnt,
 .tegaki-replay-mode #tegaki-toolmode-bar,
-.tegaki-replay-mode .tegaki-ctrlgrp:not(#tegaki-ctrlgrp-zoom):not(#tegaki-layers-grid),
+.tegaki-replay-mode .tegaki-ctrlgrp,
 .tegaki-replay-mode .tegaki-layers-cell,
 .tegaki-replay-mode #tegaki-layers-ctrl {
   pointer-events: none;
+}
+
+.tegaki-replay-mode #tegaki-ctrlgrp-zoom,
+.tegaki-replay-mode #tegaki-ctrlgrp-layers {
+  pointer-events: auto;
 }
 
 #tegaki {
