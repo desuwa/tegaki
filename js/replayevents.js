@@ -38,6 +38,8 @@ class TegakiEventPrelude extends TegakiEvent_void {
     this.type = TegakiEvents[this.constructor.name][0];
   }
   
+  static unpack(r) { return super.unpack(r); } // FF bug 1628719
+  
   dispatch() {}
 }
 
@@ -48,6 +50,8 @@ class TegakiEventConclusion extends TegakiEvent_void {
     this.type = TegakiEvents[this.constructor.name][0];
   }
   
+  static unpack(r) { return super.unpack(r); } // FF bug 1628719
+  
   dispatch() {}
 }
 
@@ -57,6 +61,8 @@ class TegakiEventHistoryDummy extends TegakiEvent_void {
     this.timeStamp = timeStamp;
     this.type = TegakiEvents[this.constructor.name][0];
   }
+  
+  static unpack(r) { return super.unpack(r); } // FF bug 1628719
   
   dispatch() {
     TegakiHistory.push(new TegakiHistoryActions.Dummy());
@@ -218,6 +224,8 @@ class TegakiEventDrawCommit extends TegakiEvent_void {
     this.type = TegakiEvents[this.constructor.name][0];
   }
   
+  static unpack(r) { return super.unpack(r); } // FF bug 1628719
+  
   dispatch() {
     Tegaki.tool.commit();
     TegakiUI.updateLayerPreview(Tegaki.activeLayer);
@@ -234,6 +242,8 @@ class TegakiEventUndo extends TegakiEvent_void {
     this.type = TegakiEvents[this.constructor.name][0];
   }
   
+  static unpack(r) { return super.unpack(r); } // FF bug 1628719
+  
   dispatch() {
     TegakiHistory.undo();
   }
@@ -245,6 +255,8 @@ class TegakiEventRedo extends TegakiEvent_void {
     this.timeStamp = timeStamp;
     this.type = TegakiEvents[this.constructor.name][0];
   }
+  
+  static unpack(r) { return super.unpack(r); } // FF bug 1628719
   
   dispatch() {
     TegakiHistory.redo();
@@ -436,6 +448,8 @@ class TegakiEventAddLayer extends TegakiEvent_void {
     this.type = TegakiEvents[this.constructor.name][0];
   }
   
+  static unpack(r) { return super.unpack(r); } // FF bug 1628719
+  
   dispatch() {
     Tegaki.addLayer();
   }
@@ -447,6 +461,8 @@ class TegakiEventDeleteLayers extends TegakiEvent_void {
     this.timeStamp = timeStamp;
     this.type = TegakiEvents[this.constructor.name][0];
   }
+  
+  static unpack(r) { return super.unpack(r); } // FF bug 1628719
   
   dispatch() {
     Tegaki.deleteSelectedLayers();
@@ -472,6 +488,8 @@ class TegakiEventMergeLayers extends TegakiEvent_void {
     this.timeStamp = timeStamp;
     this.type = TegakiEvents[this.constructor.name][0];
   }
+  
+  static unpack(r) { return super.unpack(r); } // FF bug 1628719
   
   dispatch() {
     Tegaki.mergeSelectedLayers();
