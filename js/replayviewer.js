@@ -30,10 +30,10 @@ class TegakiReplayViewer {
     this.destroyed = false;
     
     this.speedIndex = 1;
-    this.speedList = [0.5, 1.0, 2.0, 5.0, 10.0];
+    this.speedList = [0.5, 1.0, 2.0, 5.0, 10.0, 25.0];
     this.speed = this.speedList[this.speedIndex];
     
-    this.maxEventsPerFrame = 25;
+    this.maxEventsPerFrame = 50;
     
     this.maxEventCount = 8640000;
     
