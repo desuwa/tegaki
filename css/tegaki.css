@@ -53,6 +53,8 @@
 
 .tegaki-invis {
   visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .tegaki-replay-mode #tegaki-tools-cnt,

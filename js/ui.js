@@ -645,7 +645,7 @@ var TegakiUI = {
     
     el = $T.el('input');
     el.id = 'tegaki-colorpicker';
-    !edge && el.classList.add('tegaki-hidden');
+    !edge && el.classList.add('tegaki-invis');
     el.value = color;
     el.type = 'color';
     $T.on(el, 'change', Tegaki.onColorPicked);
