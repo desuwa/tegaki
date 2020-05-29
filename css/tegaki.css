@@ -350,6 +350,7 @@
 #tegaki-layers-wrap {
   margin: auto;
   padding: 50px;
+  pointer-events: none;
 }
 
 #tegaki-layers canvas {
