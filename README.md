@@ -5,7 +5,7 @@ Painter app in JavaScript.
 [Demo](https://desuwa.github.io/tegaki.html)
 
 Notes on tablet support:
-- Pen pressure doesn't work on Linux  
+- Pen pressure works on Linux with google chrome. But doesn't work with firefox
 - Firefox users on Windows need to set `dom.w3c_pointer_events.dispatch_by_pointer_messages` to `true` in `about:config` to fix scrolling issues and enable pressure support  
 
 #### Usage
