@@ -147,9 +147,9 @@ var Tegaki = {
     
     self.resetLayers();
     
-    self.bindGlobalEvents();
-    
     TegakiCursor.init(self.baseWidth, self.baseHeight);
+    
+    self.bindGlobalEvents();
     
     TegakiUI.updateUndoRedo(0, 0);
     TegakiUI.updateZoomLevel();
@@ -254,9 +254,10 @@ var Tegaki = {
     var self = Tegaki;
     
     if (!self.replayMode) {
-      $T.on(self.canvasCnt, 'pointermove', self.onPointerMove);
-      $T.on(self.canvasCnt, 'pointerdown', self.onPointerDown);
-      $T.on(self.canvasCnt, 'pointerout', self.onPointerOut);
+      let cursorNode = TegakiCursor.getCanvas();
+      $T.on(cursorNode, 'pointermove', self.onPointerMove);
+      $T.on(cursorNode, 'pointerdown', self.onPointerDown);
+      $T.on(cursorNode, 'pointerout', self.onPointerOut);
       
       $T.on(document, 'pointerup', self.onPointerUp);
       $T.on(document, 'pointercancel', self.onPointerUp);
@@ -278,9 +279,10 @@ var Tegaki = {
     var self = Tegaki;
     
     if (!self.replayMode) {
-      $T.off(self.canvasCnt, 'pointermove', self.onPointerMove);
-      $T.off(self.canvasCnt, 'pointerdown', self.onPointerDown);
-      $T.off(self.canvasCnt, 'pointerout', self.onPointerOut);
+      let cursorNode = TegakiCursor.getCanvas();
+      $T.off(cursorNode, 'pointermove', self.onPointerMove);
+      $T.off(cursorNode, 'pointerdown', self.onPointerDown);
+      $T.off(cursorNode, 'pointerout', self.onPointerOut);
       
       $T.off(document, 'pointerup', self.onPointerUp);
       $T.off(document, 'pointercancel', self.onPointerUp);
@@ -672,6 +674,8 @@ var Tegaki = {
     else {
       Tegaki.setZoom(Tegaki.zoomLevel - 1);
     }
+    
+    TegakiCursor.updateCanvasSize();
   },
   
   onNewClick: function() {
@@ -1236,11 +1240,15 @@ var Tegaki = {
       + Tegaki.canvasCnt.scrollTop + Tegaki.layersCnt.scrollTop;
   },
   
+  getScrollbarSizes: function() {
+    return [
+      Tegaki.canvasCnt.offsetWidth - Tegaki.canvasCnt.clientWidth,
+      Tegaki.canvasCnt.offsetHeight - Tegaki.canvasCnt.clientHeight
+    ];
+  },
+  
   isScrollbarClick: function(e) {
-    var sbwh, scbv;
-    
-    sbwh = Tegaki.canvasCnt.offsetWidth - Tegaki.canvasCnt.clientWidth;
-    scbv = Tegaki.canvasCnt.offsetHeight - Tegaki.canvasCnt.clientHeight;
+    var [ sbwh, scbv ] = Tegaki.getScrollbarSizes();
 
     if (sbwh > 0
       && e.clientX >= Tegaki.canvasCnt.offsetLeft + Tegaki.canvasCnt.clientWidth

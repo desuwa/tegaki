@@ -114,7 +114,6 @@
   grid-area: 2 / 2 / 3 / 3;
   overflow: auto;
   display: flex;
-  touch-action: none;
 }
 
 #tegaki-ctrl-cnt {
@@ -366,7 +365,7 @@
 #tegaki-cursor-layer {
   position: absolute;
   mix-blend-mode: difference;
-  pointer-events: none;
+  touch-action: none;
 }
 
 /* generic ui */

@@ -18,8 +18,7 @@ var TegakiCursor = {
     
     el = $T.el('canvas');
     el.id = 'tegaki-cursor-layer';
-    el.width = Tegaki.canvasCnt.clientWidth;
-    el.height = Tegaki.canvasCnt.clientHeight;
+    [ el.width, el.height ] = TegakiCursor.getMaxCanvasSize()
     
     Tegaki.canvasCnt.appendChild(el);
     
@@ -29,14 +28,34 @@ var TegakiCursor = {
     this.cursorCtx = el.getContext('2d');
   },
   
+  getCanvas: function() {
+    if (this.cursorCtx) {
+      return this.cursorCtx.canvas;
+    }
+    else {
+      return null;
+    }
+  },
+  
+  getMaxCanvasSize: function() {
+    let w = Tegaki.canvasCnt.offsetWidth;
+    let h = Tegaki.canvasCnt.offsetHeight;
+    let [ sbwh, scbv ] = Tegaki.getScrollbarSizes();
+    return [ w - sbwh, h - scbv ];
+  },
+  
   updateCanvasSize: function() {
-    var canvas = this.cursorCtx.canvas;
+    let canvas = this.cursorCtx.canvas;
     
-    canvas.width = Tegaki.canvasCnt.clientWidth;
-    canvas.height = Tegaki.canvasCnt.clientHeight;
+    let [w, h] = this.getMaxCanvasSize();
     
-    this.offsetX = canvas.offsetLeft;
-    this.offsetY = canvas.offsetTop;
+    if (w !== canvas.width || h !== canvas.height) {
+      canvas.width = w;
+      canvas.height = h;
+      
+      this.offsetX = canvas.offsetLeft;
+      this.offsetY = canvas.offsetTop;
+    }
   },
   
   render: function(rawX, rawY) {
