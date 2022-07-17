@@ -411,6 +411,7 @@ var Tegaki = {
     Tegaki.setZoom(0);
     Tegaki.updateLayersCntSize();
     Tegaki.updatePosOffset();
+    TegakiCursor.updateCanvasSize();
     Tegaki.bindGlobalEvents();
   },
   
@@ -1208,6 +1209,7 @@ var Tegaki = {
     
     Tegaki.updateLayersCntSize();
     Tegaki.updatePosOffset();
+    TegakiCursor.updateCanvasSize();
   },
   
   copyContextState: function(src, dest) {
