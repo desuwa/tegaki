@@ -1272,6 +1272,10 @@ var Tegaki = {
   onPointerMove: function(e) {
     var events, x, y, tool, ts, p;
     
+    if (Tegaki.cursor) {
+      TegakiCursor.render(e.clientX, e.clientY);
+    }
+    
     if (e.mozInputSource !== undefined) {
       // Firefox thing where mouse events fire for no reason when the pointer is a pen
       if (Tegaki.activePointerIsPen && e.pointerType === 'mouse') {
@@ -1323,14 +1327,14 @@ var Tegaki = {
       x = Tegaki.getPointerPos(e, 0);
       y = Tegaki.getPointerPos(e, 1);
     }
-    
-    if (Tegaki.cursor) {
-      TegakiCursor.render(e.clientX, e.clientY);
-    }
   },
   
   onPointerDown: function(e) {
     var x, y, tool, p;
+    
+    if (Tegaki.cursor) {
+      TegakiCursor.render(e.clientX, e.clientY);
+    }
     
     if (Tegaki.isScrollbarClick(e)) {
       return;
@@ -1389,10 +1393,6 @@ var Tegaki = {
       TegakiHistory.pendingAction.addCanvasState(Tegaki.activeLayer.imageData, 0);
       
       tool.start(x, y);
-    }
-    
-    if (Tegaki.cursor) {
-      TegakiCursor.render(e.clientX, e.clientY);
     }
   },
   

@@ -18,7 +18,7 @@ var TegakiCursor = {
     
     el = $T.el('canvas');
     el.id = 'tegaki-cursor-layer';
-    [ el.width, el.height ] = TegakiCursor.getMaxCanvasSize()
+    [ el.width, el.height ] = TegakiCursor.getMaxCanvasSize();
     
     Tegaki.canvasCnt.appendChild(el);
     
