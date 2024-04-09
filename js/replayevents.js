@@ -208,7 +208,7 @@ class TegakiEventDrawNoP {
     x = r.readInt16();
     y = r.readInt16();
     
-    return new TegakiEventDraw(timeStamp, x, y);
+    return new TegakiEventDrawNoP(timeStamp, x, y);
   }
   
   dispatch() {
