@@ -120,6 +120,7 @@
   grid-area: 2 / 3 / 4 / 4;
   padding: 6px;
   overflow: hidden auto;
+  z-index: 1000;
 }
 
 #tegaki-status-cnt {
